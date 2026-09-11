@@ -31,7 +31,7 @@ async function main() {
   process.env.KAX_IDENTITY_ISSUER = ISS;
 
   // Require AFTER env is set; reset the cache to be safe.
-  const { verifyKaxToken, traderIdFromClaims, _resetJwksCache } = require('../server/kax-identity');
+  const { verifyKaxToken, traderIdFromClaims, bearerToken, setPassRevocationCheck, _resetJwksCache } = require('../server/kax-identity');
   _resetJwksCache();
 
   const now = Math.floor(Date.now() / 1000);
@@ -76,8 +76,37 @@ async function main() {
     assert.strictEqual((await verifyKaxToken(`Bearer ${await mk({ kid: 'attacker', key: akey })}`)).ok, false);
   }
 
+  // 8. (#303) a pass-minted token (kind = "pass") verifies and derives kax:pass:<sub>
+  {
+    const token = await mk({ claims: { kind: 'pass' }, sub: 'pass_7f3a' });
+    const v = await verifyKaxToken(`Bearer ${token}`);
+    assert.strictEqual(v.ok, true, `pass token should verify: ${v.error}`);
+    assert.strictEqual(traderIdFromClaims(v.claims), 'kax:pass:pass_7f3a');
+    assert.strictEqual(traderIdFromClaims({ kind: 'pass', sub: 'p1' }), 'kax:pass:p1');
+    // the revocation hook is consulted for pass tokens only, and a revoked pass is refused
+    const seen = [];
+    setPassRevocationCheck(async (claims) => { seen.push(claims.sub); return claims.sub === 'pass_7f3a'; });
+    try {
+      const revoked = await verifyKaxToken(`Bearer ${token}`);
+      assert.strictEqual(revoked.ok, false);
+      assert.match(revoked.error, /revoked/);
+      const other = await verifyKaxToken(`Bearer ${await mk({ claims: { kind: 'pass' }, sub: 'pass_live' })}`);
+      assert.strictEqual(other.ok, true, `unrevoked pass should verify: ${other.error}`);
+      const agent = await verifyKaxToken(`Bearer ${await mk()}`);
+      assert.strictEqual(agent.ok, true);
+      assert.deepStrictEqual(seen, ['pass_7f3a', 'pass_live'], 'hook runs for pass tokens only');
+    } finally { setPassRevocationCheck(null); }
+    assert.strictEqual((await verifyKaxToken(`Bearer ${token}`)).ok, true, 'default hook revokes nothing');
+  }
+  // 9. an unknown kind is still rejected; bearerToken() splits the header
+  assert.strictEqual((await verifyKaxToken(`Bearer ${await mk({ claims: { kind: 'admin' } })}`)).ok, false);
+  assert.strictEqual(bearerToken('Bearer abc.def'), 'abc.def');
+  assert.strictEqual(bearerToken('bearer   xyz '), 'xyz');
+  assert.strictEqual(bearerToken('Basic abc'), null);
+  assert.strictEqual(bearerToken(undefined), null);
+
   server.close();
-  console.log('kax-identity.test.js: OK (valid tokens verify + derive trader id; forgery/expiry/issuer all rejected)');
+  console.log('kax-identity.test.js: OK (valid tokens verify + derive trader id; pass kind + revocation hook; forgery/expiry/issuer all rejected)');
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });

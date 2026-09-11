@@ -133,6 +133,7 @@ async function main() {
       getMarket: async () => ({ id: 'm_play', tag: 'custom', source: 'system', outcomes: ['Yes', 'No'] }),
       placeTrade: async (a) => { traded.push(a.trader_id); return { cost: 1, prices: [0.5, 0.5] }; },
       registerTrader: async () => ({}),
+      getTrader: async () => null, // #303: unauthenticated trade consults the row
     });
     const r1 = await call(handler, 'POST', '/api/markets/m_play/trade', {}, JSON.stringify({ trader_id: 'kax:agent:victim', outcome: 0, shares: 1 }));
     assert.strictEqual(r1.status, 401, `kax: id without token should be 401, got ${r1.status}`);
@@ -194,6 +195,7 @@ async function main() {
       getMarket: async () => ({ id: 'm_play', tag: 'custom', source: 'system', outcomes: ['Yes', 'No'] }),
       placeTrade: async () => { throw new Error('shares must be positive'); },
       registerTrader: async () => ({}),
+      getTrader: async () => null, // #303: unauthenticated trade consults the row
       resolveMarket: async () => { throw Object.assign(new Error('nope'), { status: 409 }); },
     });
     const r = await call(handler, 'POST', '/api/markets/m_play/trade', {}, JSON.stringify({ trader_id: 'a', outcome: 0, shares: -1 }));

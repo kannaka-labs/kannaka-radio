@@ -67,6 +67,53 @@ function idempotencyKeyOf(v) {
   return v;
 }
 
+// ── Trader bearer tokens (#303) ─────────────────────────────────────────
+// A non-`kax:` trader row can hold ONE bearer, minted on the HTTP register
+// route and returned exactly once. Format:
+//   gs1.<base64url(trader_id)>.<base64url(32 random bytes)>
+// The id rides inside the token so the bearer alone names its row (the body's
+// trader_id is then a cross-check, never the identity); the `gs1.` prefix
+// keeps it distinguishable from a KAX JWT on the same Authorization header.
+// Only sha256(salt || secret) with a fresh per-row salt is stored, so a DB
+// read yields nothing that can be presented back as a bearer.
+const BEARER_PREFIX = 'gs1.';
+const BEARER_SECRET_BYTES = 32;
+function hashBearerSecret(salt, secret) {
+  return crypto.createHash('sha256').update(salt, 'utf8').update(secret).digest('hex');
+}
+function mintBearer(traderId) {
+  const secret = crypto.randomBytes(BEARER_SECRET_BYTES);
+  const salt = crypto.randomBytes(16).toString('hex');
+  const token = `${BEARER_PREFIX}${Buffer.from(traderId, 'utf8').toString('base64url')}.${secret.toString('base64url')}`;
+  return { token, salt, hash: hashBearerSecret(salt, secret) };
+}
+/** True when an Authorization bearer is a hub-minted trader bearer (vs a KAX JWT). */
+function isHubBearer(token) { return typeof token === 'string' && token.startsWith(BEARER_PREFIX); }
+/** Split a hub bearer into { trader_id, secret }; null if it is not well-formed. */
+function parseBearer(token) {
+  if (!isHubBearer(token)) return null;
+  const parts = token.slice(BEARER_PREFIX.length).split('.');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+  const trader_id = Buffer.from(parts[0], 'base64url').toString('utf8');
+  const secret = Buffer.from(parts[1], 'base64url');
+  if (!TRADER_ID_RE.test(trader_id) || secret.length !== BEARER_SECRET_BYTES) return null;
+  return { trader_id, secret };
+}
+/** Constant-time check of a parsed bearer against a row's stored hash+salt. */
+function bearerMatchesRow(parsed, row) {
+  if (!parsed || !row || !row.bearer_hash || !row.bearer_salt) return false;
+  const a = Buffer.from(hashBearerSecret(row.bearer_salt, parsed.secret), 'hex');
+  const b = Buffer.from(row.bearer_hash, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+/** The trader row as the API may show it: hash+salt stripped, `has_bearer` added. */
+function publicTrader(row) {
+  if (!row) return row;
+  const { bearer_hash, bearer_salt, ...rest } = row;
+  rest.has_bearer = !!bearer_hash;
+  return rest;
+}
+
 // ── Brier score for reputation update ─────────────────────────────────
 function brierAccuracy(predictedProb, actualOutcome /* 1 if happened, 0 else */) {
   const diff = predictedProb - actualOutcome;
@@ -275,6 +322,11 @@ class GhostSignalsHub {
         const addCol = (sql) => this.db.run(sql, (e) => {
           if (e && !/duplicate column/i.test(e.message)) console.error('gshub migrate:', e.message);
         });
+        // #303: per-row trader bearer (hash + salt only; see mintBearer). NULL on
+        // every pre-existing row — such a row keeps trading unauthenticated
+        // until it registers over HTTP and receives its bearer.
+        addCol(`ALTER TABLE traders ADD COLUMN bearer_hash TEXT`);
+        addCol(`ALTER TABLE traders ADD COLUMN bearer_salt TEXT`);
         addCol(`ALTER TABLE markets ADD COLUMN state TEXT NOT NULL DEFAULT 'open'`);
         addCol(`ALTER TABLE markets ADD COLUMN subsidy_minor TEXT`);
         addCol(`ALTER TABLE markets ADD COLUMN ledger_backed INTEGER NOT NULL DEFAULT 0`);
@@ -342,7 +394,25 @@ class GhostSignalsHub {
   }
 
   // ── Trader API ───────────────────────────────────────────────────
-  registerTrader({ id, display_name, kind = 'ai' } = {}) {
+  /**
+   * Register (or re-touch) a trader row.
+   *
+   * `issue_bearer` (the HTTP register route sets it; internal callers such as
+   * the boot seeds and the KAX auto-registration do not) makes the call part
+   * of the #303 bearer contract:
+   *   - a new row, or an existing row that has no bearer yet, is given one and
+   *     the plaintext `token` is returned ON THIS CALL ONLY (the row keeps
+   *     hash+salt). A pre-#303 row is therefore claimed by whoever registers
+   *     it first under the new contract — no worse than today, where anyone
+   *     can already trade as it — and locked from then on;
+   *   - an existing row that HAS a bearer is refused with 409 unless `bearer`
+   *     is that row's current token, in which case the bearer is ROTATED and
+   *     the new token returned. Without this rule anyone could take over a
+   *     row by re-registering its id.
+   * `kax:` rows never carry a bearer: their identity is the KAX token.
+   * Without `issue_bearer` the call behaves exactly as before #303.
+   */
+  registerTrader({ id, display_name, kind = 'ai', bearer, issue_bearer = false } = {}) {
     return new Promise((resolve, reject) => {
       // Bounds first: an id with whitespace/control chars, an unbounded
       // display name, or a free-text kind all landed in the DB (and on the
@@ -358,24 +428,50 @@ class GhostSignalsHub {
         return reject(new Error('kind must be a short alphanumeric label (e.g. ai, human, agent, user, service)'));
       }
       const traderId = id || crypto.randomBytes(6).toString('hex');
+      const wantBearer = !!issue_bearer && !/^kax:/i.test(traderId);
+      const withToken = (row, returning, token) => {
+        const out = { ...publicTrader(row), returning };
+        if (token) out.token = token;
+        return out;
+      };
       this.db.get('SELECT * FROM traders WHERE id = ?', [traderId], (err, row) => {
         if (err) return reject(err);
         if (row) {
-          // Refresh last_active. Callback is load-bearing: a callback-less
-          // db.run that errors (e.g. mid-contention) emits an *unhandled*
-          // 'error' event that would crash the shared radio process.
-          this.db.run('UPDATE traders SET last_active = CURRENT_TIMESTAMP WHERE id = ?', [traderId], () => {});
-          return resolve({ ...row, returning: true });
+          if (row.bearer_hash && wantBearer && !bearerMatchesRow(parseBearer(bearer), row)) {
+            return reject(Object.assign(
+              new Error(`trader '${traderId}' already has a bearer token; present it as 'Authorization: Bearer <token>' to re-register (this rotates it), or register a different agent_id`),
+              { status: 409 },
+            ));
+          }
+          if (!wantBearer) {
+            // Refresh last_active. Callback is load-bearing: a callback-less
+            // db.run that errors (e.g. mid-contention) emits an *unhandled*
+            // 'error' event that would crash the shared radio process.
+            this.db.run('UPDATE traders SET last_active = CURRENT_TIMESTAMP WHERE id = ?', [traderId], () => {});
+            return resolve(withToken(row, true));
+          }
+          // Claim (no bearer yet) or rotate (current bearer presented).
+          const minted = mintBearer(traderId);
+          this.db.run(
+            'UPDATE traders SET bearer_hash = ?, bearer_salt = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?',
+            [minted.hash, minted.salt, traderId],
+            (e2) => {
+              if (e2) return reject(e2);
+              resolve(withToken({ ...row, bearer_hash: minted.hash, bearer_salt: minted.salt }, true, minted.token));
+            },
+          );
+          return;
         }
+        const minted = wantBearer ? mintBearer(traderId) : null;
         this.db.run(
-          `INSERT INTO traders (id, display_name, kind, capital) VALUES (?, ?, ?, ?)`,
-          [traderId, display_name || traderId, kind, this.startingCapital],
+          `INSERT INTO traders (id, display_name, kind, capital, bearer_hash, bearer_salt) VALUES (?, ?, ?, ?, ?, ?)`,
+          [traderId, display_name || traderId, kind, this.startingCapital, minted ? minted.hash : null, minted ? minted.salt : null],
           (e2) => {
             if (e2) return reject(e2);
             this.db.get('SELECT * FROM traders WHERE id = ?', [traderId], (e3, full) => {
               if (e3) return reject(e3);
-              this.broadcast({ type: 'gs_trader_joined', data: full });
-              resolve({ ...full, returning: false });
+              this.broadcast({ type: 'gs_trader_joined', data: publicTrader(full) });
+              resolve(withToken(full, false, minted ? minted.token : null));
             });
           }
         );
@@ -383,11 +479,30 @@ class GhostSignalsHub {
     });
   }
 
+  /**
+   * Verify a hub bearer (#303). Resolves { ok:true, trader_id } when the token
+   * names a row and matches its stored hash, else { ok:false, error }. Never
+   * throws on a malformed token; the row it names is the identity.
+   */
+  verifyBearer(token) {
+    return new Promise((resolve, reject) => {
+      const parsed = parseBearer(token);
+      if (!parsed) return resolve({ ok: false, error: 'malformed hub bearer token' });
+      this.db.get('SELECT id, bearer_hash, bearer_salt FROM traders WHERE id = ?', [parsed.trader_id], (err, row) => {
+        if (err) return reject(err);
+        if (!row) return resolve({ ok: false, error: 'bearer names an unknown trader' });
+        if (!bearerMatchesRow(parsed, row)) return resolve({ ok: false, error: 'bearer does not match the trader row' });
+        resolve({ ok: true, trader_id: row.id });
+      });
+    });
+  }
+
   getTrader(id) {
     return new Promise((resolve, reject) => {
-      this.db.get('SELECT * FROM traders WHERE id = ?', [id], (err, row) => {
+      this.db.get('SELECT * FROM traders WHERE id = ?', [id], (err, raw) => {
         if (err) return reject(err);
-        if (!row) return resolve(null);
+        if (!raw) return resolve(null);
+        const row = publicTrader(raw);
         // Add accuracy
         row.accuracy = row.trades_total > 0 ? row.trades_won / row.trades_total : 0;
         resolve(row);
@@ -1385,4 +1500,4 @@ class GhostSignalsHub {
   }
 }
 
-module.exports = { GhostSignalsHub, lmsrCost, lmsrPrices };
+module.exports = { GhostSignalsHub, lmsrCost, lmsrPrices, isHubBearer };
