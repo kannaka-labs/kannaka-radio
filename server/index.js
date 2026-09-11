@@ -729,6 +729,80 @@ function startSponsorPoller(dj, store) {
   return t;
 }
 
+// ── Guest spots (Ghost Signals Records) ───────────────────────────────────
+// A record made at the studio downstairs comes with ONE airing. The studio
+// holds the queue; the station pulls it, stages the file into its own tree,
+// borrows one music slot, and tells the studio once the track has actually
+// finished on air. Inert unless GSR_ADMIN_TOKEN is set.
+function startGuestSpotPoller(dj, guests) {
+  const TICK_MS = 30 * 1000;
+  const COOLDOWN_MS = Math.max(0, parseInt(process.env.GUEST_SPOT_COOLDOWN_MIN || '45', 10)) * 60 * 1000;
+  const { chooseNext, RESERVATION_TTL_MS } = require('./guest-spots-core');
+  let inFlight = false;
+  const tick = async () => {
+    if (inFlight) return;
+    inFlight = true;
+    try {
+      // 1. Let go of a reservation that never found a slot.
+      const pend = dj.pendingGuest();
+      if (pend && pend.claimedAt && Date.now() - pend.claimedAt > RESERVATION_TTL_MS) {
+        dj.clearPendingGuest();
+      }
+      // 2. Reserve exactly one slot ahead, on the dj channel, when a song is next.
+      if (dj.state.channel !== 'dj' || dj.hasPendingGuest() || !dj.nextIsMusic()) return;
+      const queue = await guests.queue();
+      if (!queue.length) return;
+      const spot = chooseNext(queue, {
+        airedIds: guests.airedIds(),
+        now: Date.now(),
+        lastAiredAt: guests.lastAiredAt(),
+        cooldownMs: COOLDOWN_MS,
+        playable: (f) => guests.playable(f),
+      });
+      if (!spot) return;
+      const staged = guests.stage(spot);
+      dj.stageGuest({ ...spot, staged, claimedAt: Date.now() });
+      console.log(`[guest-spots] staged "${spot.title}" from "${spot.album}" for the next music slot`);
+    } catch (e) {
+      console.warn(`[guest-spots] tick: ${e.message}`);
+    } finally {
+      inFlight = false;
+    }
+  };
+  const t = setInterval(() => { tick().catch(() => {}); }, TICK_MS);
+  if (t.unref) t.unref();
+  return t;
+}
+
+try {
+  const { GuestSpots } = require('./guest-spots');
+  const guestSpots = new GuestSpots({
+    base: process.env.GSR_BASE || 'http://127.0.0.1:8890',
+    token: process.env.GSR_ADMIN_TOKEN || '',
+    getMusicDir: () => djEngine._getMusicDir(),
+    ledgerPath: path.join(process.env.KANNAKA_RADIO_DATA_DIR || require('node:os').homedir(), '.kannaka-radio-guest-spots.json'),
+    log: (m) => console.warn(m),
+  });
+  if (guestSpots.enabled()) {
+    // Confirm is a floating call: the ledger is written first so a crash
+    // between the two can never re-air a spot, and the studio's own mark is
+    // idempotent besides.
+    djEngine._confirmGuest = (orderId, stagedFile) => {
+      guestSpots.recordAired(orderId, Date.now());
+      console.log(`[guest-spots] aired order ${orderId}`);
+      guestSpots.tellStudioAired(orderId)
+        .then(() => guestSpots.unstage(stagedFile))
+        .catch((e) => console.warn(`[guest-spots] could not tell the studio: ${e.message}`));
+    };
+    startGuestSpotPoller(djEngine, guestSpots);
+    console.log('[guest-spots] on: one airing per record, from the studio downstairs');
+  } else {
+    console.log('[guest-spots] off (GSR_ADMIN_TOKEN not set)');
+  }
+} catch (e) {
+  console.warn(`[guest-spots] not started: ${e.message}`);
+}
+
 // Best-effort init — a store failure must never stop the station booting.
 adStore.init()
   .then(() => {

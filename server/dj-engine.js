@@ -655,6 +655,13 @@ class DJEngine {
     this._pendingSponsor = null;   // { adId, file, title, airDate, band, claimedAt } — staged by the poller
     this._sponsorOverride = null;  // { idx, entry } — the ephemeral overlay honored by getCurrentTrack
     this._confirmSponsor = null;   // (adId, airDate) => void — injected; confirms an aired spot
+    // Guest spots (Ghost Signals Records). A SECOND, independent overlay with
+    // the same discipline as the sponsor one, kept separate so nothing on the
+    // money path is touched: a sponsor borrows a commercial slot, a guest
+    // borrows a music slot, and the two can never contend for the same one.
+    this._pendingGuest = null;     // { orderId, publicId, album, track, title, file, staged, claimedAt }
+    this._guestOverride = null;    // { idx, entry } — ephemeral, one track long
+    this._confirmGuest = null;     // (orderId, stagedFile) => void — injected
     this._clock = () => new Date(); // injectable for tests (drift check)
 
     // ── 12-hour no-repeat ledger ─────────────────────────────────
@@ -1456,6 +1463,7 @@ class DJEngine {
     // reshuffle/rebuild/wrap that moves off that index falls straight back to
     // the real (house-commercial) entry.
     if (this._sponsorOverride && this._sponsorOverride.idx === idx) return this._sponsorOverride.entry;
+    if (this._guestOverride && this._guestOverride.idx === idx) return this._guestOverride.entry;
     if (idx >= this.state.playlistMeta.length) return null;
     return this.state.playlistMeta[idx];
   }
@@ -1466,6 +1474,57 @@ class DJEngine {
   hasPendingSponsor() { return !!this._pendingSponsor; }
   pendingSponsor() { return this._pendingSponsor; }
   clearPendingSponsor() { this._pendingSponsor = null; }
+
+  // ── Guest-spot hooks (Ghost Signals Records) ───────────────
+  /** Poller stages one guest spot to overlay the next music slot. */
+  stageGuest(spot) { this._pendingGuest = spot; }
+  hasPendingGuest() { return !!this._pendingGuest; }
+  pendingGuest() { return this._pendingGuest; }
+  clearPendingGuest() { this._pendingGuest = null; }
+
+  /** Side-effect-free: is the very next slot a music slot? A guest spot takes
+   *  a song's place, never a commercial's. */
+  nextIsMusic() {
+    const meta = this.state.playlistMeta;
+    const nx = this.state.currentTrackIdx + 1;
+    return !!(meta && meta[nx] && !meta[nx].commercial);
+  }
+
+  /**
+   * Overlay a staged guest spot onto `current` iff it is a music slot on the
+   * dj channel. Consumes _pendingGuest into an ephemeral override; never
+   * mutates playlistMeta. Wrapped so a guest-side error can NEVER wedge the
+   * live advance — on any failure the station's own song plays unchanged.
+   */
+  _applyGuestIfMusic(current) {
+    try {
+      const g = this._pendingGuest;
+      if (!g || !current || current.commercial) return current;
+      if (current.guestSpot) return current;            // never stack two
+      if (this.state.channel !== "dj") return current;  // guest scope = Kannaka Radio programming
+      if (!g.staged) return current;                    // nothing to play is not a slot
+      const { spotEntry } = require("./guest-spots-core");
+      const entry = spotEntry(current, g, g.staged);
+      this._guestOverride = { idx: this.state.currentTrackIdx, entry };
+      this._pendingGuest = null; // consumed; confirm happens when it finishes on-air
+      return entry;
+    } catch (_) {
+      return current; // never let a guest-side bug touch the sync advance path
+    }
+  }
+
+  /** Peek-time overlay, so the DJ's intro names the guest record it is about
+   *  to play. Returns a COPY and consumes nothing. */
+  _guestPeek(entry) {
+    try {
+      const g = this._pendingGuest;
+      if (!g || !g.staged || !entry || entry.commercial || this.state.channel !== "dj") return entry;
+      const { spotEntry } = require("./guest-spots-core");
+      return spotEntry(entry, g, g.staged);
+    } catch (_) {
+      return entry;
+    }
+  }
 
   /** Side-effect-free: is the very next slot a (house) commercial? Lets the
    *  poller reserve exactly one slot ahead and never churn on ad-free windows. */
@@ -1647,12 +1706,12 @@ class DJEngine {
         this._reshufflePlaylist();
         this.state._reshufflePending = true;
       }
-      return this._sponsorPeek(this.state.playlistMeta[0] || null);
+      return this._guestPeek(this._sponsorPeek(this.state.playlistMeta[0] || null));
     }
     // If the next slot is a commercial and a sponsor is staged, announce the
     // sponsor (peek only — a returned COPY, no consume). Only advanceTrack
     // consumes; the icecast stale-intro guard keeps announce==air if they diverge.
-    return this._sponsorPeek(this.state.playlistMeta[nextIdx] || null);
+    return this._guestPeek(this._sponsorPeek(this.state.playlistMeta[nextIdx] || null));
   }
 
   /**
@@ -1679,11 +1738,21 @@ class DJEngine {
       const airDate = prev.sponsorAirDate;
       if (this._confirmSponsor) { try { this._confirmSponsor(adId, airDate); } catch (_) { /* never wedge the stream */ } }
     }
+    // A guest spot confirms on the same terms: it must have FINISHED, proven
+    // by the file the caller just streamed. A spot cut short by a deploy or a
+    // swap stays unconfirmed and comes back around — the offer is one airing,
+    // and an airing nobody heard is not one.
+    if (prev && prev.guestSpot && prev.guestOrderId && justFinishedFile && prev.file === justFinishedFile) {
+      const orderId = prev.guestOrderId;
+      const staged = prev.file;
+      if (this._confirmGuest) { try { this._confirmGuest(orderId, staged); } catch (_) { /* never wedge the stream */ } }
+    }
     // The overlay's lifetime is exactly one streamed track; this boundary ends
     // it. Clear it now so no branch below can surface a stale sponsor from a
     // swapped/rebuilt/reshuffled array — a fresh commercial slot this pass gets
     // a fresh overlay via _applySponsorIfCommercial.
     this._sponsorOverride = null;
+    this._guestOverride = null;
     const swappedMidStream = !!(justFinishedFile && prev && prev.file !== justFinishedFile
       && this.state.channel === 'dj');
     if (prev && !swappedMidStream) {
@@ -1771,7 +1840,7 @@ class DJEngine {
     // commercial (branches above all play a music track / track 0). Overlay a
     // staged sponsor here if so — a pure no-op when nothing is staged, so music
     // behavior is byte-identical.
-    const current = this._applySponsorIfCommercial(this.getCurrentTrack());
+    const current = this._applyGuestIfMusic(this._applySponsorIfCommercial(this.getCurrentTrack()));
     if (current) {
       // 12-hr no-repeat ledger: stamp the new current. buildPlaylist's
       // filter on next album-load reads from this map. (A sponsor overlay keeps
