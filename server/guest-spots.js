@@ -35,6 +35,22 @@ class GuestSpots {
     this.ledgerPath = o.ledgerPath;
     this.log = o.log || (() => {});
     this._ledger = null;
+    // Records staged but not yet aired. A spot stays here for its whole life
+    // on air so the poller cannot pick it a second time while it is playing.
+    this._inFlight = new Map(); // orderId -> staged at (ms)
+  }
+
+  /** Orders that are staged or on air right now. */
+  inFlight() { return new Set(this._inFlight.keys()); }
+  markInFlight(orderId) { this._inFlight.set(orderId, Date.now()); }
+  clearInFlight(orderId) { this._inFlight.delete(orderId); }
+
+  /** Let go of anything that was staged but never reached a slot, so a
+   *  released reservation can be picked up again later. */
+  releaseStale(maxAgeMs) {
+    for (const [id, at] of this._inFlight) {
+      if (Date.now() - at > maxAgeMs) this._inFlight.delete(id);
+    }
   }
 
   enabled() { return Boolean(this.base && this.token); }
@@ -131,9 +147,45 @@ class GuestSpots {
     return dest;
   }
 
-  /** Delete a staged file once its spot has aired. Best-effort. */
-  unstage(stagedFile) {
-    try { if (stagedFile && stagedFile.includes(SUBDIR)) fs.unlinkSync(stagedFile); } catch (_) { /* fine */ }
+  /**
+   * A spot finished on air. The file must still be there: the station's
+   * missing-file path advances with the same filename, which looks exactly
+   * like a clean finish to the confirm test, so a vanished file means the
+   * record did NOT play and must come back around.
+   *
+   * The ledger is written before the studio is told, so a crash between the
+   * two can never air a record twice; the studio's own mark is idempotent.
+   */
+  async confirmAired(orderId, stagedFile) {
+    if (!this.playable(stagedFile)) {
+      this.clearInFlight(orderId);
+      return { ok: false, reason: 'the staged file was gone at confirm — an airing nobody heard is not an airing' };
+    }
+    this.recordAired(orderId, Date.now());
+    this.clearInFlight(orderId);
+    try {
+      await this.tellStudioAired(orderId);
+      return { ok: true, told: true };
+    } catch (e) {
+      return { ok: true, told: false, reason: e.message };
+    }
+  }
+
+  /** Staged files are left alone while anything might still read them, and
+   *  swept a day later. Deleting at confirm raced the stream and cost a
+   *  false airing the first time this ran. */
+  sweepStaged(maxAgeMs = 24 * 60 * 60 * 1000) {
+    let gone = 0;
+    try {
+      const dir = path.join(this.getMusicDir(), SUBDIR);
+      for (const name of fs.readdirSync(dir)) {
+        const f = path.join(dir, name);
+        try {
+          if (Date.now() - fs.statSync(f).mtimeMs > maxAgeMs) { fs.unlinkSync(f); gone++; }
+        } catch (_) { /* next */ }
+      }
+    } catch (_) { /* no staging dir yet */ }
+    return gone;
   }
 }
 

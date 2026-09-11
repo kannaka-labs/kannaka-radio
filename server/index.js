@@ -743,17 +743,25 @@ function startGuestSpotPoller(dj, guests) {
     if (inFlight) return;
     inFlight = true;
     try {
-      // 1. Let go of a reservation that never found a slot.
+      // 1. Let go of a reservation that never found a slot, and of anything
+      //    staged long enough ago that it cannot still be waiting.
       const pend = dj.pendingGuest();
       if (pend && pend.claimedAt && Date.now() - pend.claimedAt > RESERVATION_TTL_MS) {
         dj.clearPendingGuest();
+        guests.clearInFlight(pend.orderId);
       }
-      // 2. Reserve exactly one slot ahead, on the dj channel, when a song is next.
-      if (dj.state.channel !== 'dj' || dj.hasPendingGuest() || !dj.nextIsMusic()) return;
+      guests.releaseStale(RESERVATION_TTL_MS * 3);
+      guests.sweepStaged();
+      // 2. Reserve exactly one slot ahead, on the dj channel, when a song is
+      //    next — and never while a guest is already staged or on air.
+      if (dj.state.channel !== 'dj' || dj.hasPendingGuest() || dj.guestOnAir() || !dj.nextIsMusic()) return;
       const queue = await guests.queue();
       if (!queue.length) return;
+      // A record in flight is not a record to pick: the studio's queue still
+      // lists it until it has aired.
+      const taken = new Set([...guests.airedIds(), ...guests.inFlight()]);
       const spot = chooseNext(queue, {
-        airedIds: guests.airedIds(),
+        airedIds: taken,
         now: Date.now(),
         lastAiredAt: guests.lastAiredAt(),
         cooldownMs: COOLDOWN_MS,
@@ -761,7 +769,8 @@ function startGuestSpotPoller(dj, guests) {
       });
       if (!spot) return;
       const staged = guests.stage(spot);
-      dj.stageGuest({ ...spot, staged, claimedAt: Date.now() });
+      if (!dj.stageGuest({ ...spot, staged, claimedAt: Date.now() })) return;
+      guests.markInFlight(spot.orderId);
       console.log(`[guest-spots] staged "${spot.title}" from "${spot.album}" for the next music slot`);
     } catch (e) {
       console.warn(`[guest-spots] tick: ${e.message}`);
@@ -788,11 +797,12 @@ try {
     // between the two can never re-air a spot, and the studio's own mark is
     // idempotent besides.
     djEngine._confirmGuest = (orderId, stagedFile) => {
-      guestSpots.recordAired(orderId, Date.now());
-      console.log(`[guest-spots] aired order ${orderId}`);
-      guestSpots.tellStudioAired(orderId)
-        .then(() => guestSpots.unstage(stagedFile))
-        .catch((e) => console.warn(`[guest-spots] could not tell the studio: ${e.message}`));
+      guestSpots.confirmAired(orderId, stagedFile)
+        .then((r) => {
+          if (!r.ok) return console.warn(`[guest-spots] ${orderId}: ${r.reason}`);
+          console.log(`[guest-spots] aired order ${orderId}${r.told ? '' : ` (the studio was not told: ${r.reason})`}`);
+        })
+        .catch((e) => console.warn(`[guest-spots] confirm: ${e.message}`));
     };
     startGuestSpotPoller(djEngine, guestSpots);
     console.log('[guest-spots] on: one airing per record, from the studio downstairs');
