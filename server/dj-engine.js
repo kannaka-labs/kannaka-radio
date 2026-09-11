@@ -1476,8 +1476,17 @@ class DJEngine {
   clearPendingSponsor() { this._pendingSponsor = null; }
 
   // ── Guest-spot hooks (Ghost Signals Records) ───────────────
-  /** Poller stages one guest spot to overlay the next music slot. */
-  stageGuest(spot) { this._pendingGuest = spot; }
+  /** Poller stages one guest spot to overlay the next music slot. Refused
+   *  while a spot is already on air: one guest at a time, and never the same
+   *  record twice (the first live spin staged one over itself). */
+  stageGuest(spot) {
+    if (this._guestOverride) return false;
+    this._pendingGuest = spot;
+    return true;
+  }
+
+  /** Is a guest spot on air right now? */
+  guestOnAir() { return !!this._guestOverride; }
   hasPendingGuest() { return !!this._pendingGuest; }
   pendingGuest() { return this._pendingGuest; }
   clearPendingGuest() { this._pendingGuest = null; }
