@@ -126,6 +126,9 @@ async function main() {
       getMarket: async () => ({ id: 'm_play', tag: 'custom', source: 'system', outcomes: ['Yes', 'No'] }),
       placeTrade: async (args) => { seenTraderId = args.trader_id; return { cost: 1, prices: [0.5, 0.5] }; },
       registerTrader: async () => ({}),
+      // #303: an unauthenticated trade looks the row up; a row with no bearer
+      // (or no row yet) keeps the open path.
+      getTrader: async () => null,
     });
     const req = mockReq('POST', '/api/markets/m_play/trade', {}, JSON.stringify({ trader_id: 'anon-player', outcome: 0, shares: 5 }));
     const res = mockRes();

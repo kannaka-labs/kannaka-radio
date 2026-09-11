@@ -11,7 +11,8 @@ const { execFile } = require("child_process");
 const { ALBUMS } = require("./dj-engine");
 const { MIME, readBody, readBodyLimited, getSPA, findAudioFile } = require("./utils");
 const { handleAgentRequest, attachNatsClient } = require("./agent-endpoint");
-const { verifyKaxToken, traderIdFromClaims } = require("./kax-identity");
+const { verifyKaxToken, traderIdFromClaims, bearerToken } = require("./kax-identity");
+const { isHubBearer } = require("./ghostsignals-hub");
 const { handlePodcastRequest } = require("./podcast-feed");
 const { prettyEpisodeTitle } = require("./podcast-scheduler");
 
@@ -1429,13 +1430,18 @@ module.exports = function setupRoutes(deps) {
 
     // ── ADR-0012: Constellation-wide prediction markets ─────────────
     // GhostSignalsHub HTTP API. Five-call onboarding contract:
-    //   POST /api/agents/register    body: { id?, display_name, kind }
+    //   POST /api/agents/register    body: { agent_id?, display_name, kind }  (`id` = legacy alias)
+    //                                -> { ok, trader, token }  token = per-row bearer (#303), shown once
+    //                                (a pre-existing row gets one only with the oracle token)
+    //   POST /api/agents/:id/bearer/reset   oracle only: clear the row's bearer (#303 recovery)
     //   GET  /api/agents/:id
     //   GET  /api/leaderboard?sort=&limit=
     //   POST /api/markets            body: { question, outcomes?, ttl_sec, ... }
     //   GET  /api/markets?sort=&active=&limit=&tag=
     //   GET  /api/markets/:id
     //   POST /api/markets/:id/trade  body: { trader_id, outcome, shares }
+    //                                Authorization: Bearer <hub bearer | KAX token>;
+    //                                required once the trader row holds a bearer (#303)
     //   POST /api/markets/:id/resolve body: { winning_outcome, method }
     //   GET  /api/gshub/stats
 
@@ -1557,17 +1563,36 @@ module.exports = function setupRoutes(deps) {
       // ── Trader endpoints ─────────────────────────────────
       if (parsed.pathname === "/api/agents/register" && req.method === "POST") {
         readJson().then(body => {
+          // #303: `kannaka init` sends `agent_id`; `id` stays accepted for
+          // older clients. The reply carries a per-row bearer as `token`.
+          const id = body && body.agent_id !== undefined ? body.agent_id : body && body.id;
           // The `kax:` namespace is RESERVED for identities derived from a
           // verified KAX token (kax-identity.js traderIdFromClaims). Before
           // this check anyone could self-register `kax:agent:<bot>` first,
           // pick its display name, and pollute its leaderboard stats — the
           // real principal's later auto-registration just returned that row.
-          if (body && typeof body.id === "string" && /^kax:/i.test(body.id)) {
+          if (typeof id === "string" && /^kax:/i.test(id)) {
             throw Object.assign(new Error("ids in the kax: namespace are derived from a KAX identity token and cannot be self-registered"), { status: 403 });
           }
-          return gsHub.registerTrader(body);
+          // A pre-existing row is only given a bearer when the oracle token is
+          // presented (see registerTrader); an anonymous register of one is
+          // answered as before #303 — the row, no token.
+          return gsHub.registerTrader({
+            id, display_name: body.display_name, kind: body.kind,
+            bearer: bearerToken(req.headers["authorization"]), issue_bearer: true, oracle: !!oracleAuthorized(),
+          });
         })
-          .then(t => sendJson(200, { ok: true, trader: t }))
+          .then(({ token, ...trader }) => sendJson(200, token ? { ok: true, trader, token } : { ok: true, trader }))
+          .catch(sendErr);
+        return;
+      }
+      // #303 recovery: clear a row's bearer so its node can register again.
+      // Oracle-only — this is the one path that can reopen a locked row.
+      const bearerResetMatch = parsed.pathname.match(/^\/api\/agents\/([^/]+)\/bearer\/reset$/);
+      if (bearerResetMatch && req.method === "POST") {
+        if (!oracleAuthorized()) { denyOracle(); return; }
+        gsHub.resetBearer(decodeURIComponent(bearerResetMatch[1]))
+          .then(t => t ? sendJson(200, { ok: true, trader: t }) : sendJson(404, { ok: false, error: "trader not found" }))
           .catch(sendErr);
         return;
       }
@@ -1663,8 +1688,9 @@ module.exports = function setupRoutes(deps) {
           // this, a play-tier POST could name trader_id "kax:agent:<victim>"
           // and spend that principal's play capital / pollute its record.
           const bearer = req.headers["authorization"];
+          const rawToken = bearerToken(bearer);
           const claimsKax = typeof traderId === "string" && /^kax:/i.test(traderId);
-          if (labsTier || bearer || claimsKax) {
+          if (labsTier || claimsKax || (rawToken && !isHubBearer(rawToken))) {
             const v = await verifyKaxToken(bearer);
             if (!v.ok) {
               const why = labsTier ? "labs-tier trading requires a KAX identity token" : "a kax: trader id requires a KAX identity token";
@@ -1675,6 +1701,23 @@ module.exports = function setupRoutes(deps) {
             // Auto-register the authenticated trader on first trade so callers
             // don't need a separate registration step.
             await gsHub.registerTrader({ id: traderId, display_name: traderId, kind: v.claims.kind });
+          } else if (rawToken) {
+            // #303: a hub-minted bearer IS the trader's identity — the row it
+            // names is the one that trades; a body trader_id may only agree.
+            const v = await gsHub.verifyBearer(rawToken);
+            if (!v.ok) { sendJson(401, { ok: false, error: `hub bearer rejected: ${v.error}` }); return; }
+            if (typeof traderId === "string" && traderId !== v.trader_id) {
+              sendJson(403, { ok: false, error: "trader_id does not match the bearer token's trader" }); return;
+            }
+            traderId = v.trader_id;
+          } else {
+            // #303: no credentials. Open play-tier trading stays as it was for
+            // rows that never received a bearer (the pre-#303 fleet); a row that
+            // holds one can no longer be traded by merely naming it.
+            const t = typeof traderId === "string" ? await gsHub.getTrader(traderId) : null;
+            if (t && t.has_bearer) {
+              sendJson(401, { ok: false, error: `trader '${traderId}' has a bearer token; send it as 'Authorization: Bearer <token>'` }); return;
+            }
           }
           const r = await gsHub.placeTrade({ ...body, trader_id: traderId, market_id: tradeMatch[1] });
           sendJson(200, { ok: true, ...r });

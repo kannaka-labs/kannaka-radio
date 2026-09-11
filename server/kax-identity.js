@@ -86,4 +86,4 @@ function traderIdFromClaims(claims) {
   return `kax:${claims.kind}:${claims.sub}`;
 }
 
-module.exports = { verifyKaxToken, traderIdFromClaims, _resetJwksCache };
+module.exports = { verifyKaxToken, traderIdFromClaims, bearerToken: bearer, _resetJwksCache };

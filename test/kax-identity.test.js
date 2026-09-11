@@ -31,7 +31,7 @@ async function main() {
   process.env.KAX_IDENTITY_ISSUER = ISS;
 
   // Require AFTER env is set; reset the cache to be safe.
-  const { verifyKaxToken, traderIdFromClaims, _resetJwksCache } = require('../server/kax-identity');
+  const { verifyKaxToken, traderIdFromClaims, bearerToken, _resetJwksCache } = require('../server/kax-identity');
   _resetJwksCache();
 
   const now = Math.floor(Date.now() / 1000);
@@ -76,8 +76,15 @@ async function main() {
     assert.strictEqual((await verifyKaxToken(`Bearer ${await mk({ kid: 'attacker', key: akey })}`)).ok, false);
   }
 
+  // 8. an unknown kind is rejected (no `pass` kind until ninja-portal mints one and exposes revocation); bearerToken() splits the header
+  assert.strictEqual((await verifyKaxToken(`Bearer ${await mk({ claims: { kind: 'admin' } })}`)).ok, false);
+  assert.strictEqual(bearerToken('Bearer abc.def'), 'abc.def');
+  assert.strictEqual(bearerToken('bearer   xyz '), 'xyz');
+  assert.strictEqual(bearerToken('Basic abc'), null);
+  assert.strictEqual(bearerToken(undefined), null);
+
   server.close();
-  console.log('kax-identity.test.js: OK (valid tokens verify + derive trader id; forgery/expiry/issuer all rejected)');
+  console.log('kax-identity.test.js: OK (valid tokens verify + derive trader id; unknown kind rejected; forgery/expiry/issuer all rejected)');
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
