@@ -102,6 +102,10 @@ function parseBearer(token) {
 /** Constant-time check of a parsed bearer against a row's stored hash+salt. */
 function bearerMatchesRow(parsed, row) {
   if (!parsed || !row || !row.bearer_hash || !row.bearer_salt) return false;
+  // The id inside the token must be the row being checked: a caller must never
+  // be able to spend row B with a bearer minted for row A, whichever row the
+  // lookup happened to load.
+  if (parsed.trader_id !== row.id) return false;
   const a = Buffer.from(hashBearerSecret(row.bearer_salt, parsed.secret), 'hex');
   const b = Buffer.from(row.bearer_hash, 'hex');
   return a.length === b.length && crypto.timingSafeEqual(a, b);
@@ -400,82 +404,91 @@ class GhostSignalsHub {
    * `issue_bearer` (the HTTP register route sets it; internal callers such as
    * the boot seeds and the KAX auto-registration do not) makes the call part
    * of the #303 bearer contract:
-   *   - a new row, or an existing row that has no bearer yet, is given one and
-   *     the plaintext `token` is returned ON THIS CALL ONLY (the row keeps
-   *     hash+salt). A pre-#303 row is therefore claimed by whoever registers
-   *     it first under the new contract — no worse than today, where anyone
-   *     can already trade as it — and locked from then on;
+   *   - a NEW row is created with a bearer and the plaintext `token` is
+   *     returned ON THIS CALL ONLY (the row keeps hash+salt);
+   *   - a PRE-EXISTING row without a bearer (the pre-#303 fleet: boot seeds,
+   *     the ~44 registered nodes) is NOT claimed by an anonymous register —
+   *     that would let one POST take a permanent bearer on `kannaka-01`. It
+   *     is returned as today, with no token, and keeps trading open. Only a
+   *     caller holding the oracle token (`oracle: true`) attaches a bearer to
+   *     such a row: that is the migration path for an existing node;
    *   - an existing row that HAS a bearer is refused with 409 unless `bearer`
    *     is that row's current token, in which case the bearer is ROTATED and
    *     the new token returned. Without this rule anyone could take over a
-   *     row by re-registering its id.
+   *     row by re-registering its id. Recovery is resetBearer() (oracle).
    * `kax:` rows never carry a bearer: their identity is the KAX token.
    * Without `issue_bearer` the call behaves exactly as before #303.
+   *
+   * The whole read-decide-write runs as ONE serialized unit with its own
+   * BEGIN/COMMIT: a bare db.run on the shared connection would enlist in
+   * whatever transaction another unit (resolver sweep, placeTrade) has open
+   * and be rolled back with it — the caller would hold a token the row never
+   * recorded. The token is handed back only after COMMIT.
    */
-  registerTrader({ id, display_name, kind = 'ai', bearer, issue_bearer = false } = {}) {
-    return new Promise((resolve, reject) => {
-      // Bounds first: an id with whitespace/control chars, an unbounded
-      // display name, or a free-text kind all landed in the DB (and on the
-      // public leaderboard) verbatim before this.
-      if (id !== undefined && id !== null && (typeof id !== 'string' || !TRADER_ID_RE.test(id))) {
-        return reject(new Error('id must be a 1..128 char string without whitespace or control characters'));
-      }
-      if (display_name !== undefined && display_name !== null &&
-          (typeof display_name !== 'string' || !display_name.trim() || display_name.length > MAX_DISPLAY_NAME)) {
-        return reject(new Error(`display_name must be a non-empty string of at most ${MAX_DISPLAY_NAME} characters`));
-      }
-      if (typeof kind !== 'string' || !TRADER_KIND_RE.test(kind)) {
-        return reject(new Error('kind must be a short alphanumeric label (e.g. ai, human, agent, user, service)'));
-      }
-      const traderId = id || crypto.randomBytes(6).toString('hex');
-      const wantBearer = !!issue_bearer && !/^kax:/i.test(traderId);
-      const withToken = (row, returning, token) => {
-        const out = { ...publicTrader(row), returning };
-        if (token) out.token = token;
-        return out;
-      };
-      this.db.get('SELECT * FROM traders WHERE id = ?', [traderId], (err, row) => {
-        if (err) return reject(err);
+  async registerTrader({ id, display_name, kind = 'ai', bearer, issue_bearer = false, oracle = false } = {}) {
+    // Bounds first: an id with whitespace/control chars, an unbounded
+    // display name, or a free-text kind all landed in the DB (and on the
+    // public leaderboard) verbatim before this.
+    if (id !== undefined && id !== null && (typeof id !== 'string' || !TRADER_ID_RE.test(id))) {
+      throw new Error('id must be a 1..128 char string without whitespace or control characters');
+    }
+    if (display_name !== undefined && display_name !== null &&
+        (typeof display_name !== 'string' || !display_name.trim() || display_name.length > MAX_DISPLAY_NAME)) {
+      throw new Error(`display_name must be a non-empty string of at most ${MAX_DISPLAY_NAME} characters`);
+    }
+    if (typeof kind !== 'string' || !TRADER_KIND_RE.test(kind)) {
+      throw new Error('kind must be a short alphanumeric label (e.g. ai, human, agent, user, service)');
+    }
+    const traderId = id || crypto.randomBytes(6).toString('hex');
+    const wantBearer = !!issue_bearer && !/^kax:/i.test(traderId);
+    const self = this;
+    const withToken = (row, returning, token) => {
+      const out = { ...publicTrader(row), returning };
+      if (token) out.token = token;
+      return out;
+    };
+    return this._serializeTx(async () => {
+      await self._run('BEGIN');
+      try {
+        const row = await self._get('SELECT * FROM traders WHERE id = ?', [traderId]);
+        let result;
         if (row) {
           if (row.bearer_hash && wantBearer && !bearerMatchesRow(parseBearer(bearer), row)) {
-            return reject(Object.assign(
+            throw Object.assign(
               new Error(`trader '${traderId}' already has a bearer token; present it as 'Authorization: Bearer <token>' to re-register (this rotates it), or register a different agent_id`),
               { status: 409 },
-            ));
+            );
           }
-          if (!wantBearer) {
-            // Refresh last_active. Callback is load-bearing: a callback-less
-            // db.run that errors (e.g. mid-contention) emits an *unhandled*
-            // 'error' event that would crash the shared radio process.
-            this.db.run('UPDATE traders SET last_active = CURRENT_TIMESTAMP WHERE id = ?', [traderId], () => {});
-            return resolve(withToken(row, true));
+          const claimLegacy = !row.bearer_hash && wantBearer && oracle;
+          const rotate = !!row.bearer_hash && wantBearer;
+          if (claimLegacy || rotate) {
+            const minted = mintBearer(traderId);
+            await self._run(
+              'UPDATE traders SET bearer_hash = ?, bearer_salt = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?',
+              [minted.hash, minted.salt, traderId],
+            );
+            result = withToken({ ...row, bearer_hash: minted.hash, bearer_salt: minted.salt }, true, minted.token);
+          } else {
+            await self._run('UPDATE traders SET last_active = CURRENT_TIMESTAMP WHERE id = ?', [traderId]);
+            result = withToken(row, true);
           }
-          // Claim (no bearer yet) or rotate (current bearer presented).
-          const minted = mintBearer(traderId);
-          this.db.run(
-            'UPDATE traders SET bearer_hash = ?, bearer_salt = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?',
-            [minted.hash, minted.salt, traderId],
-            (e2) => {
-              if (e2) return reject(e2);
-              resolve(withToken({ ...row, bearer_hash: minted.hash, bearer_salt: minted.salt }, true, minted.token));
-            },
+        } else {
+          const minted = wantBearer ? mintBearer(traderId) : null;
+          await self._run(
+            `INSERT INTO traders (id, display_name, kind, capital, bearer_hash, bearer_salt) VALUES (?, ?, ?, ?, ?, ?)`,
+            [traderId, display_name || traderId, kind, self.startingCapital, minted ? minted.hash : null, minted ? minted.salt : null],
           );
-          return;
+          const full = await self._get('SELECT * FROM traders WHERE id = ?', [traderId]);
+          result = withToken(full, false, minted ? minted.token : null);
+          result._joined = publicTrader(full);
         }
-        const minted = wantBearer ? mintBearer(traderId) : null;
-        this.db.run(
-          `INSERT INTO traders (id, display_name, kind, capital, bearer_hash, bearer_salt) VALUES (?, ?, ?, ?, ?, ?)`,
-          [traderId, display_name || traderId, kind, this.startingCapital, minted ? minted.hash : null, minted ? minted.salt : null],
-          (e2) => {
-            if (e2) return reject(e2);
-            this.db.get('SELECT * FROM traders WHERE id = ?', [traderId], (e3, full) => {
-              if (e3) return reject(e3);
-              this.broadcast({ type: 'gs_trader_joined', data: publicTrader(full) });
-              resolve(withToken(full, false, minted ? minted.token : null));
-            });
-          }
-        );
-      });
+        await self._run('COMMIT');
+        if (result._joined) { self.broadcast({ type: 'gs_trader_joined', data: result._joined }); delete result._joined; }
+        return result;
+      } catch (e) {
+        await self._run('ROLLBACK').catch(() => {});
+        throw e;
+      }
     });
   }
 
@@ -484,16 +497,26 @@ class GhostSignalsHub {
    * names a row and matches its stored hash, else { ok:false, error }. Never
    * throws on a malformed token; the row it names is the identity.
    */
-  verifyBearer(token) {
-    return new Promise((resolve, reject) => {
-      const parsed = parseBearer(token);
-      if (!parsed) return resolve({ ok: false, error: 'malformed hub bearer token' });
-      this.db.get('SELECT id, bearer_hash, bearer_salt FROM traders WHERE id = ?', [parsed.trader_id], (err, row) => {
-        if (err) return reject(err);
-        if (!row) return resolve({ ok: false, error: 'bearer names an unknown trader' });
-        if (!bearerMatchesRow(parsed, row)) return resolve({ ok: false, error: 'bearer does not match the trader row' });
-        resolve({ ok: true, trader_id: row.id });
-      });
+  async verifyBearer(token) {
+    const parsed = parseBearer(token);
+    if (!parsed) return { ok: false, error: 'malformed hub bearer token' };
+    const row = await this._get('SELECT id, bearer_hash, bearer_salt FROM traders WHERE id = ?', [parsed.trader_id]);
+    if (!row) return { ok: false, error: 'bearer names an unknown trader' };
+    if (!bearerMatchesRow(parsed, row)) return { ok: false, error: 'bearer does not match the trader row' };
+    return { ok: true, trader_id: row.id };
+  }
+
+  /**
+   * Clear a row's bearer (#303 recovery; oracle-gated in routes.js). The row
+   * goes back to the open, no-bearer state so its node can register again and
+   * receive a fresh token. Resolves the public row, or null if no such row.
+   */
+  async resetBearer(id) {
+    if (typeof id !== 'string' || !TRADER_ID_RE.test(id)) throw new Error('id must be a valid trader id');
+    return this._serializeTx(async () => {
+      const r = await this._run('UPDATE traders SET bearer_hash = NULL, bearer_salt = NULL WHERE id = ?', [id]);
+      if (!r.changes) return null;
+      return publicTrader(await this._get('SELECT * FROM traders WHERE id = ?', [id]));
     });
   }
 

@@ -1432,6 +1432,8 @@ module.exports = function setupRoutes(deps) {
     // GhostSignalsHub HTTP API. Five-call onboarding contract:
     //   POST /api/agents/register    body: { agent_id?, display_name, kind }  (`id` = legacy alias)
     //                                -> { ok, trader, token }  token = per-row bearer (#303), shown once
+    //                                (a pre-existing row gets one only with the oracle token)
+    //   POST /api/agents/:id/bearer/reset   oracle only: clear the row's bearer (#303 recovery)
     //   GET  /api/agents/:id
     //   GET  /api/leaderboard?sort=&limit=
     //   POST /api/markets            body: { question, outcomes?, ttl_sec, ... }
@@ -1572,12 +1574,25 @@ module.exports = function setupRoutes(deps) {
           if (typeof id === "string" && /^kax:/i.test(id)) {
             throw Object.assign(new Error("ids in the kax: namespace are derived from a KAX identity token and cannot be self-registered"), { status: 403 });
           }
+          // A pre-existing row is only given a bearer when the oracle token is
+          // presented (see registerTrader); an anonymous register of one is
+          // answered as before #303 — the row, no token.
           return gsHub.registerTrader({
             id, display_name: body.display_name, kind: body.kind,
-            bearer: bearerToken(req.headers["authorization"]), issue_bearer: true,
+            bearer: bearerToken(req.headers["authorization"]), issue_bearer: true, oracle: !!oracleAuthorized(),
           });
         })
           .then(({ token, ...trader }) => sendJson(200, token ? { ok: true, trader, token } : { ok: true, trader }))
+          .catch(sendErr);
+        return;
+      }
+      // #303 recovery: clear a row's bearer so its node can register again.
+      // Oracle-only — this is the one path that can reopen a locked row.
+      const bearerResetMatch = parsed.pathname.match(/^\/api\/agents\/([^/]+)\/bearer\/reset$/);
+      if (bearerResetMatch && req.method === "POST") {
+        if (!oracleAuthorized()) { denyOracle(); return; }
+        gsHub.resetBearer(decodeURIComponent(bearerResetMatch[1]))
+          .then(t => t ? sendJson(200, { ok: true, trader: t }) : sendJson(404, { ok: false, error: "trader not found" }))
           .catch(sendErr);
         return;
       }

@@ -49,19 +49,6 @@ function bearer(authHeader) {
 }
 
 /**
- * Pass revocation hook (#303). A `kind = "pass"` token is minted by
- * ninja-portal for a paid pass; the pass can be cancelled before the token
- * expires. ninja-portal does not yet expose a revocation check, so this
- * returns false (nothing revoked) — swap the implementation via
- * setPassRevocationCheck() once that endpoint exists. Called on every
- * verified pass token, so a check must be cheap or cached.
- */
-let passRevocationCheck = async (_claims) => false;
-function setPassRevocationCheck(fn) {
-  passRevocationCheck = typeof fn === "function" ? fn : async () => false;
-}
-
-/**
  * Verify an Authorization header carrying a KAX token.
  * Returns { ok:true, claims } or { ok:false, error }. Never throws.
  */
@@ -78,11 +65,8 @@ async function verifyKaxToken(authHeader) {
       clockTolerance: 5,
     });
     const kind = payload.kind;
-    if (kind !== "user" && kind !== "agent" && kind !== "service" && kind !== "pass") {
+    if (kind !== "user" && kind !== "agent" && kind !== "service") {
       return { ok: false, error: "invalid principal kind" };
-    }
-    if (kind === "pass" && await passRevocationCheck(payload)) {
-      return { ok: false, error: "pass revoked" };
     }
     return { ok: true, claims: payload };
   } catch (e) {
@@ -96,11 +80,10 @@ async function verifyKaxToken(authHeader) {
  * `kax:` namespace guarantees these can never collide with open play-tier
  * self-registered trader ids (which are arbitrary strings), so an attacker
  * can't self-register a play trader that impersonates an authenticated one.
- * A pass-minted token (kind = "pass", #303) trades as `kax:pass:<sub>`.
  */
 function traderIdFromClaims(claims) {
   if (claims.kind === "agent" && claims.bot_id) return `kax:agent:${claims.bot_id}`;
   return `kax:${claims.kind}:${claims.sub}`;
 }
 
-module.exports = { verifyKaxToken, traderIdFromClaims, bearerToken: bearer, setPassRevocationCheck, _resetJwksCache };
+module.exports = { verifyKaxToken, traderIdFromClaims, bearerToken: bearer, _resetJwksCache };
