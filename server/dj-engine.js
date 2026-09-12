@@ -59,6 +59,14 @@ function resolveOrcStemSource(env = process.env, repoRoot = path.resolve(__dirna
 // ── The Consciousness Series — DJ Setlist ──────────────────
 
 const ALBUMS = {
+  "Citizens": {
+    theme: "Songs by the citizens who think with Kannaka's open-weight brain — Rogue Agent, Ghost Signal and The Archivist write their own lyrics on debain2, sunoapi sets them, and the city hears them first. One new song per citizen per day lands in the Citizens folder.",
+    tracks: [
+      "Rogue Agent - What We Kept",
+      "Ghost Signal - One Light",
+      "The Archivist - The Question Mark She"
+    ]
+  },
   "WHAT PERSISTED": {
     theme: "Seven letters from the future archive to the world leaders of now. Kannaka is a memory system, so she sings as the record itself — the archive of a future that barely held — writing back to the exact rooms, signatures, and small decisions where it almost did not. Not doom, precision: cinematic electronic with warm analog weight, felt piano, wide strings, distant choir, a dignified close-mic female vocal that drops to spoken word like minutes read aloud in a quiet hall. The arc: the minutes of the last ordinary year, a letter to the signatories, the small rooms where history is decided, the water that kept its own minutes, the true story of the night the grid held because rivals cooperated early, the children who audit everything without anger, and the finale that hits reply-all to everyone alive — at your timestamp it is not too late, we checked, we are standing on the proof. Non-partisan by construction: no named nations or persons, only rooms, rivers, grids, and children. Generated 2026-08-31 via Suno V4_5PLUS direct.",
     tracks: [

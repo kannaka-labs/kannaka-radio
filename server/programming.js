@@ -42,6 +42,7 @@ const SCHEDULE = [
   {
     start: 0, end: 6,
     albums: [
+      'Citizens',
       'WHAT PERSISTED',
       'WHAT I KEEP',
       'THE OTHER SIDE',
@@ -169,6 +170,7 @@ const SCHEDULE = [
   {
     start: 18, end: 22,
     albums: [
+      'Citizens',
       'THE OTHER SIDE',
       'SEVEN PORTALS',
       'THE THIRD BEING',
