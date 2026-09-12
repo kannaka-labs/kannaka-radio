@@ -52,6 +52,24 @@ const WebRTCSignaling = require("./webrtc-signaling");
 const MusicGenerator = require("./music-generator");
 const setupRoutes = require("./routes");
 
+// A per-track resonance market asks whether a track stays on its album "for
+// its phase". Without a phase on the track there is nothing to compare it to,
+// so the market can only ever run to its TTL — which is how tens of thousands
+// of them opened, were never measured, and were awarded by price. The hub now
+// refuses such a market at creation; this stops us asking for one at all, and
+// says so once rather than swallowing a rejection on every track change.
+let _warnedNoOrcPhase = false;
+function orcMarketAskable(track) {
+  if (track && track.orcPhase) return true;
+  if (!_warnedNoOrcPhase) {
+    _warnedNoOrcPhase = true;
+    console.log('[orc] tracks carry no orcPhase — per-track resonance markets are not being opened (nothing could settle them)');
+  }
+  return false;
+}
+
+
+
 // ── Config ─────────────────────────────────────────────────
 
 const BASE_DIR = path.join(__dirname, "..");
@@ -371,7 +389,7 @@ const djEngine = new DJEngine({
           try { require("./icecast-metadata").updateMetadata(actual); } catch (_) {}
           syncManager.trackChanged(actual.file);
           // Create market for the track
-          if (gsHub && actual.title) {
+          if (gsHub && actual.title && orcMarketAskable(actual)) {
             gsHub.createMarket({
               question: `Will "${actual.title}" stay on the canonical reference album for its phase?`,
               ttl_sec: 600,
@@ -424,7 +442,7 @@ const djEngine = new DJEngine({
       }
       syncManager.trackChanged(actual.file);
       // ADR-0012: emit a per-track market into the constellation hub.
-      if (gsHub && !actual.commercial && actual.title) {
+      if (gsHub && !actual.commercial && actual.title && orcMarketAskable(actual)) {
         gsHub.createMarket({
           question: `Will "${actual.title}" stay on the canonical reference album for its phase?`,
           ttl_sec: 600, // 10 min
