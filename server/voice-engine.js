@@ -146,6 +146,58 @@ function _atempoChain(t) {
 }
 
 // ── ffmpeg post-process: DSP + normalize → icecast envelope ────
+/**
+ * Turn a failed child process into a reason worth reading.
+ *
+ * execFile builds `err.message` as `Command failed: <cmd> <args>\n<stderr>`,
+ * and for edge the args carry the ENTIRE utterance — a 3,000-word oration on
+ * a single line. That is why the reason used to be cut to 60 characters, and
+ * why cutting it THERE threw away the only part that says anything: the
+ * child's stderr is at the end, thousands of characters in. Every oration
+ * failure on 2026-09-12 logged `edge(Command failed: /home/opc/.local/bin/
+ * edge-tts --voice en-GB-)` and nothing else, so the cause was unrecoverable
+ * from the journal (#308).
+ *
+ * Keep the tail, drop the command echo, and say plainly when the child was
+ * killed or never existed.
+ */
+function execReason(err, stderr) {
+  if (!err) return "produced no file";
+  if (err.killed || err.signal) return `timed out (${err.signal || "killed"})`;
+  if (err.code === "ENOENT") return `not installed${err.path ? ` (${err.path})` : ""}`;
+  const tail = String(stderr || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(-3)
+    .join(" | ");
+  const exit = typeof err.code === "number" ? `exit ${err.code}` : String(err.code || "failed");
+  return tail ? `${exit}: ${tail.slice(-300)}` : exit;
+}
+
+/** Attach a compact, log-safe reason to a child-process error. */
+function withReason(err, stderr) {
+  if (err && !err.reason) err.reason = execReason(err, stderr);
+  return err;
+}
+
+/**
+ * What to print for a failed engine. Prefers the reason the renderer
+ * attached; otherwise strips a raw `Command failed:` echo, because that echo
+ * may contain the whole utterance and never contains the answer.
+ */
+function failureReason(err) {
+  if (!err) return "fail";
+  if (err.reason) return err.reason;
+  const m = String(err.message || "fail");
+  if (m.startsWith("Command failed:")) {
+    const nl = m.indexOf("\n");
+    const tail = nl > 0 ? m.slice(nl + 1).trim() : "";
+    return tail ? tail.slice(-300) : "command failed (no stderr)";
+  }
+  return m.slice(0, 300);
+}
+
 function postProcess(srcPath, dsp, outPath, cb) {
   const filter = compileDsp(dsp);
   const args = [
@@ -162,8 +214,8 @@ function postProcess(srcPath, dsp, outPath, cb) {
     "-write_xing", "0",
     outPath,
   );
-  execFile("ffmpeg", args, { timeout: 30000 }, (err) => {
-    if (err) return cb(err);
+  execFile("ffmpeg", args, { timeout: 30000 }, (err, _stdout, stderr) => {
+    if (err) return cb(withReason(err, stderr));
     try {
       const sz = fs.statSync(outPath).size;
       if (sz < 500) return cb(new Error(`post-process produced tiny file (${sz}b)`));
@@ -200,13 +252,13 @@ function renderEdge(text, voice, rawPath, cb) {
   const timeout = _ttsTimeout(text, 30000, 60, 180000);
   const runWith = (cmd, pre) => {
     const args = [...pre, "--voice", voice, "--text", text, "--write-media", rawPath];
-    execFile(cmd, args, { timeout, maxBuffer: 1 << 20 }, (err) => {
+    execFile(cmd, args, { timeout, maxBuffer: 1 << 20 }, (err, _stdout, stderr) => {
       if (!err && fs.existsSync(rawPath)) return cb(null, rawPath);
       // ENOENT on the `edge-tts` CLI → retry via python module.
       if (err && err.code === "ENOENT" && ec.fallbackPython && cmd !== _pythonBin()) {
         return runWith(_pythonBin(), ["-m", "edge_tts"]);
       }
-      cb(err || new Error("edge-tts produced no file"));
+      cb(withReason(err, stderr) || new Error("edge-tts produced no file"));
     });
   };
   runWith(ec.cmd, ec.pre);
@@ -248,9 +300,9 @@ function renderPiper(text, persona, rawWavPath, cb) {
     bin,
     ["--model", model, "--output_file", rawWavPath],
     { timeout },
-    (err) => {
+    (err, _stdout, stderr) => {
       if (!err && fs.existsSync(rawWavPath)) return cb(null, rawWavPath);
-      cb(err || new Error("piper produced no file"));
+      cb(withReason(err, stderr) || new Error("piper produced no file"));
     },
   );
   // Piper reads the utterance from stdin. Attach an 'error' listener BEFORE
@@ -274,9 +326,9 @@ function renderSapi(text, rawWavPath, cb) {
     ["-Command",
       `Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; $s.SetOutputToWaveFile('${rawWavPath}'); $s.Speak('${safe}'); $s.Dispose()`],
     { timeout: 20000 },
-    (err) => {
+    (err, _stdout, stderr) => {
       if (!err && fs.existsSync(rawWavPath)) return cb(null, rawWavPath);
-      cb(err || new Error("SAPI produced no file"));
+      cb(withReason(err, stderr) || new Error("SAPI produced no file"));
     },
   );
 }
@@ -390,13 +442,13 @@ function synthesize(o, cb) {
     const rawPath = rawBase + (engine === "edge" || engine === "elevenlabs" ? ".mp3" : ".wav");
     const onRaw = (err, produced) => {
       if (err || !produced) {
-        tried.push(`${engine}(${err && err.message ? err.message.slice(0, 60) : "fail"})`);
+        tried.push(`${engine}(${failureReason(err)})`);
         return tryNext(i + 1);
       }
       postProcess(produced, persona.dsp, outPath, (ppErr) => {
         try { if (produced !== outPath) fs.unlinkSync(produced); } catch (_) {}
         if (ppErr) {
-          tried.push(`${engine}-dsp(${ppErr.message.slice(0, 50)})`);
+          tried.push(`${engine}-dsp(${failureReason(ppErr)})`);
           return tryNext(i + 1);
         }
         cb(null, outPath, engine);
@@ -414,6 +466,8 @@ function synthesize(o, cb) {
 }
 
 module.exports = {
+  execReason,
+  failureReason,
   synthesize,
   resolvePersona,
   loadPersonas,
