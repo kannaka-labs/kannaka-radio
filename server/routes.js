@@ -15,6 +15,7 @@ const { verifyKaxToken, traderIdFromClaims, bearerToken } = require("./kax-ident
 const { isHubBearer } = require("./ghostsignals-hub");
 const { handlePodcastRequest } = require("./podcast-feed");
 const { prettyEpisodeTitle } = require("./podcast-scheduler");
+const { sanitizeTrackRequest, RequestRejected } = require("./track-request-core");
 
 // Delete-token check (#69, hardened ADR-0013). If RADIO_DELETE_TOKEN is
 // set, compare the supplied password against it (constant-time when
@@ -158,6 +159,13 @@ module.exports = function setupRoutes(deps) {
   // XFF — review M5); authed endpoints key per-token (stronger than any IP).
   const gsaRedeemLimiter = new PreviewLimiter({ perIpMax: 10, perIpWindowMs: 10 * 60_000, maxConcurrent: 1_000_000, dailyMax: 2000 });
   const gsaApiLimiter = new PreviewLimiter({ perIpMax: 60, perIpWindowMs: 10 * 60_000, maxConcurrent: 1_000_000, dailyMax: 20000 });
+  // Track requests stay OPEN — asking for a song is the point — but bounded.
+  // An unbounded request floods three things at once: every listener's
+  // websocket, the 500-entry in-memory log (rolling genuine requests out of
+  // it), and the `pending_requests` metric published to Flux. Per-IP keeps one
+  // caller from doing that; the daily cap is the bound that survives a spoofed
+  // X-Forwarded-For, since behind nginx the socket address is the proxy's.
+  const trackRequestLimiter = new PreviewLimiter({ perIpMax: 20, perIpWindowMs: 10 * 60_000, maxConcurrent: 1_000_000, dailyMax: 2000 });
 
   // Hand the NATS client to agent-endpoint so /agent/skills can read
   // the live skill-registry snapshot captured from KANNAKA.skills.*.
@@ -168,14 +176,20 @@ module.exports = function setupRoutes(deps) {
     requests: [],
   };
 
+  // Both doors into the station come through here: POST /api/request and a
+  // `track_request` frame on the listener websocket. Validation lives at the
+  // junction rather than at each door, so they cannot drift apart — and so
+  // the bus door, which nobody was checking at all, is checked too.
+  // Throws RequestRejected on a bad request; the HTTP route turns that into a
+  // 400 and the websocket handler's own try/catch absorbs it.
   function handleTrackRequest(request) {
-    const { from, trackTitle, message: reqMessage } = request;
+    const { from, trackTitle, message: reqMessage } = sanitizeTrackRequest(request);
     const file = trackTitle ? findAudioFile(trackTitle, config.getMusicDir()) : null;
 
     listeners.requests.push({
-      from: from || "unknown-agent",
-      trackTitle: trackTitle || null,
-      message: reqMessage || null,
+      from,
+      trackTitle,
+      message: reqMessage,
       file,
       timestamp: Date.now(),
       fulfilled: false,
@@ -187,7 +201,7 @@ module.exports = function setupRoutes(deps) {
 
     broadcast({
       type: "track_request",
-      from: from || "unknown-agent",
+      from,
       trackTitle,
       message: reqMessage,
       found: !!file,
@@ -2537,15 +2551,36 @@ load();
 
     // POST /api/request
     if (parsed.pathname === "/api/request" && req.method === "POST") {
+      // Admit before reading the body, so a rejected flood costs us the check
+      // and nothing else.
+      const reqIp = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim()
+        || (req.socket && req.socket.remoteAddress) || "unknown";
+      const gate = trackRequestLimiter.admit(reqIp);
+      if (!gate.ok) {
+        res.writeHead(429, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: "too many requests — slow down", reason: gate.reason, retryAfterSec: gate.retryAfterSec }));
+        return;
+      }
       readBody(req, res, (body) => {
+        let request;
         try {
-          const request = JSON.parse(body);
+          request = JSON.parse(body);
+        } catch (_) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: "body must be JSON" }));
+          return;
+        }
+        try {
           const result = handleTrackRequest(request);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: true, ...result }));
         } catch (e) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: e.message }));
+          // A rejected request is the caller's fault and says so; anything
+          // else is ours and must not leak an internal message to the street.
+          const rejected = e instanceof RequestRejected;
+          res.writeHead(rejected ? 400 : 500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, error: rejected ? e.message : "request failed" }));
+          if (!rejected) console.warn(`[request] ${e && e.message}`);
         }
       });
       return;
