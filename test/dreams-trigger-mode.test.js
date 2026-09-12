@@ -92,12 +92,20 @@ function makeHandler() {
   });
 }
 
+// /api/dreams/trigger is operator-only: it is gated on RADIO_ADMIN_TOKEN and
+// answers 503 when that is unset, 401 without the header. That gate is pinned
+// by admin-trigger-gate.test.js; this file is about which dream MODE runs, so
+// it authenticates and goes on testing the thing it is named after.
+const ADMIN_TOKEN = 'dreams-mode-test-token';
+process.env.RADIO_ADMIN_TOKEN = ADMIN_TOKEN;
+
 function post(handler, url) {
   return new Promise((resolve, reject) => {
     const server = http.createServer(handler);
     server.listen(0, '127.0.0.1', () => {
       const port = server.address().port;
-      const req = http.request({ host: '127.0.0.1', port, path: url, method: 'POST', timeout: 15000 }, (res) => {
+      const req = http.request({ host: '127.0.0.1', port, path: url, method: 'POST', timeout: 15000,
+        headers: { authorization: `Bearer ${ADMIN_TOKEN}` } }, (res) => {
         let d = '';
         res.on('data', (c) => (d += c));
         res.on('end', () => { server.close(); resolve({ status: res.statusCode, body: d }); });

@@ -40,6 +40,50 @@ function checkDeletePassword(password) {
   }
 }
 
+// Admin-trigger gate. These three routes do not read state: they make the
+// station SPEAK. /api/oration/now composes a peace oration, puts it on the
+// live stream, and fans a companion post out to Bluesky, Mastodon, Telegram
+// and Nostr from Kannaka's own accounts. /api/album/showcase seizes the
+// rotation for half an hour and speaks a long-form intro. /api/dreams/trigger
+// starts an unscheduled annealing pass.
+//
+// All three were reachable by anyone on the internet with an empty POST body,
+// under comments calling them "admin", and /agent.md published them under a
+// heading that said "admin / internal". On 2026-09-12 a survey called two of
+// them by accident and an unscheduled oration went out to all four social
+// accounts before anybody could stop it. An endpoint is not admin because a
+// comment says so.
+//
+// Fail closed, exactly like the library-delete gate (#69): unset token means
+// DISABLED, not open. A dangerous route that nobody configured should refuse,
+// and a refusal is recoverable in a way a published credential is not.
+let _warnedNoAdminToken = false;
+function adminTriggerOk(req, res) {
+  const token = process.env.RADIO_ADMIN_TOKEN;
+  if (!token) {
+    if (!_warnedNoAdminToken) {
+      _warnedNoAdminToken = true;
+      console.warn("[routes] RADIO_ADMIN_TOKEN unset — oration/showcase/dream triggers DISABLED (set the token to enable)");
+    }
+    res.writeHead(503, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: false, error: "disabled: RADIO_ADMIN_TOKEN unset" }));
+    return false;
+  }
+  const header = req.headers && req.headers.authorization;
+  const supplied = typeof header === "string" ? header.replace(/^Bearer\s+/i, "") : "";
+  let ok = false;
+  if (supplied.length === token.length) {
+    try { ok = crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(token)); }
+    catch (_) { ok = supplied === token; }
+  }
+  if (!ok) {
+    res.writeHead(401, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: false, error: "admin token required" }));
+    return false;
+  }
+  return true;
+}
+
 /**
  * Resolve the public origin for discoverability surfaces.
  *
@@ -1208,6 +1252,7 @@ module.exports = function setupRoutes(deps) {
     // the connection for 10+ minutes. Watch /home/opc/radio.log for
     // "ORATION" and "Bluesky posted" events.
     if (parsed.pathname === "/api/oration/now" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       if (!deps.peaceOration) {
         res.writeHead(503, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, reason: "peace_oration_unavailable" }));
@@ -2073,6 +2118,7 @@ module.exports = function setupRoutes(deps) {
 
     // POST /api/dreams/trigger
     if (parsed.pathname === "/api/dreams/trigger" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       // `--include-audio` is not a flag `kannaka dream` has ever had. Its arg
       // loop ends in `else { i += 1 }`, so unknown flags are silently dropped
       // — and dream_mode then defaults to "deep". This endpoint was therefore
@@ -2531,6 +2577,7 @@ load();
     // tracks introduced, the mission spoken aloud — then play through
     // the whole thing end-to-end.
     if (parsed.pathname === "/api/album/showcase" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       const albumName = parsed.searchParams.get("album");
       const durationMin = parseInt(parsed.searchParams.get("duration") || "30", 10);
       if (!albumName) {
