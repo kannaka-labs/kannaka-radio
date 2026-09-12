@@ -3,8 +3,11 @@
 // ADR-0041 regression: oracle-authoritative (labs-tier) markets must NEVER be
 // price-resolved by the TTL auto-resolver. Their outcome belongs to the Labs
 // oracle, not to whichever side traders pumped the price to before expiry.
-// A play-tier market with the same expiry must still auto-resolve, so the
-// test also proves we did not simply disable the resolver.
+// A play-tier market with the same expiry must still be FINISHED by the
+// sweep, so the test also proves we did not simply disable the resolver.
+// What finishing means changed: the sweep now VOIDS and refunds rather than
+// awarding the highest-priced outcome, because expiry is not evidence. See
+// market-ttl-void.test.js.
 
 const assert = require('assert');
 const path = require('path');
@@ -50,7 +53,9 @@ async function main() {
   assert.strictEqual(labsAfter.resolved, false,
     'BLOCKER: labs-tier market was price-resolved by the TTL sweep (oracle gate bypassed)');
   assert.strictEqual(playAfter.resolved, true,
-    'play-tier market should still auto-resolve on TTL — resolver must not be disabled wholesale');
+    'play-tier market should still be finished by the TTL sweep — resolver must not be disabled wholesale');
+  assert.strictEqual(playAfter.resolved_outcome, null,
+    'and finished by VOID, not by awarding a winner the sweep never measured');
 
   // And the oracle path still works on the labs market.
   await hub.resolveMarket({ market_id: labs.id, winning_outcome: 0, method: 'manual' });
@@ -59,7 +64,7 @@ async function main() {
   assert.strictEqual(labsFinal.resolved_outcome, 0, 'oracle outcome must win, not the pumped price');
 
   await hub.stop?.();
-  console.log('ghostsignals-ttl-authority.test.js: OK (labs market survives TTL; play market resolves; oracle wins)');
+  console.log('ghostsignals-ttl-authority.test.js: OK (labs market survives TTL; play market voids; oracle wins)');
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
