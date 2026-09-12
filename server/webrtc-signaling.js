@@ -18,18 +18,23 @@ class WebRTCSignaling {
    */
   claimMic(ws, clientId, displayName) {
     if (this.broadcaster) {
-      // Already broadcasting — add to queue if not already there
-      if (!this.micQueue.find(q => q.clientId === clientId)) {
+      // Already broadcasting — add to queue if not already there.
+      // findIndex once: if absent (-1) we push and the position is the
+      // new tail; if present we already have the index. Avoids a second
+      // linear scan over the same predicate.
+      let pos = this.micQueue.findIndex(q => q.clientId === clientId);
+      if (pos === -1) {
         this.micQueue.push({
           ws,
           clientId,
           displayName: displayName || clientId,
           queuedAt: Date.now(),
         });
+        pos = this.micQueue.length - 1;
       }
       return {
         granted: false,
-        position: this.micQueue.findIndex(q => q.clientId === clientId) + 1,
+        position: pos + 1,
         currentBroadcaster: this.broadcaster.displayName,
       };
     }
