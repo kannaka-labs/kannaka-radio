@@ -10,6 +10,7 @@
 "use strict";
 
 const https = require("https");
+const http = require("http");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -151,7 +152,7 @@ function fetchKnowledgeGeneInterpretation() {
 function _fetchJson(url, timeoutMs) {
   return new Promise((resolve) => {
     const u = new URL(url);
-    const mod = u.protocol === "https:" ? https : require("http");
+    const mod = u.protocol === "https:" ? https : http;
     mod
       .get(u, { timeout: timeoutMs || 8000, headers: { "User-Agent": "kannaka-radio-news/1.0" } }, (res) => {
         if (res.statusCode && res.statusCode >= 300) { res.resume(); return resolve(null); }
@@ -250,7 +251,7 @@ function _fetchText(url, timeoutMs) {
   return new Promise((resolve) => {
     const fetchOnce = (target, redirectsLeft) => {
       const u = new URL(target);
-      const mod = u.protocol === "https:" ? https : require("http");
+      const mod = u.protocol === "https:" ? https : http;
       mod
         .get(u, { timeout: timeoutMs || 8000, headers: { "User-Agent": "kannaka-radio-news/1.0" } }, (res) => {
           if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && redirectsLeft > 0) {
