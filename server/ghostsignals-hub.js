@@ -56,6 +56,41 @@ const MAX_OUTCOME_LABEL = 120;
 const MAX_DISPLAY_NAME = 120;
 const MAX_LIQUIDITY = 1e6;
 const MAX_TTL_SEC = 10 * 366 * 86400;             // |ttl| bound; negative = born expired (tests)
+
+/**
+ * A market may not ask about a field its own record leaves null.
+ *
+ * The resonance generator opened tens of thousands of markets asking whether a
+ * track would "stay on the canonical reference album for its phase" while
+ * carrying `metadata: { orc_phase: null, orc_stem_id: null }`. There is no
+ * phase. Nothing could ever be compared to anything, so every one of them ran
+ * to its TTL and was awarded by price. The market was ceremony from the moment
+ * it opened, and no resolver fix reaches backwards to make it answerable.
+ *
+ * So refuse at the door. For each metadata key whose value is null, take the
+ * words of the key (dropping a namespace prefix like `orc_`) and refuse if any
+ * of them appears in the question. A question that names a thing the record
+ * does not have is unanswerable by construction, and that is knowable here.
+ *
+ * Returns the offending key, or null when the market is askable.
+ * @param {string} question
+ * @param {object|null|undefined} metadata
+ */
+function unanswerableBy(question, metadata) {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const q = String(question).toLowerCase();
+  for (const [key, value] of Object.entries(metadata)) {
+    if (value !== null) continue;
+    const words = String(key).toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 3);
+    // Drop a leading namespace segment (orc_phase -> phase) but keep the rest,
+    // so `orc` alone never triggers and `phase` does.
+    const meaningful = words.length > 1 ? words.slice(1) : words;
+    for (const w of meaningful) {
+      if (q.includes(w)) return key;
+    }
+  }
+  return null;
+}
 const MAX_METADATA_BYTES = 8192;
 const IDEMPOTENCY_KEY_RE = /^[^\s\x00-\x1f\x7f]{1,64}$/;
 /** True for the labs tier: oracle-settled, deterministic ids, KAX ledger when armed. */
@@ -555,7 +590,11 @@ class GhostSignalsHub {
               outcome: label,
               shares: r.shares,
               resolved: !!r.resolved,
-              won: r.resolved ? r.resolved_outcome === r.outcome_idx : null,
+              // A voided market has resolved=1 and resolved_outcome=NULL. Without
+              // this branch `NULL === idx` is false and every refunded position
+              // reads as a loss the trader never took.
+              voided: !!r.resolved && r.resolved_outcome === null,
+              won: r.resolved ? (r.resolved_outcome === null ? null : r.resolved_outcome === r.outcome_idx) : null,
               state: r.state || 'open',
               expires_at: r.expires_at,
             };
@@ -638,6 +677,10 @@ class GhostSignalsHub {
     if (metadata !== undefined && metadata !== null) {
       if (typeof metadata !== 'object' || Array.isArray(metadata)) throw new Error('metadata must be an object');
       if (JSON.stringify(metadata).length > MAX_METADATA_BYTES) throw new Error(`metadata must serialise to <= ${MAX_METADATA_BYTES} bytes`);
+      const missing = unanswerableBy(question, metadata);
+      if (missing) {
+        throw new Error(`question asks about "${missing}" but the market's own metadata leaves it null — unanswerable, not opened`);
+      }
     }
     const labsTier = isLabsTier({ tag, source });
 
@@ -935,6 +978,78 @@ class GhostSignalsHub {
       const updated = await self.getMarket(market_id);
       self.broadcast({ type: 'gs_trade', data: { market_id, trader_id, outcome, shares, cost, prices: updated.prices } });
       return { cost, prices: updated.prices, market: updated };
+    });
+  }
+
+  /**
+   * Void a market and refund every trader what they paid into it.
+   *
+   * This is what "nobody measured it" is supposed to look like. The previous
+   * behaviour on TTL expiry was to award the outcome with the highest price,
+   * which is not a measurement of anything: it hands the question to whichever
+   * side put the most money in, and on an untraded market the prices are equal
+   * so `indexOf(max)` silently returns index 0 and outcome ZERO wins by tie.
+   * That is how markets with q=[0,0] — never traded, never read — resolved
+   * "Yes", and how a scripted opener that bought the same 41 Yes shares every
+   * time went 19-for-19.
+   *
+   * Voiding is the honest answer, and refunding is the honest settlement:
+   * nobody profits and nobody loses on a question that was never answered.
+   *
+   * Reputation is DELIBERATELY not touched. resolveMarket brier-scores every
+   * participant against the outcome; doing that on a fabricated outcome is
+   * what inflated the top of the leaderboard to a reputation of
+   * 0.999999999999999 across tens of thousands of trades. An unmeasured
+   * market must score nobody.
+   */
+  async voidMarket({ market_id, reason = 'unmeasured' }) {
+    const self = this;
+    const market = await this.getMarket(market_id);
+    if (!market) throw new Error('market not found');
+    if (market.resolved) throw new Error('already resolved');
+    // A ledger-backed market's money lives on KAX; refunding it out of SQLite
+    // play capital would mint credits. Those are voided through the ledger.
+    if (this._isLabsLedger(market)) {
+      throw new Error('ledger-backed market: void it through the ledger, not play capital');
+    }
+    const method = `void:${String(reason).slice(0, 26)}`;
+    return this._serializeTx(async () => {
+      await self._run('BEGIN');
+      try {
+        // Same single-flip guard as resolveMarket: only the transaction that
+        // moves resolved 0->1 refunds, so a void racing a resolve (or two
+        // voids) can never pay the same stake twice.
+        const uRes = await self._run(
+          `UPDATE markets SET resolved = 1, resolved_outcome = NULL, resolved_at = CURRENT_TIMESTAMP,
+                  resolution_method = ?, state = 'voided'
+             WHERE id = ? AND resolved = 0`,
+          [method, market_id],
+        );
+        if (uRes.changes === 0) throw new Error('already resolved');
+        // Refund what each trader actually paid: the sum of their trade costs
+        // on this market. A sell is recorded as a negative cost, so the sum is
+        // the net stake and the refund returns them to where they started.
+        const paid = await self._all(
+          `SELECT trader_id, SUM(cost) AS paid FROM trades WHERE market_id = ? GROUP BY trader_id`,
+          [market_id],
+        );
+        let refunded = 0;
+        for (const row of paid) {
+          if (!row.paid) continue;
+          await self._run(
+            `UPDATE traders SET capital = capital + ?, last_active = CURRENT_TIMESTAMP WHERE id = ?`,
+            [row.paid, row.trader_id],
+          );
+          refunded += row.paid;
+        }
+        await self._run('COMMIT');
+        const out = { ok: true, market_id, voided: true, method, traders: paid.length, refunded };
+        this.broadcast({ type: 'gs_market_voided', data: { market_id, reason, traders: paid.length, refunded } });
+        return out;
+      } catch (e) {
+        try { await self._run('ROLLBACK'); } catch (_) { /* already unwound */ }
+        throw e;
+      }
     });
   }
 
@@ -1494,9 +1609,11 @@ class GhostSignalsHub {
           if (err) return resolve();
           for (const row of rows) {
             try {
-              const m = this._enrichMarket(row);
-              const winner = m.prices.indexOf(Math.max(...m.prices));
-              await this.resolveMarket({ market_id: m.id, winning_outcome: winner, method: 'ttl' });
+              // Expiry is not evidence. A market that reached its TTL without a
+              // measurement is VOIDED and refunded, never awarded to the side
+              // with the highest price — see voidMarket for what that used to
+              // do to the leaderboard.
+              await this.voidMarket({ market_id: row.id, reason: 'ttl-unmeasured' });
             } catch (_e) { /* silent */ }
           }
           resolve();
@@ -1523,4 +1640,4 @@ class GhostSignalsHub {
   }
 }
 
-module.exports = { GhostSignalsHub, lmsrCost, lmsrPrices, isHubBearer };
+module.exports = { GhostSignalsHub, lmsrCost, lmsrPrices, isHubBearer, unanswerableBy };
