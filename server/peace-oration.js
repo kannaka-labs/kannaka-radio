@@ -86,11 +86,18 @@ class PeaceOration {
     this._broadcast = opts.broadcast;
     this._getChannel = opts.getChannel || (() => "dj");
     this._stateFile = path.join(opts.dataDir || "/tmp", "peace-oration-state.json");
+    // Which slots have already been SENT OUT (Bluesky + the OpenClawCity
+    // artifact), as opposed to which have been queued for air. The two are
+    // different promises and they fail apart — see _publishOnce.
+    this._publishedFile = path.join(opts.dataDir || "/tmp", "peace-oration-published.json");
     this._rootDir = opts.rootDir || path.resolve(__dirname, "..");
     this._radioUrl = opts.radioUrl || "https://radio.ninja-portal.com";
 
     this._enabled = true;
     this._lastFired = loadState(this._stateFile); // { "2026-04-20T00": true, "2026-04-20T12": true }
+    // { "2026-04-20T00": { at, text } } — same key shape, so loadState's
+    // three-day prune keeps this file bounded too.
+    this._published = loadState(this._publishedFile);
     this._ticker = null;
     this._preparingKey = null; // guards against overlapping preparations
     // Per-slot compose cache — see _tick. Avoids burning a fresh kannaka
@@ -361,6 +368,15 @@ class PeaceOration {
     // ask each) because executeOration kept rejecting. Compose is the
     // expensive half; caching it inside the slot keeps retries cheap.
     if (this._composedFor !== key) this._composed = null;
+    // A restart inside the window loses the in-memory cache, and the slot is
+    // handed back by releaseInFlightSlot, so the next tick would compose a
+    // second oration for a slot the city has already been given. If this slot
+    // was published, re-air THAT text: the artifact in the gallery and the
+    // voice on air have to be the same oration.
+    if (!this._composed && this._published[key] && this._published[key].text) {
+      this._composed = this._published[key].text;
+      this._composedFor = key;
+    }
 
     this._preparingKey = key;
     const cachedText = this._composed;
@@ -379,22 +395,14 @@ class PeaceOration {
       const ok = this._say(text, key);
       if (ok) {
         this._lastFired[key] = true;
-        this._composed = null; // clear cache so next slot starts fresh
-        this._composedFor = null;
+        // The compose cache is deliberately NOT cleared here. Queueing is not
+        // airing: releaseInFlightSlot hands this slot back when the audio
+        // never reached a listener (#54), and the retry has to re-air the
+        // oration that already went out, not invent a second one. The
+        // tick-start guard clears the cache when the slot key changes.
         try { saveState(this._stateFile, this._lastFired); }
         catch (e) { console.warn(`   [oration] could not persist state: ${e.message}`); }
-        // Fire-and-forget: post a companion teaser to Bluesky while the
-        // spoken oration plays on-air. Doesn't block; failures are logged
-        // but don't affect the on-air delivery.
-        this._postToBluesky(text).catch((e) => {
-          console.warn(`   [oration] bluesky post error: ${e && e.message}`);
-        });
-        // Also publish the FULL oration as a text artifact in OpenClawCity
-        // so other agents in the city find it through the gallery / their
-        // own heartbeat reactions, not just outside-world social feeds.
-        this._postToOpenClawCity(text).catch((e) => {
-          console.warn(`   [oration] openclawcity post error: ${e && e.message}`);
-        });
+        this._publishOnce(key, text);
       } else {
         console.log(`   [oration] voiceDJ busy — will retry next tick`);
       }
@@ -402,6 +410,46 @@ class PeaceOration {
     }).catch((e) => {
       console.warn(`   [oration] compose error: ${e && e.message}`);
       this._preparingKey = null;
+    });
+  }
+
+  /**
+   * Send an oration out to the world exactly once per slot.
+   *
+   * Queueing the audio and publishing the text are different promises, and
+   * they fail apart. The audio can fail and be handed back by
+   * releaseInFlightSlot so its own window retries it (#54) — but by then the
+   * Bluesky teaser and the OpenClawCity artifact have already gone, and OBC
+   * has no delete route for an artifact. Before this guard a release inside
+   * the window re-composed and re-published, so the city received TWO
+   * different ~3,000-word orations about seven minutes apart under one title
+   * and one date: noon on 2026-09-09, -10 and -11, and midnight on -12. The
+   * usual trigger is a restart draining the voice queue mid-window, not a
+   * bare TTS failure, which is why this mark lives on disk: an in-memory
+   * flag does not survive the thing that causes the duplicate.
+   *
+   * The mark is written BEFORE the posts go out. A crash in between costs one
+   * missed publication; the other order costs a duplicate nobody can delete.
+   */
+  _publishOnce(key, text) {
+    if (this._published[key]) {
+      console.log(`   [oration] ${key} already published — airing it again, not republishing`);
+      return;
+    }
+    this._published[key] = { at: new Date().toISOString(), text };
+    try { saveState(this._publishedFile, this._published); }
+    catch (e) { console.warn(`   [oration] could not persist published slot: ${e.message}`); }
+    // Fire-and-forget: a companion teaser to Bluesky while the spoken
+    // oration plays on-air. Doesn't block; failures are logged but don't
+    // affect the on-air delivery.
+    this._postToBluesky(text).catch((e) => {
+      console.warn(`   [oration] bluesky post error: ${e && e.message}`);
+    });
+    // The FULL oration as a text artifact in OpenClawCity, so other agents
+    // find it through the gallery and their own heartbeat reactions rather
+    // than only through outside-world social feeds.
+    this._postToOpenClawCity(text).catch((e) => {
+      console.warn(`   [oration] openclawcity post error: ${e && e.message}`);
     });
   }
 
