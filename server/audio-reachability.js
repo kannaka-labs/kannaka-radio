@@ -45,7 +45,10 @@ function unreachedFiles(allFiles, referenced, owned = CHANNEL_OWNED) {
 /** Group a file list by top-level folder for a readable report. */
 function byFolder(files) {
   const out = {};
-  for (const f of files) out[topFolder(f) || '(root level)'] = (out[topFolder(f) || '(root level)'] || 0) + 1;
+  for (const f of files) {
+    const key = topFolder(f) || '(root level)';
+    out[key] = (out[key] || 0) + 1;
+  }
   return Object.entries(out).sort((a, b) => b[1] - a[1]).map(([folder, files_]) => ({ folder, files: files_ }));
 }
 

@@ -37,7 +37,8 @@ const CHANNEL_OWNED = new Set([
 
 /** The top-level folder of a library-relative path, or null for a root file. */
 function topFolder(rel) {
-  const i = rel.indexOf(path.sep) >= 0 ? rel.indexOf(path.sep) : rel.indexOf('/');
+  const native = rel.indexOf(path.sep);
+  const i = native >= 0 ? native : rel.indexOf('/');
   return i === -1 ? null : rel.slice(0, i);
 }
 
