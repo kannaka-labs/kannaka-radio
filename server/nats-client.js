@@ -139,6 +139,8 @@ class NATSClient extends EventEmitter {
         agentCount: 0,
       },
       consciousness: {
+        /** Which agent this reading is OF. null until a payload names one. */
+        agent_id: null,
         phi: 0,
         xi: 0,
         order: 0,
@@ -742,6 +744,19 @@ class NATSClient extends EventEmitter {
       const phiTrend = Math.abs(phiDelta) < 0.01 ? 'stable' : (phiDelta > 0 ? 'rising' : 'falling');
 
       this.swarmState.consciousness = {
+        // WHOSE reading this is. The binary stamps agent_id on every
+        // KANNAKA.consciousness payload (build_consciousness_payload in
+        // kannaka-memory), and this rebuild used to drop it on the floor —
+        // so the observatory, which reads this object back out of
+        // /api/state, had a number with no subject attached. It served
+        // skywave's phi as Kannaka's for as long as skywave published last.
+        //
+        // Deliberately NOT `?? this.swarmState.consciousness.agent_id`: an
+        // unattributed payload must stay unattributed. Inheriting the
+        // previous publisher's name would stamp somebody else's identity on
+        // a reading that never claimed it, which is the exact failure this
+        // field exists to prevent.
+        agent_id: data.agent_id ?? null,
         phi,
         xi,
         order,
