@@ -146,9 +146,27 @@ function readBodyLimited(req, res, maxBytes, callback) {
 
 // ── Fuzzy audio file matching ──────────────────────────────
 
+/**
+ * A filename is a title with the path-hostile characters taken out.
+ *
+ * A track may legitimately be called "Ascension at \u03C6\uFF0F2" while its file is
+ * "Ascension at \u03C6_2.mp3", because a real solidus cannot appear in a filename
+ * and whoever saved it substituted an underscore. Those are the same track and
+ * nothing in the three matching passes bridged them: the exact and substring
+ * passes fail outright, and word overlap scores 2 of 3 words — 66% against a
+ * 70% threshold — so it missed by a hair and that track never played.
+ *
+ * Normalising the separator family for COMPARISON only makes two strings equal
+ * when they differ by nothing else. The path returned is always the real one.
+ */
+function sepNormalise(s) {
+  return s.replace(/[\/\\\uFF0F\uFF3C_:|]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function findAudioFile(trackName, musicDir) {
   const files = getFiles(musicDir);
   const lower = trackName.toLowerCase();
+  const norm = sepNormalise(lower);
 
   // Pass 1: exact basename match (or with leading track-number stripped).
   // Must be a separate pass from substring — interleaving them let a title
@@ -159,6 +177,7 @@ function findAudioFile(trackName, musicDir) {
     const cleaned = base.replace(/^\d+[\s.\-_]+/, "").trim().toLowerCase();
     const baseLower = base.toLowerCase();
     if (cleaned === lower || baseLower === lower) return f;
+    if (sepNormalise(cleaned) === norm || sepNormalise(baseLower) === norm) return f;
   }
 
   // Pass 2: substring match (basename includes the title).
@@ -166,6 +185,7 @@ function findAudioFile(trackName, musicDir) {
     const base = path.basename(f, path.extname(f));
     const baseLower = base.toLowerCase();
     if (baseLower.includes(lower)) return f;
+    if (sepNormalise(baseLower).includes(norm)) return f;
   }
 
   // Pass 3: fuzzy word overlap (>=70%)
@@ -191,4 +211,5 @@ module.exports = {
   readBody,
   readBodyLimited,
   findAudioFile,
+  sepNormalise,
 };
