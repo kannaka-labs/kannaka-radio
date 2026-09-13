@@ -126,6 +126,13 @@ class NATSClient extends EventEmitter {
     // Publishes refused because the socket was gone — surfaced so a reconnect
     // window shows up as a countable drop instead of silence. (#218)
     this._droppedPublishes = 0;
+    // Which agent this station IS. `KANNAKA.consciousness` is one subject every
+    // node publishes to, so without a self id "authoritative" silently means
+    // "whoever spoke last" — see the queen sync in _handleMessage.
+    this.selfAgentId = opts.selfAgentId
+      || process.env.KANNAKA_AGENT_ID
+      || process.env.KANNAKA_SELF_ID
+      || 'kannaka-prime';
 
     this.swarmState = {
       agents: {},
@@ -779,9 +786,18 @@ class NATSClient extends EventEmitter {
         phiTrend,
       };
 
-      // Keep queen state in sync with canonical metrics (authoritative override)
-      this.swarmState.queen.phi = phi;
-      this.swarmState.queen.orderParameter = order;
+      // Keep queen state in sync with canonical metrics — but ONLY when the
+      // packet is ours. This said "authoritative override" and applied to every
+      // publisher on the subject, so the queen's phi became whoever spoke last.
+      // That mattered beyond the label: the observatory's status gate rejects a
+      // consciousness block belonging to another agent, then falls through to
+      // `swarm.queen.phi` — so a neighbour's reading routed around the gate and
+      // was served as ours anyway. Rejecting at one tier is not rejecting.
+      const fromSelf = String(data.agent_id || '').toLowerCase() === String(this.selfAgentId).toLowerCase();
+      if (fromSelf) {
+        this.swarmState.queen.phi = phi;
+        this.swarmState.queen.orderParameter = order;
+      }
 
       this._broadcast({ type: 'consciousness', data: this.swarmState.consciousness });
       this.emit('consciousness:update', this.swarmState.consciousness);

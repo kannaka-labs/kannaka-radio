@@ -131,5 +131,23 @@ test('with strict mode off, an unattributed reading does not inherit a name', ()
   }
 });
 
+
+test('the queen view is not overwritten by another node', () => {
+  const c = client();
+  c.selfAgentId = 'kannaka-prime';
+  c.swarmState.queen.phi = 0.628;
+  deliver(c, { agent_id: 'skywave', phi: 0.343 });
+  assert.strictEqual(c.swarmState.queen.phi, 0.628,
+    'rejecting a neighbour at one tier is not rejecting it if the next tier takes it');
+});
+
+test('the queen view still follows our own reading', () => {
+  const c = client();
+  c.selfAgentId = 'kannaka-prime';
+  deliver(c, { agent_id: 'kannaka-prime', phi: 0.77, order: 0.31 });
+  assert.strictEqual(c.swarmState.queen.phi, 0.77);
+  assert.strictEqual(c.swarmState.queen.orderParameter, 0.31);
+});
+
 if (failures) { console.error(`consciousness-subject: ${failures} failed`); process.exit(1); }
 console.log('consciousness-subject: all passed');
