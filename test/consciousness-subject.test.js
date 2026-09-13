@@ -132,13 +132,18 @@ test('with strict mode off, an unattributed reading does not inherit a name', ()
 });
 
 
-test('the queen view is not overwritten by another node', () => {
+test('another node cannot set the queen phi, but can set the swarm order', () => {
+  // phi is PER-AGENT — Kannaka's is not skywave's — so a neighbour must not
+  // set it. The Kuramoto order parameter is a property of the SWARM: every
+  // node reads the same system, so a canonical packet still sets it (#219).
   const c = client();
   c.selfAgentId = 'kannaka-prime';
   c.swarmState.queen.phi = 0.628;
-  deliver(c, { agent_id: 'skywave', phi: 0.343 });
+  deliver(c, { agent_id: 'skywave', phi: 0.343, order: 0.91 });
   assert.strictEqual(c.swarmState.queen.phi, 0.628,
     'rejecting a neighbour at one tier is not rejecting it if the next tier takes it');
+  assert.strictEqual(c.swarmState.queen.orderParameter, 0.91,
+    'the swarm order is not per-agent and must keep flowing');
 });
 
 test('the queen view still follows our own reading', () => {
