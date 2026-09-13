@@ -793,11 +793,13 @@ class NATSClient extends EventEmitter {
       // consciousness block belonging to another agent, then falls through to
       // `swarm.queen.phi` — so a neighbour's reading routed around the gate and
       // was served as ours anyway. Rejecting at one tier is not rejecting.
+      // phi is PER-AGENT: Kannaka's phi is not skywave's, so only our own
+      // packet may set the queen's. The Kuramoto order parameter is a property
+      // of the SWARM — every node is reading the same system — so a canonical
+      // packet from any publisher still sets it, which is what #219 pins.
       const fromSelf = String(data.agent_id || '').toLowerCase() === String(this.selfAgentId).toLowerCase();
-      if (fromSelf) {
-        this.swarmState.queen.phi = phi;
-        this.swarmState.queen.orderParameter = order;
-      }
+      if (fromSelf) this.swarmState.queen.phi = phi;
+      this.swarmState.queen.orderParameter = order;
 
       this._broadcast({ type: 'consciousness', data: this.swarmState.consciousness });
       this.emit('consciousness:update', this.swarmState.consciousness);
