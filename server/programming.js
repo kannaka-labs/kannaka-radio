@@ -484,6 +484,60 @@ class ProgrammingSchedule {
   }
 
   /**
+   * Load an album, and if it has nothing playable, move on to the next one.
+   *
+   * `djEngine.loadAlbum` returns null when an album yields zero playable
+   * tracks, and its own comment says the caller "can try a different album".
+   * Every caller here ignored the return value. On 2026-09-12 the rotation
+   * picked an album whose files had been left behind by the music-directory
+   * migration, the load aborted, and the station sat with an empty playlist
+   * and `now-playing: null` until somebody noticed. Nothing retried, nothing
+   * alerted, and it could not recover on its own.
+   *
+   * A library entry with no files is a bad row, not a reason to stop
+   * broadcasting. Skip it, say so once per album, and keep going.
+   *
+   * @param {string} first the album the rotation chose
+   * @param {object} [block] its block, whose other albums are the first fallbacks
+   * @returns {object|null} the loaded track, or null if nothing in the library loads
+   */
+  loadAlbumOrNext(first, block) {
+    const tried = new Set();
+    const order = [first];
+    if (block && Array.isArray(block.albums)) {
+      for (const a of block.albums) if (a && !order.includes(a)) order.push(a);
+    }
+    // Last resort: every album in the catalogue. An empty block and a broken
+    // first choice must still leave the listener with music.
+    for (const a of Object.keys(ALBUMS)) if (a && !order.includes(a)) order.push(a);
+
+    for (const name of order) {
+      if (tried.has(name)) continue;
+      tried.add(name);
+      let track = null;
+      try { track = this._djEngine.loadAlbum(name); } catch (e) {
+        console.warn(`   [programming] "${name}" threw while loading: ${e && e.message}`);
+      }
+      if (track) {
+        if (tried.size > 1) {
+          console.log(`   [programming] loaded "${name}" after skipping ${tried.size - 1} album(s) with nothing playable`);
+        }
+        this._lastAlbumPlayed = name;
+        return track;
+      }
+      // Say it once per album per process, so a permanently broken row does
+      // not fill the journal on every block transition.
+      this._unplayable = this._unplayable || new Set();
+      if (!this._unplayable.has(name)) {
+        this._unplayable.add(name);
+        console.warn(`   \u26A0 [programming] "${name}" has nothing playable — skipping it (check the music directory for this album)`);
+      }
+    }
+    console.error('   \u26A0\u26A0 [programming] no album in the library has a playable track — the station has nothing to play');
+    return null;
+  }
+
+  /**
    * Called on every track change (DJ channel, non-commercial only).
    * Handles block transitions and mixed-set album switching.
    * @param {object} track — the track that just started playing
@@ -567,8 +621,9 @@ class ProgrammingSchedule {
     this._lastAlbumPlayed = album;
 
     // Load the new album (don't broadcastState here — the caller's
-    // advanceTrack → onTrackChange flow handles the single broadcast)
-    this._djEngine.loadAlbum(album);
+    // advanceTrack → onTrackChange flow handles the single broadcast).
+    // Falls through to the block's other albums if this one has no files.
+    this.loadAlbumOrNext(album, newBlock);
 
     // Set the DJ's mood to match the block
     if (this._voiceDJ) {
