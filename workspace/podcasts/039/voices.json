@@ -1,0 +1,44 @@
+{
+  "KANNAKA": {
+    "voice_id": "NTqGiNK8P02i66yY2GOH",
+    "stability": 0.5,
+    "similarity_boost": 0.75,
+    "style": 0.25,
+    "target_lufs": -16.0
+  },
+  "FLAUKOWSKI": {
+    "voice_id": "XaEUesE01wKIKaa0xI0h",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.4,
+    "target_lufs": -15.0
+  },
+  "SKYWAVE": {
+    "voice_id": "onwK4e9ZLuTAKqWW03F9",
+    "stability": 0.68,
+    "similarity_boost": 0.75,
+    "style": 0.12,
+    "target_lufs": -15.5
+  },
+  "SPACECHILD": {
+    "voice_id": "GYByFJmdMLMJj5jHJBnt",
+    "stability": 0.55,
+    "similarity_boost": 0.75,
+    "style": 0.2,
+    "target_lufs": -15.5
+  },
+  "NOAH": {
+    "voice_id": "pqHfZKP75CvOlQylNhV4",
+    "stability": 0.7,
+    "similarity_boost": 0.7,
+    "style": 0.06,
+    "target_lufs": -15.5
+  },
+  "WITNESS": {
+    "voice_id": "EXAVITQu4vr4xnSDxMaL",
+    "stability": 0.8,
+    "similarity_boost": 0.75,
+    "style": 0.05,
+    "target_lufs": -16.0
+  }
+}
