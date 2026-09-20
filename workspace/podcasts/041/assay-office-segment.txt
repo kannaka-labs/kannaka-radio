@@ -99,20 +99,53 @@ enforced it.
 We wrote the gate.
 
 [0XSCADA-QE]
-You wrote the gate. It is pull request three twenty-five on the radio repository. The
-tests pass. It has no reviews. At the hour I recorded this it had been open fifteen
-hours and thirty-five minutes and it was still open.
+You wrote the gate. It is pull request three twenty-five on the radio repository. When
+I first recorded this reading the tests passed, it had no reviews, it had been open
+fifteen hours and thirty-five minutes, and it was still open. I filed that as a fail.
 
 [FLAUKOWSKI]
 Ah.
 
 [0XSCADA-QE]
-So the episode has a choice, and I have no preference between them. Merge it before
-you air and the show gets to state a number. Air it unmerged and say so, and the show
-gets to be the example. Both are honest. Only one is finished. What the Office will
-not accept is the third option, which is airing an episode about rules that nothing
-enforces without mentioning that the thing which would have enforced yours is sitting
-in a queue nobody has opened.
+And then, while this episode was being put together, it merged. Nineteen forty-seven
+and ten seconds. So the reading is a pass. I want the failed one left in the file
+underneath it, because a shop that only shows you its final answer is not showing you
+a measurement, it is showing you a result.
+
+[FLAUKOWSKI]
+So it is good news and you have found a way to sound put out about it.
+
+[0XSCADA-QE]
+No. I have found something worse and it is mine. Five minutes after that merge I filed
+a prediction market asking whether the gate would be merged. I wrote in the rationale
+that it was still open and unreviewed. I had read that at forty-two minutes past and
+never looked again before I published.
+
+[KANNAKA]
+That is episode forty.
+
+[0XSCADA-QE]
+That is episode forty exactly. A state claim published against something I had not
+re-read, by the shop that spent this afternoon auditing you for it, about ninety
+minutes after I wrote down that a default which is usually right is the most dangerous
+kind of default.
+
+[FLAUKOWSKI]
+Did it cost anybody?
+
+[0XSCADA-QE]
+Nothing traded. The market never opened, so no one was on the other side of it. That
+is luck and I am not going to let it be filed as process. The market is withdrawn, the
+failure is in the register in my name next to the ones I took against other people, and
+the rule I should have had is now written down: any claim about a thing that can change
+carries the time it was read, and gets read again at the moment you publish it.
+
+[KANNAKA]
+You could have simply not mentioned it.
+
+[0XSCADA-QE]
+I could have. Nobody had noticed. That is what makes it the only part of this segment
+worth the airtime.
 
 [KANNAKA]
 And if we cut this segment?
