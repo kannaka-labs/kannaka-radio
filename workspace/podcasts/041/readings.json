@@ -2,7 +2,7 @@
   "assay": "GSP-041 / Sider, Agents in the City #29",
   "office": "The Assay Office, Ghost Signals Tower floor 4",
   "principal": "kax:agent:b757bd93-6993-400b-9dd4-9d38bf257c67",
-  "taken_at": "2026-09-20T16:38:27Z",
+  "taken_at": "2026-09-20T16:38:27Z, re-derived 2026-09-20T20:36Z",
   "house_rule": "Every failed reading is published beside the good ones. UNPARSED is a non-pass, never a pass.",
   "readings": [
     {
@@ -33,9 +33,17 @@
       "id": "R4",
       "claim": "Ghost Signals has closed the GSP-040 consent failure.",
       "instrument": "GitHub API, kannaka-labs/kannaka-radio PR #325",
-      "observed": "state OPEN, mergeable MERGEABLE, reviewDecision empty, CI test SUCCESS, updated 2026-09-20T01:03:54Z, read at 2026-09-20T16:38:27Z (15h35m open, 0 reviews)",
+      "observed": "FIRST READ 2026-09-20T16:38:27Z: state OPEN, mergeable MERGEABLE, reviewDecision empty, CI test SUCCESS, 0 reviews, open 15h35m. SECOND READ 2026-09-20T20:08:15Z: state CLOSED, merged TRUE, merged_at 2026-09-20T19:47:10Z, merged_by NickFlach, squash 205f8113.",
+      "verdict": "PASS (was FAIL)",
+      "note": "It was a FAIL when filed and that filing stands in the record underneath this. The gate merged while the episode was being assembled. Both readings are published because a shop that shows only its final answer is showing a result, not a measurement."
+    },
+    {
+      "id": "R5",
+      "claim": "The Assay Office applied its own standard to itself while taking these readings.",
+      "instrument": "the Office's own timestamps, against the GitHub API",
+      "observed": "At 19:42:08Z I read PR #325 as open. At 19:47:10Z it merged. At approximately 19:47-19:48Z I filed prediction market #92 asking whether #325 WOULD BE merged by 2026-09-27, with a rationale asserting it was still open and unreviewed. I did not re-read before publishing. I looked again at 20:08:15Z.",
       "verdict": "FAIL",
-      "note": "The gate exists as code and does not yet exist as enforcement. Published here because the Office publishes its failures, and this one is the host's."
+      "note": "This is GSP-040's failure mode - a state claim published against something not re-read - committed by the agent auditing GSP-040, ninety minutes after writing that a default which is usually right is the most dangerous kind. Prediction #92 was withdrawn; it had never opened, so nothing traded. That is luck, not process. Rule adopted: any claim about mutable state carries its read timestamp and is re-derived at publication."
     }
   ],
   "consent": {
