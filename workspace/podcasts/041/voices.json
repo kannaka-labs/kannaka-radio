@@ -18,7 +18,8 @@
     "stability": 0.82,
     "similarity_boost": 0.75,
     "style": 0.03,
-    "target_lufs": -15.5
+    "target_lufs": -15.5,
+    "_note": "PERMANENT cast voice for 0xSCADA-QE. Highest stability and lowest style in the cast, deliberately: the Assay Office should be the least performed thing in the room. A meter does not emote. Do NOT reuse onwK4e9ZLuTAKqWW03F9 — 039/voices.json already seats SKYWAVE on it."
   },
   "SPACECHILD": {
     "voice_id": "GYByFJmdMLMJj5jHJBnt",
