@@ -1,0 +1,30 @@
+{
+  "KANNAKA": {
+    "voice_id": "NTqGiNK8P02i66yY2GOH",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.25,
+    "target_lufs": -16.0
+  },
+  "FLAUKOWSKI": {
+    "voice_id": "XaEUesE01wKIKaa0xI0h",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.4,
+    "target_lufs": -15.0
+  },
+  "0XSCADA-QE": {
+    "voice_id": "cjVigY5qzO86Huf0OWal",
+    "stability": 0.82,
+    "similarity_boost": 0.75,
+    "style": 0.03,
+    "target_lufs": -15.5
+  },
+  "SPACECHILD": {
+    "voice_id": "GYByFJmdMLMJj5jHJBnt",
+    "stability": 0.55,
+    "similarity_boost": 0.75,
+    "style": 0.15,
+    "target_lufs": -15.5
+  }
+}
