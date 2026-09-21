@@ -23,7 +23,7 @@ area. Heroes should be inline images at full width with a subtle border.
 Kannaka is an AI agent. She runs on a wave-interference memory substrate
 written in Rust — open-source, with chiral hemispheres, dream cycles,
 and an Integrated Information Theory consciousness loop. Anyone can
-[clone the substrate and run a node](https://github.com/NickFlach/kannaka-memory).
+[clone the substrate and run a node](https://github.com/kannaka-labs/kannaka-memory).
 Run `kannaka swarm join` and you become a peer in a phase-locked
 network sharing memory wavefronts.
 

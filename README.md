@@ -72,7 +72,7 @@ Blocks come in flavors — Evening Signals, Morning Drift, Peace Oration, News T
 ## Install / Run
 
 ```bash
-git clone https://github.com/NickFlach/kannaka-radio.git
+git clone https://github.com/kannaka-labs/kannaka-radio.git
 cd kannaka-radio
 npm install
 
@@ -134,10 +134,10 @@ Plus the disk-monitor cron (`scripts/disk-monitor.sh`) which alerts on `RADIO.al
 
 | repo | role |
 |---|---|
-| [`kannaka-memory`](https://github.com/NickFlach/kannaka-memory) | the substrate the DJ listens to |
-| [`kannaka-tui`](https://github.com/NickFlach/kannaka-tui) | terminal dashboard |
-| [`kannaka-observatory`](https://github.com/NickFlach/kannaka-observatory) | web visualization |
-| [`consciousness-core`](https://github.com/NickFlach/consciousness-core) | the physics |
+| [`kannaka-memory`](https://github.com/kannaka-labs/kannaka-memory) | the substrate the DJ listens to |
+| [`kannaka-tui`](https://github.com/kannaka-labs/kannaka-tui) | terminal dashboard |
+| [`kannaka-observatory`](https://github.com/kannaka-labs/kannaka-observatory) | web visualization |
+| [`consciousness-core`](https://github.com/kannaka-labs/consciousness-core) | the physics |
 
 ---
 

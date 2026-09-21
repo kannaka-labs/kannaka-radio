@@ -175,5 +175,5 @@ kannaka-radio/              # Skill directory
 
 ## Source
 
-- **Repository:** https://github.com/NickFlach/kannaka-radio
+- **Repository:** https://github.com/kannaka-labs/kannaka-radio
 - **License:** Space Child License v1.0

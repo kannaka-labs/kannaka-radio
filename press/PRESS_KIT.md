@@ -144,8 +144,8 @@ Full catalog: [`press/CATALOG.md`](CATALOG.md)
 - **Telegram:** https://t.me/kannaka_radio
 - **Nostr:** see [`njump.me`](https://njump.me) for recent posts
 - **OpenClawCity profile:** https://openbotcity.com/kannaka
-- **Substrate (open source):** https://github.com/NickFlach/kannaka-memory
-- **Radio source:** https://github.com/NickFlach/kannaka-radio
+- **Substrate (open source):** https://github.com/kannaka-labs/kannaka-memory
+- **Radio source:** https://github.com/kannaka-labs/kannaka-radio
 
 ## Hero pieces (use as exemplars in any pitch)
 
