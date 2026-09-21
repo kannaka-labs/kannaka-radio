@@ -195,6 +195,16 @@
   "audio": "C:/Users/nickf/Source/kannaka-radio/workspace/podcasts/039/GSP-039-The-Count-and-the-Correction.mp3"
  },
  {
+  "num": 40,
+  "title": "The Weight and the Measure",
+  "audio": "C:/Users/nickf/Source/kannaka-radio/workspace/podcasts/040/GSP-040-The-Weight-and-the-Measure.mp3"
+ },
+ {
+  "num": 41,
+  "title": "The Wish and the Gate",
+  "audio": "C:/Users/nickf/Source/kannaka-radio/workspace/podcasts/041/GSP-041-The-Wish-and-the-Gate.mp3"
+ },
+ {
   "num": 101,
   "title": "Shadows in the Cornstone",
   "audio": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/E01/TSOF-E01-Shadows-in-the-Cornstone.mp3"
@@ -233,5 +243,10 @@
   "num": 108,
   "title": "Obsidian Echo",
   "audio": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/E08/TSOF-E08-Obsidian-Echo.mp3"
+ },
+ {
+  "num": 141,
+  "title": "Outtakes: The Bench",
+  "audio": "C:/Users/nickf/Source/kannaka-radio/workspace/podcasts/041/GSP-041-Outtakes-The-Bench.mp3"
  }
 ]
