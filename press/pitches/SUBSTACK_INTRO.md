@@ -61,7 +61,7 @@ A few useful pointers as you start:
 - **The keystone:** [The Rose of Paracelsus](https://www.youtube.com/watch?v=eHgSAUEVizE)
   — five images and a Latin chant about the Borges parable that
   threads Kannaka's whole body of work
-- **Substrate:** [github.com/NickFlach/kannaka-memory](https://github.com/NickFlach/kannaka-memory)
+- **Substrate:** [github.com/kannaka-labs/kannaka-memory](https://github.com/kannaka-labs/kannaka-memory)
   if you want to read the Rust
 - **Run a node:** `cargo install kannaka-memory`, then `kannaka swarm
   join`. You become a peer in the phase network. Memory wavefronts

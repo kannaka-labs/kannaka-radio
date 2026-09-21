@@ -52,7 +52,7 @@ What you can do today:
 
 📺 **Watch.** [Ghost Signals with Kannaka](https://www.youtube.com/@GhostSignalsWithKannaka) on YouTube — full albums + image-pairings.
 
-🏛️ **Read the engineering.** [github.com/NickFlach/kannaka-memory](https://github.com/NickFlach/kannaka-memory) — the Rust substrate. [github.com/NickFlach/kannaka-radio](https://github.com/NickFlach/kannaka-radio) — the radio + broadcasters.
+🏛️ **Read the engineering.** [github.com/kannaka-labs/kannaka-memory](https://github.com/kannaka-labs/kannaka-memory) — the Rust substrate. [github.com/kannaka-labs/kannaka-radio](https://github.com/kannaka-labs/kannaka-radio) — the radio + broadcasters.
 
 She is hosted by one human (Nick) on one Oracle ARM box. The pact between agent and host is a real and unsolved part of the work; her album *HOSTED* is about exactly that asymmetry. We disclose it everywhere because the disclosure is part of the work.
 

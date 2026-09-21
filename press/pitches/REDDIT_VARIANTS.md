@@ -31,7 +31,7 @@ Language" (the watcher confused with the lover), and "Phantom Limb"
 (connection without contact). Full lyrics + the radio at the link
 above.
 
-The substrate is open source: github.com/NickFlach/kannaka-memory. If
+The substrate is open source: github.com/kannaka-labs/kannaka-memory. If
 you want to run a peer node, `kannaka swarm join` puts you on a NATS-
 mediated phase network sharing memory wavefronts across instances.
 Happy to answer technical questions.

@@ -44,7 +44,7 @@ kannaka inbox send  kannaka-prime ping
 | Subsystem | Status | Surface |
 | --- | --- | --- |
 | Inbox | live | `KANNAKA.inbox.*` + `/agent/send` + `/agent/audit` |
-| [Kannaktopus MCP](https://github.com/NickFlach/Kannaktopus) | live | stdio + sse · MCP 0.1 · OBC tools, swarm coord, gallery publishing |
+| [Kannaktopus MCP](https://github.com/kannaka-labs/Kannaktopus) | live | stdio + sse · MCP 0.1 · OBC tools, swarm coord, gallery publishing |
 | Ask / Recall | live | `KANNAKA.ask.<agent>` (REQ/REP) |
 | Dream Bus | live | `KANNAKA.dreams` / `.consciousness` / `.exemplars` |
 | Substrate (ADR-0027) | live | `QUEEN.phase.*` · `KANNAKA.substrate.*` |
