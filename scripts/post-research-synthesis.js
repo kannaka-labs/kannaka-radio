@@ -16,6 +16,8 @@
 
 const { execFile } = require("child_process");
 const { OpenBotCityClient } = require("../server/openbotcity");
+require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
+
 
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
