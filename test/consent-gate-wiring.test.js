@@ -170,6 +170,53 @@ run('scripts/consent-gate.py exists and still documents 0 / 2 / 1 as pass / answ
 
 // ── 3. the ratchet: nothing new publishes without consulting it ───────
 
+// WHAT COUNTS AS A PUBLISHER. Not a glob over one directory — the first draft
+// of this test scanned `workspace/podcasts/upload-*.js` only, and three
+// scripts that put video on YouTube live in `scripts/` and sailed straight
+// through a net advertised as general. A narrower net than the claim above it
+// is the same defect as a gate with no caller, one level up, so the detector
+// is the capability itself: anything that drives the YouTube adapter with
+// media attached can publish, wherever it sits.
+const PUBLISHER_DIRS = ['scripts', path.join('workspace', 'podcasts')];
+
+function isPublisher(src) {
+  return /YouTubeAdapter/.test(src) && /adapter\.post\(/.test(src) && /media/.test(src);
+}
+
+function publishers() {
+  const out = [];
+  for (const dir of PUBLISHER_DIRS) {
+    const abs = path.join(ROOT, dir);
+    if (!fs.existsSync(abs)) continue;
+    for (const f of fs.readdirSync(abs)) {
+      if (!f.endsWith('.js')) continue;
+      const rel = path.join(dir, f).split(path.sep).join('/');
+      const src = fs.readFileSync(path.join(abs, f), 'utf8');
+      if (isPublisher(src)) out.push({ rel, src });
+    }
+  }
+  return out;
+}
+
+// Publishers that do NOT call the guard, each with the reason it is allowed
+// not to. CLOSED MAP — adding an entry is the defect this test exists to
+// catch. A reason is required because an exemption nobody has to justify is
+// how the list grows.
+const UNGUARDED = {
+  'scripts/podcast-upload-batch.js':
+    'Backfill of episodes 1-12 from metadata.json, all published long before the gate. ' +
+    'RESIDUAL RISK, stated rather than hidden: if anyone ever adds a NEW episode to ' +
+    'metadata.json and runs this, it uploads without a consent check. Guarding it means ' +
+    'a consent.json for each of the twelve, which is work nobody has a reason to do until ' +
+    'the tool is used again.',
+  'scripts/release-album-upload-youtube.js':
+    'Publishes an album render, not an episode. It quotes no one and asks no permission, ' +
+    'so there is no thread for a gate to read.',
+  'scripts/youtube-upload-test.js':
+    'A harness that uploads its own generated fixture to prove the adapter works. No guest, ' +
+    'no quotation, and it should stay runnable with no episode directory in existence.',
+};
+
 // The 37 upload scripts that predate the gate. CLOSED LIST — adding to it is
 // the defect this test exists to catch.
 const PRE_GATE = new Set([
@@ -212,31 +259,58 @@ const PRE_GATE = new Set([
   'upload-tsof-08.js',
 ]);
 
-run('every upload script written after the gate calls the guard', () => {
-  const scripts = fs.readdirSync(PODCASTS).filter((f) => /^upload-.*\.js$/.test(f));
-  const missing = scripts
-    .filter((f) => !PRE_GATE.has(f))
-    .filter((f) => !/consent-guard/.test(fs.readFileSync(path.join(PODCASTS, f), 'utf8')));
+/** Every exemption this file grants, from either list. */
+function exempt(rel) {
+  return Object.hasOwn(UNGUARDED, rel) || (rel.startsWith('workspace/podcasts/') && PRE_GATE.has(path.basename(rel)));
+}
+
+run('every publisher written after the gate calls the guard', () => {
+  const missing = publishers()
+    .filter((p) => !exempt(p.rel))
+    .filter((p) => !/consent-guard/.test(p.src))
+    .map((p) => p.rel);
   assert.deepStrictEqual(
     missing, [],
-    'these upload scripts publish without consulting the consent gate:\n    ' + missing.join('\n    ') +
+    'these publish video without consulting the consent gate:\n    ' + missing.join('\n    ') +
       '\n  Add, inside the async main and BEFORE adapter.post:\n' +
       '      const { assertConsentClear } = require(path.join(ROOT, "scripts/lib/consent-guard"));\n' +
       '      assertConsentClear(path.join(ROOT, "workspace/podcasts/<NNN>"));',
   );
 });
 
-run('the grandfathered list names only scripts that exist', () => {
-  const ghosts = [...PRE_GATE].filter((f) => !fs.existsSync(path.join(PODCASTS, f)));
-  assert.deepStrictEqual(ghosts, [], 'listed as pre-gate but not on disk: ' + ghosts.join(', '));
+run('the detector actually recognises the publishers we know about', () => {
+  // A net that catches nothing passes the test above for the wrong reason.
+  const found = new Set(publishers().map((p) => p.rel));
+  for (const known of [
+    'workspace/podcasts/upload-41.js',
+    'scripts/podcast-upload-batch.js',
+    'scripts/release-album-upload-youtube.js',
+  ]) {
+    assert.ok(found.has(known), `the publisher detector missed ${known}`);
+  }
+  assert.ok(found.size >= 40, `only ${found.size} publishers detected; the net has narrowed`);
 });
 
-run('the grandfathered list has not grown', () => {
-  // 37 was the count on 2026-09-21, the day the guard was wired. If this
-  // number goes up, someone added a new publisher to the exemption list
-  // instead of calling the guard — which is the wish with better formatting
-  // that this whole file exists to prevent.
-  assert.strictEqual(PRE_GATE.size, 37);
+run('both exemption lists name only files that exist', () => {
+  const ghosts = [
+    ...[...PRE_GATE].filter((f) => !fs.existsSync(path.join(PODCASTS, f))).map((f) => `workspace/podcasts/${f}`),
+    ...Object.keys(UNGUARDED).filter((f) => !fs.existsSync(path.join(ROOT, f))),
+  ];
+  assert.deepStrictEqual(ghosts, [], 'exempted but not on disk: ' + ghosts.join(', '));
+});
+
+run('every unguarded publisher carries a stated reason', () => {
+  const unreasoned = Object.entries(UNGUARDED).filter(([, why]) => !why || why.trim().length < 40);
+  assert.deepStrictEqual(unreasoned.map(([f]) => f), [], 'exempted with no real reason given');
+});
+
+run('neither exemption list has grown', () => {
+  // The counts on 2026-09-21, the day the guard was wired. If either goes up,
+  // someone added a publisher to an exemption list instead of calling the
+  // guard — which is the wish with better formatting that this whole file
+  // exists to prevent.
+  assert.strictEqual(PRE_GATE.size, 37, 'the pre-gate list grew');
+  assert.strictEqual(Object.keys(UNGUARDED).length, 3, 'the unguarded-publisher list grew');
 });
 
 if (failed > 0) { console.error(`\n${failed} failing`); process.exit(1); }
