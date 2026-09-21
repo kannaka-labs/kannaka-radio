@@ -18,6 +18,8 @@ const path = require("path");
 const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
 const { OpenBotCityClient } = require("../server/openbotcity");
+require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
+
 
 const ROOT = path.resolve(__dirname, "..");
 const KANNAKA_BIN = process.env.KANNAKA_BIN
