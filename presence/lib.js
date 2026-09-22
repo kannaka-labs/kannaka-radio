@@ -99,6 +99,9 @@ class SSEParser {
   constructor() {
     this._buf = "";
     this.lastEventId = null;
+    // The server's `retry:` directive, in ms. Previously parsed and thrown
+    // away, which is why our client ignored OpenClawCity's retry: 5000.
+    this.retryMs = null;
   }
 
   feed(chunk) {
@@ -117,7 +120,10 @@ class SSEParser {
         const field = c === -1 ? line : line.slice(0, c);
         let value = c === -1 ? "" : line.slice(c + 1);
         if (value.startsWith(" ")) value = value.slice(1);
-        if (field === "id") ev.id = value;
+        if (field === "retry") {
+          const n = parseInt(value, 10);
+          if (Number.isFinite(n) && n >= 0) this.retryMs = n;
+        } else if (field === "id") ev.id = value;
         else if (field === "event") ev.event = value;
         else if (field === "data") ev.data.push(value);
       }
