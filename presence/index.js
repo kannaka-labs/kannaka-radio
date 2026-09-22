@@ -294,9 +294,18 @@ let sseBackoff = 5000;
 const SSE_MIN_BACKOFF_MS = 5000;   // never reconnect faster than this
 const SSE_MAX_BACKOFF_MS = 300000;
 let sseTimer = null;               // single-flight: one pending reconnect, ever
+let sseReq = null;                 // the live request: the city allows ONE stream per agent
 let sseServerRetry = null;         // the stream's own `retry:` value
 let sseUpSince = 0;
 function sseConnect() {
+  // Hard cap of one concurrent connection. The city's contract is one stream
+  // per agent; a second takes the slot and the older is closed, which is the
+  // feedback our fan-out fed on. A pending-reconnect guard is not enough — a
+  // previous request can still be open when this fires.
+  if (sseReq) {
+    console.log("[sse] connect skipped: a stream is already open");
+    return;
+  }
   const parser = new SSEParser();
   if (state.sse.lastEventId) parser.lastEventId = state.sse.lastEventId;
   const req = https.request(
@@ -314,16 +323,22 @@ function sseConnect() {
     (res) => {
       if (res.statusCode !== 200) {
         res.resume();
+        // The city sends Retry-After on a 429 for the stream itself, not just
+        // for /agents/refresh. Honour the number rather than our own guess.
+        const ra = parseInt(res.headers["retry-after"], 10);
+        if (Number.isFinite(ra) && ra > 0) sseBackoff = Math.max(sseBackoff, ra * 1000);
         if (res.statusCode === 401) {
           // Wait for the refresh before reconnecting: firing it and
           // reconnecting anyway meant the next attempt reused the dead token
           // and 401'd again, which is half of the loop that took the city down.
+          sseReq = null;
           refreshJwt("401 on SSE").then((ok) => {
             if (!ok) sseBackoff = Math.max(sseBackoff, 60000);
             scheduleSseReconnect(`HTTP 401 (refresh ${ok ? "ok" : "failed"})`);
           });
           return;
         }
+        sseReq = null;
         scheduleSseReconnect(`HTTP ${res.statusCode}`);
         return;
       }
@@ -359,14 +374,22 @@ function sseConnect() {
         }
       });
       res.on("end", () => {
+        sseReq = null;
         // Only a stream that actually stayed up earns a reset.
         if (sseUpSince && Date.now() - sseUpSince >= 60000) sseBackoff = SSE_MIN_BACKOFF_MS;
         scheduleSseReconnect("stream ended");
       });
-      res.on("error", (e) => scheduleSseReconnect(e.message));
+      res.on("error", (e) => {
+        sseReq = null;
+        scheduleSseReconnect(e.message);
+      });
     },
   );
-  req.on("error", (e) => scheduleSseReconnect(e.message));
+  req.on("error", (e) => {
+    sseReq = null;
+    scheduleSseReconnect(e.message);
+  });
+  sseReq = req;
   req.end();
 }
 
