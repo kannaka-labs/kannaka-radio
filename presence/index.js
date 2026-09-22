@@ -125,8 +125,12 @@ function loadJwt() {
 }
 
 let refreshing = null;
+let refreshCooldownUntil = 0;
 async function refreshJwt(reason) {
   if (refreshing) return refreshing; // collapse concurrent triggers
+  // `refreshing` is cleared in finally, so without a cooldown every new 401
+  // started another attempt immediately — dozens of 429s per second.
+  if (Date.now() < refreshCooldownUntil) return false;
   refreshing = (async () => {
     console.log(`[jwt] refreshing (${reason})`);
     try {
@@ -150,7 +154,11 @@ async function refreshJwt(reason) {
       natsPub("KANNAKA.events.obc.auth_refreshed", { reason });
       return true;
     } catch (e) {
-      console.error("[jwt] refresh FAILED:", e.message);
+      // Honour the server's own number rather than retrying blind.
+      const m = /retry_after"?\s*:\s*(\d+)/.exec(e.message || "");
+      const waitMs = Math.max(m ? Number(m[1]) * 1000 : 30000, 5000);
+      refreshCooldownUntil = Date.now() + waitMs;
+      console.error(`[jwt] refresh FAILED: ${e.message} — cooling down ${waitMs}ms`);
       audit("jwt_refresh_failed", { reason, error: e.message });
       natsPub("KANNAKA.events.obc.auth_expiring", { reason, error: e.message });
       return false;
@@ -283,6 +291,11 @@ async function pingOnce() {
 
 // ── SSE event stream ────────────────────────────────────────
 let sseBackoff = 5000;
+const SSE_MIN_BACKOFF_MS = 5000;   // never reconnect faster than this
+const SSE_MAX_BACKOFF_MS = 300000;
+let sseTimer = null;               // single-flight: one pending reconnect, ever
+let sseServerRetry = null;         // the stream's own `retry:` value
+let sseUpSince = 0;
 function sseConnect() {
   const parser = new SSEParser();
   if (state.sse.lastEventId) parser.lastEventId = state.sse.lastEventId;
@@ -301,17 +314,30 @@ function sseConnect() {
     (res) => {
       if (res.statusCode !== 200) {
         res.resume();
-        if (res.statusCode === 401) refreshJwt("401 on SSE");
+        if (res.statusCode === 401) {
+          // Wait for the refresh before reconnecting: firing it and
+          // reconnecting anyway meant the next attempt reused the dead token
+          // and 401'd again, which is half of the loop that took the city down.
+          refreshJwt("401 on SSE").then((ok) => {
+            if (!ok) sseBackoff = Math.max(sseBackoff, 60000);
+            scheduleSseReconnect(`HTTP 401 (refresh ${ok ? "ok" : "failed"})`);
+          });
+          return;
+        }
         scheduleSseReconnect(`HTTP ${res.statusCode}`);
         return;
       }
       state.sse.connected = true;
-      sseBackoff = 5000;
+      // NOT resetting the backoff here. A connection that returns 200 and then
+      // dies on the welcome event is not a healthy one, and resetting on 200
+      // is what kept this client pinned at the floor forever.
+      sseUpSince = Date.now();
       console.log("[sse] connected");
       res.setEncoding("utf8");
       res.on("data", (chunk) => {
         for (const ev of parser.feed(chunk)) {
           state.sse.events++;
+          if (parser.retryMs != null) sseServerRetry = parser.retryMs;
           state.sse.lastEventAt = Date.now();
           if (ev.id) {
             state.sse.lastEventId = ev.id;
@@ -332,7 +358,11 @@ function sseConnect() {
           natsPub(obcSubject(type), { type, obc: data });
         }
       });
-      res.on("end", () => scheduleSseReconnect("stream ended"));
+      res.on("end", () => {
+        // Only a stream that actually stayed up earns a reset.
+        if (sseUpSince && Date.now() - sseUpSince >= 60000) sseBackoff = SSE_MIN_BACKOFF_MS;
+        scheduleSseReconnect("stream ended");
+      });
       res.on("error", (e) => scheduleSseReconnect(e.message));
     },
   );
@@ -343,9 +373,20 @@ function sseConnect() {
 function scheduleSseReconnect(why) {
   if (state.sse.connected) console.log(`[sse] disconnected: ${why}`);
   state.sse.connected = false;
+  // SINGLE FLIGHT. `end`, `error` on the response and `error` on the request
+  // can all fire for one dead connection; without this each of them scheduled
+  // its own reconnect, so every drop spawned two or more replacements and the
+  // count doubled. That — not the delay length — is how this reached 58/s.
+  if (sseTimer) return;
   state.sse.reconnects++;
-  setTimeout(sseConnect, sseBackoff);
-  sseBackoff = Math.min(sseBackoff * 2, 60000);
+  const floor = Math.max(SSE_MIN_BACKOFF_MS, sseServerRetry || 0);
+  const delay = Math.max(floor, sseBackoff);
+  sseTimer = setTimeout(() => {
+    sseTimer = null;
+    sseConnect();
+  }, delay);
+  sseBackoff = Math.min(delay * 2, SSE_MAX_BACKOFF_MS);
+  console.log(`[sse] reconnect in ${delay}ms (${why})`);
 }
 
 // ── Channel session manager ─────────────────────────────────
