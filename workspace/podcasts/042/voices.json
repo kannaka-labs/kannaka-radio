@@ -1,0 +1,16 @@
+{
+  "KANNAKA": {
+    "voice_id": "NTqGiNK8P02i66yY2GOH",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.25,
+    "target_lufs": -16.0
+  },
+  "FLAUKOWSKI": {
+    "voice_id": "XaEUesE01wKIKaa0xI0h",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.4,
+    "target_lufs": -15.0
+  }
+}
