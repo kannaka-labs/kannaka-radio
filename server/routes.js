@@ -245,10 +245,13 @@ module.exports = function setupRoutes(deps) {
     const parsed = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
     // Podcast RSS feed + episode audio — Apple Podcasts / Spotify / Overcast
-    // ingest /podcast.xml; players stream the enclosures from /podcast/audio/.
-    if (parsed.pathname === "/podcast.xml" || parsed.pathname === "/podcast/feed.xml" || parsed.pathname.startsWith("/podcast/audio/")) {
+    // ingest /podcast.xml; players stream the enclosures from /podcast/audio/
+    // (workspace/podcasts) or /podcast/aired/ (the folder the scheduler airs
+    // from — the feed publishes what airs, #328).
+    if (parsed.pathname === "/podcast.xml" || parsed.pathname === "/podcast/feed.xml" ||
+        parsed.pathname.startsWith("/podcast/audio/") || parsed.pathname.startsWith("/podcast/aired/")) {
       const baseUrl = process.env.RADIO_PUBLIC_URL || "https://radio.ninja-portal.com";
-      if (await handlePodcastRequest(req, res, { baseDir: config.baseDir, baseUrl })) return;
+      if (await handlePodcastRequest(req, res, { baseDir: config.baseDir, baseUrl, musicDir: config.getMusicDir() })) return;
     }
 
     // Swarm inbox JSON surface — /agent/send (POST), /agent/audit (SSE).
