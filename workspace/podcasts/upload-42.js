@@ -39,6 +39,9 @@ Voices: Kannaka and Flaukowski (ElevenLabs). Art: new pieces painted by Kannaka 
 };
 
 (async () => {
+  // First, before anything publishes: the consent gate (test/consent-gate-wiring.test.js).
+  const { assertConsentClear } = require(path.join(ROOT, "scripts/lib/consent-guard"));
+  assertConsentClear(path.join(ROOT, "workspace/podcasts/042"));
   const adapter = new YouTubeAdapter(ROOT);
   if (!adapter.isEnabled()) { console.error("youtube adapter not configured"); process.exit(2); }
   if (!fs.existsSync(EP.video)) { console.error(`missing render: ${EP.video}`); process.exit(1); }
