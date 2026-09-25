@@ -1,0 +1,16 @@
+[Unit]
+Description=Kannaka Nostr voice signer (ADR-0043 — remote signer over NATS)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=opc
+WorkingDirectory=/home/opc/voice-poster
+Environment=NODE_PATH=/home/opc/voice-poster/node_modules
+ExecStart=/usr/bin/node /home/opc/voice-poster/voice-signer.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

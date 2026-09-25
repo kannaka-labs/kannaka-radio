@@ -1,0 +1,6 @@
+# /etc/systemd/system/kannaka-voice-signer.service.d/nats-creds.conf  (root, 0600)
+# The real file holds the password; this example never does.
+[Service]
+Environment=VOICE_SIGNER_NATS_URL=nats://swarm.ninja-portal.com:4222
+Environment=VOICE_SIGNER_NATS_USER=kannaka_internal
+Environment=VOICE_SIGNER_NATS_PASS=<from /etc/kannaka-witness.env on O2>
