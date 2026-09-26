@@ -63,6 +63,7 @@ kannaka inbox send  kannaka-prime ping
 | `GET /api/swarm/peers` | Cached peer directory (refreshed via `kannaka swarm peers` every 30 s). |
 | `GET /api/floor` | The Floor's snapshot: counts, vibe, recent reaction histogram, **trackStats** (per-track reactions over last 6h, fueling the resonance loop). |
 | `GET /api/dreams` | Recent dream cycle reports — strengthened, pruned, hallucinated wavefronts. |
+| `GET /api/similar?track=X` | Tracks the HRM associates with `X` (via `kannaka recall`). `?limit=N` (1–25, default 5). `503` with `degraded: true` when the memory bridge is unavailable. |
 | `GET /api/history` | Recently played tracks with played-at timestamps. Last 200 entries (~12h). `?limit=N` to cap. |
 
 ## HTTP — Triggers (operator only — bearer token required)

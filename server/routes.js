@@ -146,6 +146,9 @@ function publicOrigin(req) {
  */
 module.exports = function setupRoutes(deps) {
   const { djEngine, perception, nats, flux, live, voiceDJ, syncManager, voteManager, webrtcSignaling, musicGen, broadcast, floor, config, gsHub, adStore, adPayments, adBridge, gsa } = deps;
+  // HRM bridge for /api/similar (#290). Injectable for tests; otherwise the
+  // shared module, which server/index.js points at KANNAKA_BIN.
+  const memoryBridge = deps.memoryBridge || require("../memory-bridge");
   // Rate/concurrency/daily caps for the unauthenticated ad TTS preview — the
   // one place a stranger can make the station render audio, so it is guarded
   // against the cost + disk-fill DoS the design review flagged.
@@ -2213,6 +2216,36 @@ module.exports = function setupRoutes(deps) {
           }));
         }
       });
+      return;
+    }
+
+    // GET /api/similar?track=<title>&limit=5 — tracks the HRM associates with
+    // a given one, via `kannaka recall`. Lived in the legacy server.js and was
+    // lost when that monolith was removed (kr#6), so the default `npm start`
+    // runtime answered 404 for an advertised endpoint (#290). Same response
+    // shape as before; an unavailable bridge is now an explicit 503 rather
+    // than an empty 200 that looks like "no similar tracks".
+    if (parsed.pathname === "/api/similar" && req.method === "GET") {
+      const trackQuery = (parsed.searchParams.get("track") || "").trim().slice(0, 200);
+      if (!trackQuery) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "track parameter required" }));
+        return;
+      }
+      const rawLimit = parseInt(parsed.searchParams.get("limit"), 10);
+      const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(25, rawLimit)) : 5;
+      const unavailable = (why) => {
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ query: trackQuery, results: [], source: "unavailable", degraded: true, error: why }));
+      };
+      Promise.resolve()
+        .then(() => memoryBridge.recallSimilarTracks(trackQuery, limit))
+        .then((results) => {
+          if (!results) { unavailable("memory_bridge_unavailable"); return; }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ query: trackQuery, results, source: "hrm" }));
+        })
+        .catch(() => unavailable("memory_bridge_failed"));
       return;
     }
 
