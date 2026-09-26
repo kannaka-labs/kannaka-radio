@@ -61,8 +61,15 @@ for (const f of EPISODES) {
   fs.utimesSync(path.join(showDir, f), OLD, OLD);
 }
 
+// The fixture files were just created, so their ctime is "now" — and since
+// #327 the new-release rule reads when a file LANDED (max of mtime, ctime),
+// not mtime alone. Run the scheduler's release clock 30 days ahead so the
+// whole season has long since landed and the rotation is what these tests
+// observe. Tests that need a fresh drop move the clock explicitly.
+const CLOCK_AHEAD_MS = 30 * 24 * 60 * 60 * 1000;
+
 function makeScheduler() {
-  return new PodcastScheduler({
+  const s = new PodcastScheduler({
     djEngine: { state: { channel: "dj", playlist: [], playlistMeta: [], history: [] } },
     voiceDJ: {},
     broadcast: () => {},
@@ -75,6 +82,8 @@ function makeScheduler() {
       intro: (t) => t,
     },
   });
+  s._nowMs = () => Date.now() + CLOCK_AHEAD_MS;
+  return s;
 }
 
 console.log("TSOF schedule display");
@@ -115,18 +124,19 @@ check("both airings on one day play the same episode (second-chance replay)", ()
 check("a fresh drop preempts the rotation for 48h, then hands it back", () => {
   const s = makeScheduler();
   const fresh = path.join(showDir, "TSOF-E08-Obsidian-Echo.mp3");
-  const now = new Date();
+  const now = new Date(s._nowMs());
   fs.utimesSync(fresh, now, now);
   s._chicagoNow = () => new Date(2026, 7, 23, 9, 0, 0);
   let pick = s.pickTodayEpisode();
   assert.strictEqual(pick.file, "TSOF-E08-Obsidian-Echo.mp3");
   assert.strictEqual(pick.reason, "new-release");
 
-  // Age it past the window — the rotation resumes.
-  const stale = new Date(Date.now() - 49 * 60 * 60 * 1000);
-  fs.utimesSync(fresh, stale, stale);
+  // 49h later — the rotation resumes.
+  const later = now.getTime() + 49 * 60 * 60 * 1000;
+  s._nowMs = () => later;
   pick = s.pickTodayEpisode();
   assert.strictEqual(pick.reason, "rotation");
+  fs.utimesSync(fresh, OLD, OLD); // leave the fixture as the other checks expect
 });
 
 check("an empty or missing show folder reports nothing rather than guessing", () => {
