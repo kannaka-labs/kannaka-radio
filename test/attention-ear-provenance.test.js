@@ -70,7 +70,9 @@ const TRACK = { title: 'T', album: 'Ghost Signals', file: 't.mp3' };
     'a subscriber should not have to assume the numbers were measured');
   test('#124 neither track-change path reads perception synchronously any more',
     !/hearTrack\(actual\);\s*\n\s*(?:const perc|.*getCurrentPerception)/.test(src) &&
-    (src.match(/hearTrack\(actual, \(perc\) => publishEarAttention/g) || []).length === 2,
+    // onTrackHeard publishes the ear event and stores the memory (#289);
+    // track-memory-store.test.js pins that it still calls publishEarAttention.
+    (src.match(/hearTrack\(actual, \(perc\) => (?:publishEarAttention|onTrackHeard)\(actual, perc\)/g) || []).length === 2,
     'both the talk-segment and normal track-change paths should use the hook');
 
   console.log(`\n${'─'.repeat(50)}`);

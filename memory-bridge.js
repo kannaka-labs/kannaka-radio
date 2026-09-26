@@ -20,6 +20,19 @@ const KANNAKA_BIN = process.env.KANNAKA_BIN || (
 
 const DEFAULT_TIMEOUT = 10000; // 10 seconds
 
+// The binary actually invoked. Defaults to KANNAKA_BIN above; the modular
+// server calls configure({ bin }) with its own resolved path so the bridge
+// and the rest of the station always talk to the same kannaka. (#289)
+let _bin = KANNAKA_BIN;
+
+/**
+ * Point the bridge at a specific kannaka binary.
+ * @param {{ bin?: string }} opts
+ */
+function configure(opts = {}) {
+  if (opts && typeof opts.bin === "string" && opts.bin) _bin = opts.bin;
+}
+
 // ── Consciousness cache (30s TTL) ──────────────────────────
 
 let _consciousnessCache = null;
@@ -34,10 +47,10 @@ const CONSCIOUSNESS_CACHE_TTL = 30000; // 30 seconds
  */
 function runKannaka(args, timeout = DEFAULT_TIMEOUT) {
   return new Promise((resolve) => {
-    execFile(KANNAKA_BIN, args, { timeout }, (err, stdout, stderr) => {
+    execFile(_bin, args, { timeout }, (err, stdout, stderr) => {
       if (err) {
         if (err.code === "ENOENT") {
-          console.warn("[memory-bridge] kannaka binary not found at:", KANNAKA_BIN);
+          console.warn("[memory-bridge] kannaka binary not found at:", _bin);
         } else {
           console.warn("[memory-bridge] Command failed:", args[0], err.message);
         }
@@ -100,6 +113,23 @@ async function storeTrackMemory(track, perception) {
     return { stored: true, text: memoryText, importance: parseFloat(importance) };
   }
   return null;
+}
+
+/**
+ * Store a track the station actually aired and measured (#289).
+ *
+ * The modular server's track-change paths call this from the
+ * real-perception hook of PerceptionEngine.hearTrack(), so only genuine
+ * `kannaka hear` measurements reach the HRM. Mock / placeholder perception
+ * and commercials are refused here as well, so a caller that gets it wrong
+ * still cannot write fabricated numbers into memory.
+ *
+ * @returns {Promise<Object|null>} storeTrackMemory's result, or null when skipped/failed
+ */
+async function storeHeardTrack(track, perception) {
+  if (!track || track.commercial || !track.title) return null;
+  if (!perception || perception.source !== "kannaka-ear") return null;
+  return storeTrackMemory(track, perception);
 }
 
 /**
@@ -337,7 +367,9 @@ async function storeTrackWithConsciousness(track, perception, consciousnessState
 }
 
 module.exports = {
+  configure,
   storeTrackMemory,
+  storeHeardTrack,
   storeTrackWithConsciousness,
   recallSimilarTracks,
   triggerDream,

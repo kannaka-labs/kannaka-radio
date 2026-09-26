@@ -72,9 +72,10 @@ test('#140 exactly the two track-change paths refresh metadata', () => {
 });
 
 test('#124 both paths publish an ear attention event (the mirror drift)', () => {
-  assert.ok(/publishEarAttention\(actual, perc\)/.test(talkSegmentBranch()),
+  // onTrackHeard wraps publishEarAttention (#289), pinned in track-memory-store.test.js.
+  assert.ok(/(?:publishEarAttention|onTrackHeard)\(actual, perc\)/.test(talkSegmentBranch()),
     'talk-segment path lost its ear publish');
-  assert.ok(/publishEarAttention\(actual, perc\)/.test(normalBranch()),
+  assert.ok(/(?:publishEarAttention|onTrackHeard)\(actual, perc\)/.test(normalBranch()),
     'normal path lost its ear publish');
 });
 

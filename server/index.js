@@ -109,6 +109,10 @@ if (!FLUX_TOKEN) console.warn("[config] FLUX_TOKEN not set — Flux publishing w
 const KANNAKA_BIN = process.env.KANNAKA_BIN ||
   path.join(BASE_DIR, "..", "kannaka-memory", "target", "release", process.platform === "win32" ? "kannaka.exe" : "kannaka");
 
+// The same binary for the HRM bridge as for everything else here. (#289)
+const memoryBridge = require("../memory-bridge");
+memoryBridge.configure({ bin: KANNAKA_BIN });
+
 const SPA_PATH = path.join(BASE_DIR, "workspace", "index.html");
 const VOICE_DIR = path.join(BASE_DIR, "chunks", "voice");
 const CHUNKS_DIR = path.join(BASE_DIR, "chunks");
@@ -171,6 +175,26 @@ function publishEarAttention(track, perc) {
       },
     }));
   } catch (_) { /* best-effort — a publish failure must not break playback */ }
+}
+
+/**
+ * Real-perception hook for a track that just started airing. Fired by
+ * PerceptionEngine.hearTrack() only once `kannaka hear` has measured it.
+ *
+ * Publishes the ear attention event (#124) AND stores the heard track in
+ * kannaka-memory. The legacy server.js did the store on every advance; the
+ * modular server never did, so `npm start` silently stopped feeding the HRM
+ * (#289). Both track-change branches call this one hook so they cannot drift
+ * apart on it. Fire-and-forget: a slow or failing `kannaka remember` must
+ * never hold up playback.
+ */
+function onTrackHeard(track, perc) {
+  publishEarAttention(track, perc);
+  memoryBridge.storeHeardTrack(track, perc).then((r) => {
+    if (r && r.stored) console.log(`   \u{1F9E0} stored in HRM: "${track.title}" (importance ${r.importance})`);
+  }).catch((e) => {
+    console.warn(`   [memory-bridge] store failed: ${e && e.message}`);
+  });
 }
 
 // Icecast listener cache — populated by the poller below. /api/listeners
@@ -374,7 +398,7 @@ const djEngine = new DJEngine({
           // fills in `kannaka hear` output ~500ms later — so the attention bus
           // received fabricated tempo/centroid/RMS/pitch on every single track
           // change and never once saw the real measurement. (#124)
-          perception_.hearTrack(actual, (perc) => publishEarAttention(actual, perc));
+          perception_.hearTrack(actual, (perc) => onTrackHeard(actual, perc));
           // Push the new metadata to Icecast. The normal track-change path
           // below does this; this branch did not, so every track that followed
           // a DJ talk segment left /stream and /preview listeners looking at
@@ -416,7 +440,7 @@ const djEngine = new DJEngine({
       // the mock. So KANNAKA.attention.ear was both fabricated and rare. Same
       // real-perception hook here, so an ear observation lands on every track
       // change that actually got measured. (#124)
-      perception_.hearTrack(actual, (perc) => publishEarAttention(actual, perc));
+      perception_.hearTrack(actual, (perc) => onTrackHeard(actual, perc));
       // Push the same metadata to Icecast so listeners on /preview see
       // a Now-Playing update (ADR-0004 Phase 2 stopgap, no Liquidsoap).
       try { require("./icecast-metadata").updateMetadata(actual); } catch (_) {}
