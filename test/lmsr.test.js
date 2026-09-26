@@ -155,6 +155,82 @@ run('a buy too small to move the cost function is refused (no free dust shares)'
   assert.ok(lmsrTradeCost([0, 0], 10, 0, 1e-6).cost > 0);
 });
 
+// ── #296: mirror ghostsignals 0.2.0 — precise trade cost ──────────────────
+// C(q+d) − C(q) subtracts two numbers of size ~b·ln(n) to get one of size
+// ~p·d, so a small trade loses most of its digits (1e-9 shares was ~1e-5
+// relative off). The crate's closed form b·ln1p(p_i·expm1(d/b)) keeps them.
+
+// Values printed by the reference crate itself (NickFlach/ghostsignals-rs
+// 0.2.0, `ghostsignals::trade_cost`, release build) — not by this port.
+const RUST_TRADE_COST = [
+  { q: [0, 0], b: 10, idx: 0, shares: 1e-9, cost: 5.000000000125e-10 },
+  { q: [0, 0], b: 100, idx: 1, shares: 1e-9, cost: 5.000000000012501e-10 },
+  { q: [5, -3, 1], b: 7.5, idx: 1, shares: 1e-9, cost: 1.782441401221674e-10 },
+  { q: [120, 80], b: 50, idx: 0, shares: 1e-9, cost: 6.899744811297516e-10 },
+  { q: [0, 0], b: 10, idx: 0, shares: 1e-6, cost: 5.000000125e-7 },
+  { q: [3, 1, 2], b: 4, idx: 2, shares: 2.5, cost: 9.982964712133825e-1 },
+  { q: [0, 0], b: 10, idx: 0, shares: 1e4, cost: 9.9930685281944e3 },
+];
+
+const relErr = (a, ref) => Math.abs(a - ref) / Math.abs(ref);
+
+run('trade cost matches the ghostsignals 0.2.0 crate to 1e-13 relative, incl. 1e-9-share trades', () => {
+  for (const c of RUST_TRADE_COST) {
+    const { cost } = lmsrTradeCost(c.q, c.b, c.idx, c.shares);
+    const e = relErr(cost, c.cost);
+    assert.ok(e < 1e-13, `q=${JSON.stringify(c.q)} b=${c.b} shares=${c.shares}: ${cost} vs crate ${c.cost} (rel err ${e.toExponential(2)})`);
+  }
+});
+
+run('tiny trades (1e-9 shares) agree with an independent 2nd-order series to 1e-12 relative', () => {
+  // For x = d/b → 0: C(q+d·e_i) − C(q) = b·ln(1 + p(eˣ−1)) = p·d·(1 + (1−p)·x/2) + O(p·d·x²).
+  // The truncation term is < 1e-14 relative here, and p comes from the softmax
+  // (lmsrPrices), not from the code under test — an independent reference.
+  let checked = 0, worst = 0;
+  for (let i = 0; i < 2000; i++) {
+    const { n, b, q } = randomState();
+    const idx = Math.floor(rnd() * n);
+    const d = 1e-9;
+    const p = lmsrPrices(q, b)[idx];
+    const ref = p * d * (1 + (1 - p) * (d / b) / 2);
+    let cost;
+    try { ({ cost } = lmsrTradeCost(q, b, idx, d)); } catch (e) {
+      // Only a trade below the float resolution of C(q) may be refused as dust.
+      assert.match(e.message, /too small/);
+      assert.ok(ref < Math.abs(lmsrCost(q, b)) * Number.EPSILON, `refused a resolvable trade: ref cost ${ref}, C(q)=${lmsrCost(q, b)}`);
+      continue;
+    }
+    const e = relErr(cost, ref);
+    worst = Math.max(worst, e);
+    assert.ok(e < 1e-12, `1e-9 shares: ${cost} vs series ${ref} (rel err ${e.toExponential(2)}, q=${JSON.stringify(q)}, b=${b}, idx=${idx})`);
+    checked++;
+  }
+  assert.ok(checked > 1000, `only ${checked} tiny trades were priced`);
+});
+
+run('closed form agrees with the direct C(q+d) − C(q) on moderate trades (1e-10 relative)', () => {
+  for (let i = 0; i < 2000; i++) {
+    const { n, b, q } = randomState();
+    const idx = Math.floor(rnd() * n);
+    const d = Math.exp(rnd() * 5 - 2) * b;          // 0.14b .. 20b: no cancellation to speak of
+    const qAfter = q.slice(); qAfter[idx] += d;
+    const direct = lmsrCost(qAfter, b) - lmsrCost(q, b);
+    const { cost } = lmsrTradeCost(q, b, idx, d);
+    // Absolute floor: the direct form itself is only good to ~ulp(C(q)).
+    const tol = 1e-10 * Math.abs(direct) + 8 * Number.EPSILON * Math.abs(lmsrCost(q, b));
+    assert.ok(Math.abs(cost - direct) <= tol, `${cost} vs direct ${direct} (q=${JSON.stringify(q)}, b=${b}, d=${d})`);
+  }
+});
+
+run('a buy past exp() overflow (d/b > 709) falls back to log-sum-exp and stays finite', () => {
+  // expm1(1000) = Infinity, so the closed form is not finite; the fallback
+  // gives b·(ln((e^1000 + 1)/2)) = 1000 − ln 2 for b = 1.
+  const { cost } = lmsrTradeCost([0, 0], 1, 0, 1000);
+  assert.ok(Number.isFinite(cost) && Math.abs(cost - (1000 - Math.LN2)) < 1e-9, `cost ${cost}`);
+  const big = lmsrTradeCost([0, 5, -5], 0.01, 2, 1e6);
+  assert.ok(Number.isFinite(big.cost) && big.cost > 0 && big.cost <= 1e6, `cost ${big.cost}`);
+});
+
 run('lmsrTradeCost does not mutate its input q', () => {
   const q = [1, 2, 3];
   lmsrTradeCost(q, 5, 1, 2);
