@@ -2102,33 +2102,39 @@ module.exports = function setupRoutes(deps) {
     //
     // Use real `kannaka search` (literal, fast, read-only — added in
     // kannaka-memory v0.5.0) against an audio-themed query and pull the
-    // top hits. Fall through to mockDreams on any failure so the player
-    // page always gets a response.
+    // top hits.
+    //
+    // On failure this used to answer 200 with generated mock dreams (#297),
+    // so a broken or drifting memory bridge looked like a radio that had been
+    // dreaming. Now a failure is a failure: 503 when the bridge could not be
+    // run, 502 when it answered with something that is not JSON, both with
+    // `degraded: true`, an empty `dreams` list, and the reason. The body is
+    // still JSON so the player's fetch chain never blocks on it.
     if (parsed.pathname === "/api/dreams") {
       execFile(config.kannakabin, ["search", "audio perception dream", "--limit", "20", "--json"],
         { timeout: 15000 }, (err, stdout) => {
-          // Mock fallbacks are labelled `synthetic: true` so the SPA (and
-          // any API consumer) can tell placeholder dreams from live
-          // HRM-backed results — the trigger endpoint already does this,
-          // and unlabelled mocks were the remaining half of #206.
-          if (err || !stdout) {
-            const mockDreams = djEngine.generateMockDreams();
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ ...mockDreams, synthetic: true }));
+          const degraded = (status, error, detail) => {
+            res.writeHead(status, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ dreams: [], degraded: true, source: "unavailable", error, detail }));
+          };
+          if (err) {
+            degraded(503, "memory_bridge_failed", err.killed ? "kannaka search timed out after 15s" : String(err.message || err).slice(0, 200));
             return;
           }
-          try {
-            const data = JSON.parse(stdout);
-            // The player consumes `{ dreams: [...] }`. kannaka v0.5.0
-            // search returns a bare array; wrap it. Older mockDreams
-            // already used the wrapped shape so this is consistent.
-            const dreams = Array.isArray(data) ? data : (data.dreams || data);
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ dreams }));
-          } catch {
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ ...djEngine.generateMockDreams(), synthetic: true }));
+          let data;
+          try { data = JSON.parse(stdout); } catch {
+            degraded(502, "memory_bridge_unparseable", "kannaka search did not return JSON");
+            return;
           }
+          // The player consumes `{ dreams: [...] }`. kannaka v0.5.0 search
+          // returns a bare array; wrap it.
+          const dreams = Array.isArray(data) ? data : (data && Array.isArray(data.dreams) ? data.dreams : null);
+          if (!dreams) {
+            degraded(502, "memory_bridge_unexpected_shape", "kannaka search returned JSON without a dreams array");
+            return;
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ dreams }));
         });
       return;
     }
@@ -2167,7 +2173,8 @@ module.exports = function setupRoutes(deps) {
             // A deep dream cannot finish inside the 60s budget; say so rather
             // than leaving the caller to guess why it "failed".
             hint: err.killed ? `dream timed out after 60s (mode=${rawMode})` : undefined,
-            fallback: djEngine.generateMockDream()
+            // No `fallback` mock dream any more (#297): a failed trigger
+            // must not carry something that looks like a dream result.
           }));
           return;
         }
@@ -2190,8 +2197,20 @@ module.exports = function setupRoutes(deps) {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: true, mode: rawMode, dream: result }));
         } catch {
+          // Exit 0 but no JSON (#297). This used to answer ok:true with a
+          // generated mock dream, i.e. a success nobody verified. The process
+          // did exit cleanly, so say that — but do not claim a dream result,
+          // do not fabricate one, and do not broadcast one to listeners.
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ ok: true, mode: rawMode, dream: djEngine.generateMockDream(), synthetic: true }));
+          res.end(JSON.stringify({
+            ok: false,
+            degraded: true,
+            error: "dream_result_unparseable",
+            mode: rawMode,
+            exited_cleanly: true,
+            message: "kannaka dream exited 0 but did not return JSON; the result could not be verified",
+            output: String(stdout || "").trim().slice(-500),
+          }));
         }
       });
       return;
