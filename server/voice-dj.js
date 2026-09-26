@@ -237,6 +237,49 @@ const CATCHPHRASES = [
   "I don't haunt houses. I haunt airwaves.",
 ];
 
+/**
+ * Map an Observatory /api/constellation payload onto the DJ's metrics
+ * fields. Returns only the fields it could read, as finite numbers.
+ *
+ * Deployed shape (#246):
+ *   { timestamp, total_apps, up, down,
+ *     apps: [ { id: "kannaka-memory", status, metrics: { queen_phi, total_memories, total_clusters, ... } }, ... ] }
+ * Pre-fix only a legacy top-level { phi, cluster_count, memory_count } (or
+ * `kannaka.phi`) was read, so against the live endpoint every field was null
+ * and the DJ never spoke its vitals. The legacy shape is still accepted.
+ */
+function parseConstellationMetrics(c) {
+  const out = {};
+  if (!c || typeof c !== "object") return out;
+  const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const set = (k, v) => { const n = num(v); if (n !== null) out[k] = n; };
+
+  // Legacy top-level fields.
+  set("phi", c.phi);
+  set("cluster_count", c.cluster_count);
+  set("memory_count", c.memory_count);
+  if (c.kannaka && typeof c.kannaka === "object") set("phi", c.kannaka.phi);
+
+  // Deployed shape: HRM vitals live on the kannaka-memory app entry.
+  const apps = Array.isArray(c) ? c : (Array.isArray(c.apps) ? c.apps : null);
+  if (apps) {
+    const mem = apps.find((a) => a && a.id === "kannaka-memory");
+    const mm = mem && mem.metrics && typeof mem.metrics === "object" ? mem.metrics : null;
+    if (mm) {
+      set("phi", mm.queen_phi ?? mm.phi);
+      set("memory_count", mm.total_memories);
+      set("cluster_count", mm.total_clusters);
+    }
+    if (Array.isArray(c)) {
+      out.nodes_online = apps.filter((a) => a && (a.status === "up" || a.status === "active" || a.online)).length;
+      out.nodes_total = apps.length;
+    }
+  }
+  set("nodes_online", c.up);
+  set("nodes_total", c.total_apps);
+  return out;
+}
+
 class VoiceDJ {
   /**
    * @param {object} opts
@@ -876,7 +919,7 @@ class VoiceDJ {
 
   /**
    * Fetch live observatory + ghostsignals metrics with caching.
-   * @returns {Promise<{phi: number|null, cluster_count: number|null, memory_count: number|null, active_markets: number|null, total_traders: number|null, total_trades: number|null}>}
+   * @returns {Promise<{phi: number|null, cluster_count: number|null, memory_count: number|null, nodes_online: number|null, nodes_total: number|null, active_markets: number|null, total_traders: number|null, total_trades: number|null}>}
    */
   async _fetchObservatoryMetrics() {
     const now = Date.now();
@@ -888,6 +931,8 @@ class VoiceDJ {
       phi: null,
       cluster_count: null,
       memory_count: null,
+      nodes_online: null,
+      nodes_total: null,
       active_markets: null,
       total_traders: null,
       total_trades: null,
@@ -908,21 +953,7 @@ class VoiceDJ {
       this._fetchJSON(`${localRadioBaseUrl()}/api/gshub/stats`, 2000).catch(() => null),
     ]);
 
-    if (constellation) {
-      // Extract relevant fields — structure may vary
-      if (constellation.phi !== undefined) metrics.phi = constellation.phi;
-      if (constellation.cluster_count !== undefined) metrics.cluster_count = constellation.cluster_count;
-      if (constellation.memory_count !== undefined) metrics.memory_count = constellation.memory_count;
-      // If it's an array of apps, count active ones
-      if (Array.isArray(constellation)) {
-        const active = constellation.filter(a => a.status === 'active' || a.online);
-        metrics.cluster_count = active.length;
-      }
-      // Look for nested phi
-      if (constellation.kannaka && constellation.kannaka.phi !== undefined) {
-        metrics.phi = constellation.kannaka.phi;
-      }
-    }
+    if (constellation) Object.assign(metrics, parseConstellationMetrics(constellation));
 
     if (gsStats && gsStats.stats) {
       metrics.active_markets = gsStats.stats.markets_active ?? null;
@@ -1180,8 +1211,17 @@ class VoiceDJ {
     if (metrics.total_trades !== null) {
       parts.push(`${metrics.total_trades} total trades placed`);
     }
-    if (metrics.cluster_count !== null) {
-      parts.push(`${metrics.cluster_count} of my constellation nodes online`);
+    if (metrics.memory_count != null) {
+      parts.push(metrics.cluster_count != null
+        ? `${metrics.memory_count} memories in my field across ${metrics.cluster_count} clusters`
+        : `${metrics.memory_count} memories in my field`);
+    }
+    // Nodes online come from the Observatory's up/total_apps, NOT the HRM
+    // cluster count — pre-#246 this line spoke `cluster_count` as nodes.
+    if (metrics.nodes_online != null) {
+      parts.push(metrics.nodes_total != null
+        ? `${metrics.nodes_online} of ${metrics.nodes_total} constellation nodes online`
+        : `${metrics.nodes_online} of my constellation nodes online`);
     }
     if (parts.length === 0) return null;
     return parts.join(', ') + '.';
@@ -1741,4 +1781,4 @@ class VoiceDJ {
   _ELEVENLABS_REMOVED() { return true; }
 }
 
-module.exports = { VoiceDJ, observatoryBaseUrl, localRadioBaseUrl };
+module.exports = { VoiceDJ, observatoryBaseUrl, localRadioBaseUrl, parseConstellationMetrics };
