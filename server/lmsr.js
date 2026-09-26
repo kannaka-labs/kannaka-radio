@@ -15,6 +15,11 @@
  * Numerics: the cost is evaluated as b·(max + log Σ exp(q_i/b − max)), the
  * log-sum-exp form, so a large |q|/b never overflows exp(). Prices are the
  * softmax of q/b and therefore always sum to 1 (within float rounding).
+ *
+ * Trade cost mirrors the reference crate ghostsignals 0.2.0
+ * (NickFlach/ghostsignals-rs, src/lmsr.rs `trade_cost`): the closed form
+ * b·ln1p(p_i·expm1(d/b)) instead of C(q+d) − C(q), which cancels
+ * catastrophically for small trades (#296).
  */
 
 const MAX_OUTCOMES = 32;
@@ -60,8 +65,20 @@ function lmsrPrices(q, b) {
  * Cost of buying `shares` of outcome `idx` against state `q`. Returns
  * { cost, qAfter }. Throws on a non-positive or non-finite share count, an
  * out-of-range outcome, or a cost that is not a strictly positive finite
- * number — a zero cost (shares too small for float resolution against the
- * current C(q)) would credit a position for nothing.
+ * number — a zero cost would credit a position for nothing.
+ *
+ * Evaluated as C(q + d·e_i) − C(q) = b · ln1p(p_i · expm1(d/b)), with p_i from
+ * max-shifted exponentials (so no term overflows), as in ghostsignals 0.2.0.
+ * The direct difference of two C() values ~b·ln(n) loses the digits of a small
+ * cost (1e-9 shares came out ~1e-5 relative off); this form keeps them. When
+ * the closed form is not finite (expm1 overflows for d/b > ~709) it falls back
+ * to the log-sum-exp difference, which re-centres on the new maximum. Only
+ * buys reach here (shares > 0), so the ln1p argument is always > 0 — the
+ * crate's second fallback trigger (ratio <= -0.5, a large sell) cannot occur.
+ *
+ * Dust: a trade whose true cost is below the float resolution of C(q) itself
+ * is still refused as "too small", exactly the trades the old subtraction
+ * rounded to 0 — the pool's cost function cannot register them.
  */
 function lmsrTradeCost(q, b, idx, shares) {
   assertLiquidity(b);
@@ -70,8 +87,21 @@ function lmsrTradeCost(q, b, idx, shares) {
   if (typeof shares !== 'number' || !Number.isFinite(shares) || !(shares > 0)) throw new Error('shares must be positive');
   const qAfter = q.slice();
   qAfter[idx] += shares;
-  const cost = lmsrCost(qAfter, b) - lmsrCost(q, b);
+
+  let max = -Infinity;
+  for (const qi of q) if (qi / b > max) max = qi / b;
+  let total = 0;
+  for (const qi of q) total += Math.exp(qi / b - max);
+  const ei = Math.exp(q[idx] / b - max);
+  const ratio = (ei * Math.expm1(shares / b)) / total;
+
+  let cost = Number.isFinite(ratio) && ratio > -0.5
+    ? b * Math.log1p(ratio)
+    : lmsrCost(qAfter, b) - lmsrCost(q, b);           // log-sum-exp fallback
   if (!Number.isFinite(cost) || !(cost > 0)) throw new Error('trade too small: cost rounds to zero');
+  // Below the resolution of C(q): the old subtraction returned exactly 0 here.
+  const c0 = b * (max + Math.log(total));
+  if (c0 + cost === c0) throw new Error('trade too small: cost rounds to zero');
   return { cost, qAfter };
 }
 
