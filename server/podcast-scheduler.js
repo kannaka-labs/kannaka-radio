@@ -36,6 +36,15 @@ const DEFAULT_SHOW = {
 };
 
 /**
+ * The episode number a release filename carries: "GSP-041-…" → 41,
+ * "TSOF-E03-…" → 3, "GSP-007.mp3" → 7. null when there is none.
+ */
+function episodeNumber(fileName) {
+  const m = /^[A-Za-z]+[-_ ]?E?(\d{1,4})(?=[-_ .]|$)/i.exec(path.basename(String(fileName)));
+  return m ? parseInt(m[1], 10) : null;
+}
+
+/**
  * Turn an episode filename stem into something readable on a schedule.
  * "TSOF-E03-The-Whisper-Cathedral" → "E03 · The Whisper Cathedral".
  * A stem that doesn't carry the SHOW-E0N- prefix just loses its
@@ -145,25 +154,42 @@ class PodcastScheduler {
     // ── New-release priority ────────────────────────────────
     // A freshly released episode preempts the rotation for its first
     // 48 hours (both slots, both days), then the day-of-week rotation
-    // resumes. Keyed on file mtime — the release copy onto this box —
-    // so it's deterministic across restarts with no state file.
+    // resumes. Deterministic across restarts with no state file.
+    //
+    // This used to key on mtime alone, and mtime is one flag away from
+    // lying: `cp -p`, `rsync -a`, `scp -p`, `tar -x`, a backup restore or
+    // a sync tool all land a brand-new GSP-041 wearing its source's OLD
+    // mtime, and the release was silently demoted to the rotation (#327).
+    //
+    // Now:
+    //   - the candidate is the highest-numbered episode (GSP-041,
+    //     TSOF-E08 …) — by construction the newest release, and immune to
+    //     an old episode being re-tagged or re-encoded. Unnumbered
+    //     folders keep the old newest-mtime candidate.
+    //   - it is fresh when it LANDED on this box within the window:
+    //     max(mtime, ctime). ctime is set by the filesystem when the file
+    //     is created here and cannot be carried over by a
+    //     timestamp-preserving copy. (A later rename/chmod also bumps it,
+    //     which at worst re-extends the newest episode's own window.)
     const NEW_RELEASE_MS = 48 * 60 * 60 * 1000;
-    const podcastDir = path.join(this._getMusicDir(), this._show.folder);
-    let newest = null;
-    let newestMtime = 0;
-    for (const f of episodes) {
-      try {
-        const mtime = fs.statSync(path.join(podcastDir, f)).mtimeMs;
-        if (mtime > newestMtime) { newestMtime = mtime; newest = f; }
-      } catch (_) { /* unstattable file — rotation fallback covers it */ }
-    }
-    if (newest && Date.now() - newestMtime < NEW_RELEASE_MS) {
+    const release = this._newestRelease(episodes);
+    const nowMs = this._nowMs();
+    if (release) release.fresh = nowMs - release.landedMs < NEW_RELEASE_MS;
+    const diag = release ? {
+      file: release.file,
+      number: release.number,
+      mtime: new Date(release.mtimeMs).toISOString(),
+      landed: new Date(release.landedMs).toISOString(),
+      fresh: release.fresh,
+    } : null;
+    if (release && release.fresh) {
       return {
-        file: newest,
-        title: newest.replace(/\.[^.]+$/, ""),
-        index: episodes.indexOf(newest),
+        file: release.file,
+        title: release.file.replace(/\.[^.]+$/, ""),
+        index: episodes.indexOf(release.file),
         total: episodes.length,
         reason: "new-release",
+        release: diag,
       };
     }
 
@@ -174,7 +200,45 @@ class PodcastScheduler {
       index: idx,
       total: episodes.length,
       reason: "rotation",
+      release: diag,
     };
+  }
+
+  /** Wall clock for the new-release window; a method so tests can move it. */
+  _nowMs() {
+    return Date.now();
+  }
+
+  /**
+   * The episode most likely to be the latest release, with the times the
+   * new-release rule needs. Highest episode number wins (ties: latest to
+   * land); a folder with no numbered episodes falls back to newest mtime,
+   * the pre-#327 rule. null when nothing could be stat'd.
+   */
+  _newestRelease(episodes) {
+    const dir = path.join(this._getMusicDir(), this._show.folder);
+    const rows = [];
+    for (const f of episodes) {
+      try {
+        const st = fs.statSync(path.join(dir, f));
+        rows.push({
+          file: f,
+          number: episodeNumber(f),
+          mtimeMs: st.mtimeMs,
+          landedMs: Math.max(st.mtimeMs, st.ctimeMs),
+        });
+      } catch (_) { /* unstattable file — rotation fallback covers it */ }
+    }
+    if (rows.length === 0) return null;
+    const numbered = rows.filter((r) => r.number !== null);
+    if (numbered.length > 0) {
+      const top = Math.max(...numbered.map((r) => r.number));
+      return numbered.filter((r) => r.number === top)
+        .reduce((a, b) => (b.landedMs > a.landedMs ? b : a));
+    }
+    // Unnumbered: newest by mtime, judged by mtime (legacy behaviour).
+    const r = rows.reduce((a, b) => (b.mtimeMs > a.mtimeMs ? b : a));
+    return { ...r, landedMs: r.mtimeMs };
   }
 
   /**
@@ -255,6 +319,12 @@ class PodcastScheduler {
     console.log(pick.reason === "new-release"
       ? `[podcast-scheduler] ${this._show.label}: new-release priority — ${todayEpisode}`
       : `[podcast-scheduler] ${this._show.label}: today's episode (idx ${pick.index}/${pick.total}) — ${todayEpisode}`);
+    // Say what the new-release gate saw, so a rotation pick over a fresh
+    // release is greppable instead of silent (#327).
+    if (pick.release) {
+      console.log(`[podcast-scheduler] ${this._show.label}: newest release ${pick.release.file} ` +
+        `(mtime ${pick.release.mtime}, landed ${pick.release.landed}) → ${pick.reason}`);
+    }
 
     // Save current DJ state for restoration after the episode finishes
     this._savedDJState = {
@@ -431,4 +501,4 @@ class PodcastScheduler {
   }
 }
 
-module.exports = { PodcastScheduler, prettyEpisodeTitle };
+module.exports = { PodcastScheduler, prettyEpisodeTitle, episodeNumber };
