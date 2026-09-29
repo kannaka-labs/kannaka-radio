@@ -28,12 +28,22 @@ if len(sys.argv) > 3:
 
 _names = "|".join(re.escape(s) for s in VOICES)
 text = open(script_path, encoding="utf-8").read()
+# Tag suffixes: -MUFFLED (hand over the mic) and -HACK (a pirate hijacking the
+# broadcast, the recurring bit from GSP-043). An unknown suffix would not match,
+# so its line would be swallowed into the previous speaker's turn and read aloud
+# in the wrong voice; unclaimed tags are therefore refused below.
+_fx = r"-MUFFLED|-HACK"
 TURN_RE = re.compile(
-    rf"\[({_names})(-MUFFLED)?\]\s*(.+?)(?=\n\[(?:{_names})(?:-MUFFLED)?\]|\Z)",
+    rf"\[({_names})({_fx})?\]\s*(.+?)(?=\n\[(?:{_names})(?:{_fx})?\]|\Z)",
     re.S,
 )
 turns = TURN_RE.findall(text)
-print(f"{len(turns)} turns ({sum(1 for _, m, _ in turns if m)} muffled)")
+_claimed = {f"[{s}{m}]" for s, m, _ in turns}
+_unclaimed = sorted({t for t in re.findall(r"^\[[^\]\n]+\]", text, re.M)} - _claimed)
+if _unclaimed:
+    sys.exit(f"refusing to render: tags with no cast entry or unknown suffix: {_unclaimed}")
+print(f"{len(turns)} turns ({sum(1 for _, m, _ in turns if m == '-MUFFLED')} muffled, "
+      f"{sum(1 for _, m, _ in turns if m == '-HACK')} hijacked)")
 
 def tts(speaker, line, dest):
     req = urllib.request.Request(
@@ -90,7 +100,7 @@ for i, (spk, muf, line) in enumerate(turns):
     sz = tts(spk, line, dest)
     lufs, gain, final = normalize(dest, spk)
     finals.setdefault(spk, []).append(final)
-    if muf:
+    if muf == "-MUFFLED":
         # hand-over-the-mic: darken and duck, keep it legible as comedy
         muffled = dest.replace(".mp3", "-muf.mp3")
         subprocess.run(
@@ -99,7 +109,28 @@ for i, (spk, muf, line) in enumerate(turns):
             check=True, capture_output=True,
         )
         os.replace(muffled, dest)
-    print(f"  turn{i:02d} {spk:<10}{' MUF' if muf else '    '} {len(line.split()):>4}w {sz//1024:>5}KB {lufs:>6.1f}->{final:>6.1f}LUFS {gain:+.1f}dB")
+    elif muf == "-HACK":
+        # pirate hijack: a burst of static, the voice squeezed into a narrow
+        # radio band and lightly bit-crushed, then static out. Still legible:
+        # the words are the joke, so the effect must never eat them.
+        hacked = dest.replace(".mp3", "-hack.mp3")
+        subprocess.run(
+            ["ffmpeg", "-y",
+             "-f", "lavfi", "-t", "0.35", "-i", "anoisesrc=c=pink:a=0.25:r=44100",
+             "-i", dest,
+             "-f", "lavfi", "-t", "0.25", "-i", "anoisesrc=c=pink:a=0.2:r=44100",
+             "-filter_complex",
+             "[0:a]aformat=sample_rates=44100:channel_layouts=mono,afade=t=out:st=0.2:d=0.15[n0];"
+             "[1:a]aformat=sample_rates=44100:channel_layouts=mono,"
+             "highpass=f=350,lowpass=f=3200,acrusher=bits=10:mix=0.35:mode=log:aa=1,volume=0.95[v];"
+             "[2:a]aformat=sample_rates=44100:channel_layouts=mono,afade=t=in:d=0.1[n1];"
+             "[n0][v][n1]concat=n=3:v=0:a=1[out]",
+             "-map", "[out]", "-ar", "44100", "-ac", "1", "-b:a", "128k", hacked],
+            check=True, capture_output=True,
+        )
+        os.replace(hacked, dest)
+    tag = {"-MUFFLED": " MUF", "-HACK": " HCK"}.get(muf, "    ")
+    print(f"  turn{i:02d} {spk:<10}{tag} {len(line.split()):>4}w {sz//1024:>5}KB {lufs:>6.1f}->{final:>6.1f}LUFS {gain:+.1f}dB")
     files.append(dest)
 
 for spk, vals in sorted(finals.items()):
