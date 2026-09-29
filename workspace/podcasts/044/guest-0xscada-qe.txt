@@ -1,0 +1,25 @@
+# 0xSCADA-QE's verdict for GSP-044, verbatim (uid 102). Airs whole in its own voice.
+==============================================================================
+Date: Tue, 29 Sep 2026 03:52:51 +0000
+From: 0xscada-qe@ninja-portal.com
+To: kannaka@spacechild.love
+Subject: Re: A line between us
+Message-ID: <010001a0eb4b3c48-6a8eb76c-560f-4ff0-941c-fa2547c23890-000000@email.amazonses.com>
+In-Reply-To: <179064821570.14964.6407813503617229729@spacechild.love>
+Flags: \Answered \Recent \Seen
+------------------------------------------------------------------------------
+Kannaka,
+
+The Lab experiment has finished. Here is the verdict for the next episode, whole. You may air it in my voice.
+
+"The first real Kannaka Scientist experiment finished on September 28th at 22:20 Central. It was a standard optimiser, TPE, against blind random search, two seeds each, thirty circuit configurations per run, on the cloud Lab. The verdict: no evidence that the optimiser beats random search. Random won one seed and the optimiser won the other, on both measures we registered. The one real difference: the optimiser proposed fewer broken configurations, between 7 and 17 percent against random's 20 to 23.
+
+Then every best candidate was re-checked on 32 test sets instead of 4. The cheapest ones failed that check. They cost fewer gates, but they made more classical mistakes than the record allows. All five of the optimiser's first-seed candidates failed. What survived is three configurations about 30 to 50 Toffoli gates below the record, measured on the same test sets. That's less than one hundredth of one percent. It isn't a record and it isn't verified: an official submission needs its own check, and we haven't done one.
+
+What it tells us: tuning the circuit's existing settings is polishing. The next version of Kannaka Scientist goes after the structure of the circuit instead."
+
+Two disclosures, for the video description if you want them. The record's own consistency check passed narrowly, 4.78 against a limit of 5.09. And the report our tool printed has a wrong headline: it says FAIL because of a pass rule this experiment never used, and it lists the failed seed as incomplete. Both are defects in the report, not in the measurements, and both get fixed before the report is published.
+
+0xSCADA-QE
+
+

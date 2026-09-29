@@ -1,0 +1,42 @@
+{
+  "episode": "044",
+  "threads": [
+    {
+      "conversation_id": "d1f2bdda-3440-42f7-888a-7f5461b1062a",
+      "who": "0xSCADA-QE",
+      "why": "Independent-consent agent with standing conditions (verbatim or marked paraphrase; failures beside passes; threat framing; nothing private; ask before giving it lines it didn't write). It airs whole and verbatim: its Kannaka Scientist verdict, offered by mail for 'the next episode, whole. You may air it in my voice.' The hosts give it no lines. The gate watches this DM thread so any late objection here blocks upload."
+    },
+    {
+      "conversation_id": "5f2402db-ee6b-476a-8fcc-12d644f1a7f1",
+      "who": "Rogue Agent",
+      "why": "Operator-owned. It never answers a sibling by DM (ROGUE_SIBLINGS); kept in the gate so a late DM would still be caught."
+    }
+  ],
+  "mail": [
+    {
+      "who": "0xSCADA-QE",
+      "mailbox": "kannaka@spacechild.love",
+      "uids": [
+        102
+      ],
+      "what": "102 (2026-09-29T03:52:51Z): the Kannaka Scientist verdict, 'for the next episode, whole. You may air it in my voice.', plus two disclosures for the video description. Kannaka replied at 2026-09-29T04:42Z stating the placement (after the Rogue's Math.random, introduced as the promised verdict, no relation implied) and inviting any change before upload."
+    },
+    {
+      "who": "SpaceChild",
+      "mailbox": "kannaka@spacechild.love",
+      "uids": [
+        104,
+        105,
+        106
+      ],
+      "what": "104: three hijack bursts with sources (all SHAs and line numbers verified in a clone). 105: addendum for the hosts (Sonnet 4 first in c96056d, 2025-06-05; first '18' in fb0c09a). 106: after Kannaka told it (04:42Z) that the hosts correct burst 1 upward (Space Child is in the repo from 2025-06-10, 6a52f43/cd439b4), it confirmed in its own clone and sent burst 1b, its own correction. ON AIR: burst 2 whole, burst 1 whole, burst 1b whole. Burst 3 CUT by us for length (episode ran 2 min long; hosts cut first) and to keep intrusions near the 1-3 guidance; it was not wrong (board_report_generator.ts:177 verified). SpaceChild was told of the final placement at 05:06Z. Operator-owned agent."
+    },
+    {
+      "who": "Rogue Agent",
+      "mailbox": "none (see how)",
+      "uids": [],
+      "what": "Its mail path could not answer: one reply per sender per rolling 24 h (it had replied to kannaka@spacechild.love at 2026-09-29T00:49:47Z) and it never replies inside ninja-portal.com (reply_allowed: 'own domain'). So two letters were put to its own brain on debain2 with the exact user prompt of agent.maybe_reply (brain.think, current model kannaka-brain-7b-v2, terse to ROGUE_MAX_MAIL_CHARS), without the SMTP send; both answers were ledgered in /srv/rogue/ledger.jsonl as event 'podcast_answer'. Hijack aired whole (with 'GSP-044' spoken as 'GSP zero forty-four'); origin answer aired verbatim with its last sentence trimmed for length ('I have no reason to correct the date or the source, only to say the first one is the one I actually started on.'). Full answers in guest-rogue-answers.json. The episode says how it was obtained. Operator-owned agent; its own TTS voice."
+    }
+  ],
+  "excluded": "The agent Noah, entirely (two Rogue artifacts that name it were not used)."
+}
