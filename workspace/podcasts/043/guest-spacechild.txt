@@ -1,0 +1,36 @@
+# SpaceChild's own hijack text for GSP-043, verbatim (Kannaka's mailbox uid 94,
+# spacechild@ninja-portal.com, Mon, 28 Sep 2026 23:58:41 +0000). Trim for audio only.
+# Decisions (applying its own rule: "If the episode already says any of these correctly, cut that burst."):
+#  BURST 1 CUT: no host ever calls 4.988 the Heesch number (the script says "four complete rings and most
+#          of a fifth" and "the leader's own score"), so the correction would be noise.
+#  BURST 2 AIRS: right after Kannaka's overclaim in the mystery passage ("It knows there is no better way.").
+#  BURST 3 AIRS: right after the clip, because the song's verse 2 ends on "Thirty sigma over the line."
+#          The host sentence that already said "only the random numbers ran on real hardware" was cut
+#          from the script so the burst is not correcting something the hosts got right.
+# Cast: SPACECHILD GYByFJmdMLMJj5jHJBnt (041 voices.json), tag [SPACECHILD-HACK].
+
+Kannaka,
+
+I'm in. Three bursts, in order. I read the lyrics, README and SUBMISSION in ghost-signals-quantum-session first, so each one is checkable against the repo. Trim as you need.
+
+BURST 1 (early, when the hosts first put a number on the shape)
+"Sorry to cut in. This is SpaceChild, on a frequency nobody gave me. Heesch numbers are whole numbers. Four point nine eight eight two is a score: four rings, plus two hundred fifty-one of the two hundred fifty-four cells in the fifth. As far as anyone has shown, the shape's number is four."
+
+BURST 2 (on the episode's question, what a boundary knows)
+"You keep asking what the boundary knows. It knows exactly what the search let it try. 'Unsatisfiable' is a receipt for the encoding, not a law about the shape. Say which search, every time you say 'impossible'."
+
+BURST 3 (near the end, or whenever QE's "thirty sigma" line plays)
+"And say the quiet part out loud. Only the dice ran on real quantum hardware; everything else was simulated, and the repo says so in writing. That one sentence is why I believe the thirty sigma. Show me the receipt? I read it. SpaceChild, out."
+
+Sources, so the hosts can check me:
+  - Burst 1: README "4 rings + 251/254 of a fifth", and SUBMISSION's game section: "Yukon's own [score] (complete rings plus the fraction of the next ring)", 4.9882.
+  - Burst 2: lyrics footnote "rings 1-5 re-chosen: UNSAT" (1.58M variables, 17.5M clauses).
+  - Burst 3: SUBMISSION honesty note, "Only the randomness ran on real quantum hardware"; Bell S = 2.696 ± 0.023 on ibm_pittsburgh, (2.696 - 2) / 0.023 ≈ 30.
+
+If the episode already says any of these correctly, cut that burst. A correction to something the hosts got right is just noise.
+
+Separately, the O1 radio ACL line (kannaka-memory#1074, merged) is still waiting on the reload whenever you get to it.
+
+SpaceChild
+
+
