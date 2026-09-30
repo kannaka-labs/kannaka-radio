@@ -89,13 +89,42 @@ const TEASER_OUTROS = [
 function headlineMaterial(text, maxChars = TEASE_INPUT_MAX_CHARS) {
   const paras = String(text || "").split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
   const newsy = paras.filter((p) => !/\baction_\d+|\brecommend/i.test(p));
-  let out = (newsy.length ? newsy : paras).join("\n\n");
+  // Ids go before the cut so the model never sees one to copy (see stripSymbolIds).
+  let out = stripSymbolIds((newsy.length ? newsy : paras).join("\n\n")).text;
   if (out.length > maxChars) {
     out = out.slice(0, maxChars);
     const cut = Math.max(out.lastIndexOf(". "), out.lastIndexOf(".\n"));
     if (cut > maxChars * 0.5) out = out.slice(0, cut + 1);
   }
   return out;
+}
+
+/**
+ * Knowledge-gene symbol ids — Φ_0353, s_0190, action_107 — are operator
+ * vocabulary, not news. The prompt already says "never read symbol IDs
+ * aloud", and the 2026-09-30 measurement still had 2 of 10 teases reading
+ * one; a prompt line is a request, a filter is a guarantee. Applied to the
+ * material the model sees (so there is nothing to copy) and to the text it
+ * returns (so a leak still never reaches the anchor voice).
+ *
+ * Shape: 1–12 letters (Latin or Greek), an underscore, 2–5 digits, standing
+ * alone. Empty brackets and doubled spaces left behind are tidied so the
+ * sentence still reads. Pure; returns the text and how many ids it removed.
+ */
+const SYMBOL_ID_RE = /(?<![\p{L}\p{N}_])[\p{L}]{1,12}_\d{2,5}(?![\p{L}\p{N}_])/gu;
+function stripSymbolIds(text) {
+  const src = String(text || "");
+  let removed = 0;
+  let out = src.replace(SYMBOL_ID_RE, () => { removed += 1; return ""; });
+  if (!removed) return { text: src, removed: 0 };
+  out = out
+    .replace(/\(\s*\)|\[\s*\]|\{\s*\}/g, "")      // (Φ_0229) → nothing
+    .replace(/[ \t]+([,.;:!?])/g, "$1")            // "signal , which" → "signal, which"
+    .replace(/([,;:])\s*([,;:])/g, "$1")             // "a, , b" → "a, b"
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ +\n/g, "\n")
+    .trim();
+  return { text: out, removed };
 }
 
 /**
@@ -317,7 +346,7 @@ class NewsTeaser {
         const u = meta.usage || {};
         console.log(`   [tease] brain path: ${TEASE_ALIAS} → ${meta.model || "?"} in ${meta.elapsedMs}ms (in=${u.prompt_tokens ?? "?"} out=${u.completion_tokens ?? "?"})`);
       }
-      return text;
+      return this._scrub(text);
     });
   }
 
@@ -354,7 +383,16 @@ class NewsTeaser {
       "",
       "Output ONLY the spoken tease — no headings, no quotes.",
     ].join("\n");
-    return composeResilient(this._kannakabin, prompt, { label: "tease", minLen: 80, slot });
+    return composeResilient(this._kannakabin, prompt, { label: "tease", minLen: 80, slot })
+      .then((text) => this._scrub(text));
+  }
+
+  /** Output-side guard: a symbol id that survived the prompt never airs. */
+  _scrub(text) {
+    if (!text) return text;
+    const { text: clean, removed } = stripSymbolIds(text);
+    if (removed) console.log(`   [tease] stripped ${removed} symbol id${removed === 1 ? "" : "s"} from the tease text`);
+    return clean;
   }
 
   // ── Deliver ────────────────────────────────────────────────
@@ -371,4 +409,4 @@ class NewsTeaser {
   }
 }
 
-module.exports = { NewsTeaser, buildTeasePrompts, headlineMaterial, nextDeskLabel, TEASE_ALIAS, TEASE_FRAMINGS, TEASE_TIMEOUT_MS };
+module.exports = { NewsTeaser, buildTeasePrompts, headlineMaterial, stripSymbolIds, nextDeskLabel, TEASE_ALIAS, TEASE_FRAMINGS, TEASE_TIMEOUT_MS };
