@@ -26,7 +26,7 @@ const EventEmitter = require("events");
 
 const helpers = require("../server/lib/scheduler-helpers");
 const { composeShort, gatewayConfig, resetSlotBudgets, slotExhausted } = helpers;
-const { NewsTeaser, buildTeasePrompts, headlineMaterial, TEASE_ALIAS } = require("../server/news-teaser");
+const { NewsTeaser, buildTeasePrompts, headlineMaterial, nextDeskLabel, TEASE_ALIAS, TEASE_TIMEOUT_MS } = require("../server/news-teaser");
 
 // ── Stubs ────────────────────────────────────────────────────────────────
 const realHttps = https.request;
@@ -200,16 +200,31 @@ async function test(name, fn) {
   });
 
   await test("buildTeasePrompts: headline material only, ≈ ≤ 600 tokens, carries themes + framing + the ID rule", () => {
-    const { system, user } = buildTeasePrompts(INTERP, false, "Lead with the single biggest delta.");
+    const { system, user } = buildTeasePrompts(INTERP, false, "Lead with the single biggest delta.", "5 PM Central");
     const total = system.length + user.length;
     assert.ok(total <= 2500, `short prompt is ${total} chars (~${Math.round(total / 4)} tokens) — must stay ≈ ≤ 600 tokens`);
     assert.ok(user.includes("Themes: Atmospheric Stagnation, High-Pressure Blocking, Grid Load Contraction."));
     assert.ok(user.includes("Framing: Lead with the single biggest delta."));
     assert.ok(!/action_10[79]/.test(user), "operator paragraph dropped");
     assert.ok(/symbol IDs/.test(system) && /Invent nothing/.test(system));
+    assert.ok(/80 to 120 words/.test(system), "max-words nudge");
+    assert.ok(system.includes('stating its time ONLY as "5 PM Central". Never invent another time.'), "one desk time, named");
+    assert.ok(user.includes("Next full news desk: 5 PM Central."));
+    assert.ok(!/7 AM/.test(system + user), "the other desk time is not offered as an option");
     assert.ok(/half-hour between bulletins/.test(user));
-    const lead = buildTeasePrompts(INTERP, true, "x").user;
+    const lead = buildTeasePrompts(INTERP, true, "x", "7 AM Central").user;
     assert.ok(/thirty minutes before a full bulletin/.test(lead));
+    assert.ok(lead.includes("Next full news desk: 7 AM Central."));
+  });
+
+  await test("nextDeskLabel: 7 AM Central outside [07:00,17:00) Chicago, 5 PM Central inside", () => {
+    const at = (h) => new Date(2026, 8, 30, h, 30);
+    assert.strictEqual(nextDeskLabel(at(6)), "7 AM Central");
+    assert.strictEqual(nextDeskLabel(at(7)), "5 PM Central");
+    assert.strictEqual(nextDeskLabel(at(16)), "5 PM Central");
+    assert.strictEqual(nextDeskLabel(at(17)), "7 AM Central");
+    assert.strictEqual(nextDeskLabel(at(23)), "7 AM Central");
+    assert.strictEqual(nextDeskLabel(at(0)), "7 AM Central");
   });
 
   await test("NewsTeaser._compose goes through composeShort → alias, and logs the brain path", async (scratch) => {
@@ -220,7 +235,10 @@ async function test(name, fn) {
     assert.strictEqual(captured.length, 1);
     assert.strictEqual(captured[0].body.model, TEASE_ALIAS);
     assert.strictEqual(TEASE_ALIAS, "kannaka-radio");
+    assert.strictEqual(captured[0].timeoutMs, 60000, "tease waits 60 s for the brain (measured 21–42 s)");
+    assert.strictEqual(TEASE_TIMEOUT_MS, 60000);
     assert.ok(captured[0].body.messages[1].content.includes("INTERPRETATION:"));
+    assert.ok(/Next full news desk: (7 AM|5 PM) Central\./.test(captured[0].body.messages[1].content));
     assert.ok(logs.some((l) => /\[tease\] brain path: kannaka-radio → ollama_chat\/kannaka-brain-current in \d+ms \(in=540 out=150\)/.test(l)), logs.join(" | "));
   });
 

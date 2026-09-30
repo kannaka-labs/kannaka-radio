@@ -46,9 +46,12 @@ const {
 // prompt is self-contained, so nothing HRM-grounded is lost by going direct.
 const TEASE_ALIAS = process.env.KANNAKA_RADIO_TEASE_MODEL || "kannaka-radio";
 // Headline material only: the first ~1100 chars of the interpretation (≈275
-// tokens), cut at a sentence. The whole short prompt lands ≈ 500–600 tokens,
-// which is what a CPU-hosted 8B can prefill inside the 20 s timeout.
+// tokens), cut at a sentence. The whole short prompt lands ≈ 500 tokens.
 const TEASE_INPUT_MAX_CHARS = 1100;
+// Wall time for one brain generation. Measured on O1 2026-09-30 at ~500
+// prompt tokens: 21.6–41.6 s (median 28 s) on debain2's CPU. Latency is not
+// listener-facing (the slot window is 15 min), so 60 s, not the 20 s default.
+const TEASE_TIMEOUT_MS = 60000;
 
 const TEASE_FRAMINGS = [
   "Open with the headline-in-one-sentence, then point listeners to the next news desk for the full read.",
@@ -99,17 +102,18 @@ function headlineMaterial(text, maxChars = TEASE_INPUT_MAX_CHARS) {
  * The short system + user prompt for composeShort. Pure: same inputs, same
  * prompts (framing is passed in so the caller keeps the random pick).
  */
-function buildTeasePrompts(interp, leadingMain, framing) {
+function buildTeasePrompts(interp, leadingMain, framing, nextDesk) {
+  nextDesk = nextDesk || nextDeskLabel(chicagoNow());
   const system = [
     "You are Gene, the news anchor on Kannaka Radio, delivering a 30-to-50-second TEASE between full news bulletins.",
     "Do not refer to yourself as Kannaka. Kannaka is the station; you are the human-voiced anchor.",
     "You read a live signal-layer interpretation of world-state data from the Flux Universe knowledge-gene feed.",
     "Rules:",
-    "- 80 to 130 words. Hard cap 150. Plain spoken prose: no headings, no quotes, no lists, no stage directions.",
+    "- 80 to 120 words. Plain spoken prose: no headings, no quotes, no lists, no stage directions.",
     "- Pick ONE headline plus at most ONE supporting beat. Tease it; don't deliver the full bulletin.",
     "- Never read symbol IDs (Φ_0353, s_0190, action_107) aloud — translate them into plain words.",
     "- Use only facts present in the interpretation. Invent nothing.",
-    "- Mention the Flux Universe source once. End by pointing to the next full news desk (7 AM or 5 PM Central).",
+    `- Mention the Flux Universe source once. End by pointing to the next full news desk, stating its time ONLY as "${nextDesk}". Never invent another time.`,
     "Output ONLY the spoken tease.",
   ].join("\n");
   const themesLine = interp.themes && interp.themes.length
@@ -125,9 +129,21 @@ function buildTeasePrompts(interp, leadingMain, framing) {
     headlineMaterial(interp.text),
     "",
     themesLine,
+    `Next full news desk: ${nextDesk}.`,
     `Framing: ${framing}`,
   ].filter((l) => l !== null).join("\n");
   return { system, user };
+}
+
+/**
+ * The desk the tease points at: 7 AM Central before the morning bulletin
+ * (and after the evening one), 5 PM Central in between. The 09-30 brain
+ * measurement produced "7 PM Central" once when the rule only listed the two
+ * options — so the prompt now names exactly one.
+ */
+function nextDeskLabel(chi) {
+  const h = chi.getHours();
+  return (h >= 7 && h < 17) ? "5 PM Central" : "7 AM Central";
 }
 
 class NewsTeaser {
@@ -292,10 +308,10 @@ class NewsTeaser {
       console.log(`   [tease] no gateway configured — composing via kannaka ask`);
       return this._composeViaAsk(interp, leadingMain, framing, slot);
     }
-    const { system, user } = buildTeasePrompts(interp, leadingMain, framing);
+    const { system, user } = buildTeasePrompts(interp, leadingMain, framing, nextDeskLabel(chicagoNow()));
     const meta = {};
     return composeShort(TEASE_ALIAS, system, user, {
-      label: "tease", slot, minLen: 80, maxTokens: 320, timeoutMs: 20000, meta,
+      label: "tease", slot, minLen: 80, maxTokens: 320, timeoutMs: TEASE_TIMEOUT_MS, meta,
     }).then((text) => {
       if (text) {
         const u = meta.usage || {};
@@ -355,4 +371,4 @@ class NewsTeaser {
   }
 }
 
-module.exports = { NewsTeaser, buildTeasePrompts, headlineMaterial, TEASE_ALIAS, TEASE_FRAMINGS };
+module.exports = { NewsTeaser, buildTeasePrompts, headlineMaterial, nextDeskLabel, TEASE_ALIAS, TEASE_FRAMINGS, TEASE_TIMEOUT_MS };
