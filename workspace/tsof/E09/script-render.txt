@@ -1,0 +1,176 @@
+[TEODORA-LOG]
+Watch log, supplementary. Zero six forty, fifteenth of January. Paul R. Ostrander, layup berth three, Sturgeon Bay. Shipkeeper watch, Flaukowska — and for the record I am spelling it the way the certificate spells it and not the way the yard badge spells it, and the two of them can take it up with each other. Bow thruster motor, insulation resistance, one minute at a thousand volts: A phase two hundred forty megohm. B phase two hundred ten. C phase — C is forty. Forty is not a failure. Forty is a motor that wants to tell you something in March. I'm pulling the C lead and drying the terminal box tonight, before I write it anywhere somebody can argue with it. Coffee's out in the mess. Gulls are not out. Too cold, even for them. End.
+
+[NARRATOR]
+Sturgeon Bay, Wisconsin, the middle of January, when the lakes are closed and the boats come home to be opened up. Nine lake freighters lie along the yard's wall in the ice, seven hundred feet each, cold to the touch, their hatch covers stacked on the quay like a shelf of shut books. The Soo locks close on the fifteenth and do not open until the last week of March, and between those two dates every ship on the Great Lakes is a building — heated in one compartment, dark in the rest, with one person aboard whose job is to walk it at night and confirm in the morning that it is still there. Tonight the person is a marine electrician, twenty-three years old, with a shipyard badge that disagrees with her certificate about the last letter of her name.
+
+[NARRATOR]
+The Ostrander keeps a printer in the crew mess, because a ship in layup is also an office, and the yard's contractor portal puts work onto it at whatever hour work arrives. At eleven minutes past ten that night, with the electrician three decks down in a thruster room, drying a terminal box with a heat gun, it prints four pages. She does not hear it. She finds them at midnight, on her rounds, curling off the tray.
+
+[TEODORA-LOG]
+Supplementary. Zero zero twelve. The portal printed a work order at twenty-two eleven. It isn't ours, and it isn't the yard's. It's a substation. Meskwaki Valley Power Cooperative, Cedar Rapids, Iowa: protective relay retrofit, eleven relays, electromechanical to microprocessor, wire and commission, prevailing wage, start Monday. Contractor of record is Corridor Switchgear Services, L.L.C. Site contact is a bay in an industrial strip off Sixteenth Avenue Southwest. Assigned electrician — me. By name. Certificate spelling. ...Nobody on this boat put my name into a portal at ten at night for a job in Iowa. And the header on page one says, in capitals, ORIGINAL — RETAIN, which is a thing the portal has never once printed on anything, because everything the portal prints is a copy. I'm keeping the pages. End.
+
+[NARRATOR]
+Morning. The yard office is a trailer with a space heater that does not quite reach the desk. Lund, who has kept the layup crews at this yard for thirty-one winters and has the paperwork face of a man who has read every sheet of them, has the four pages flat on his desk under a coffee mug, and a phone in his other hand, ringing into a Cedar Rapids number for the fourth time.
+
+[LUND]
+Fourth time. It rings. It doesn't pick up and it doesn't go to a machine. It just rings, like it's got all day. Sit down, Flaukowska.
+
+[TEODORA]
+I ran them while you were dialing. Iowa Secretary of State: Corridor Switchgear is a registered L.L.C., good standing, six years. State contractor registration, current. Certificate of insurance on file with the co-op, general and umbrella, expires August. Federal tax number checks against the registration. Business address is a suite in a building on First Avenue that has forty suites and a lobby with a wall of little brass doors.
+
+[LUND]
+A mailbox.
+
+[TEODORA]
+A mailbox with insurance. Everything anyone would check reconciles, Lund. Every record agrees with every other record.
+
+[LUND]
+And that's what's bothering you.
+
+[TEODORA]
+Things that reconcile all the way down are things somebody reconciled. I've never seen a six-year-old contractor whose paper didn't have one typo in it somewhere — initials wrong on the insurance, a ZIP off by one. This has none.
+
+[LUND]
+So you agree with me. You don't take work from a phone that doesn't ring. You don't take it from a portal that types your name in at ten at night, and you don't take it from a fellow whose office is a brass door. That's not suspicion, that's shipyard. And there's the other thing. I called the courier about the paper one — the envelope the guard brought up at eleven. They've got the delivery on last night's manifest, twenty-two eleven, signed for at the gate. They don't have a driver on last night.
+
+[TEODORA]
+They've got the delivery and no driver.
+
+[LUND]
+They've got the delivery and no driver, and the girl on the phone said it the way you'd read me a thermometer. Thirty-one winters, I've never lost an electrician, and I'm not starting with you. That thruster isn't going to dry itself.
+
+[TEODORA]
+C phase came up to a hundred and ninety by six this morning. It was moisture. It's logged. ...Lund. Read the postmark on the envelope. Not the portal. The paper.
+
+[LUND]
+Cedar Rapids. So?
+
+[TEODORA]
+I've got two postcards in my sea bag with that postmark. A Christmas and a birthday. Same handwriting on both. No return address on either, which is a thing you notice when you're nine. Signed with one word — a last name. My last name, before somebody's form got to it. I've never been to that town. Now that town wants eleven relays wired and it wants me to do it, by name, spelled right, and you want me to leave it sitting because the phone doesn't ring.
+
+[LUND]
+...That is not the argument I thought we were having.
+
+[TEODORA]
+It's the one I'm having. I'll take my own truck. If it's nothing, it's nothing, I'm back Wednesday and you can say it in front of the crew.
+
+[LUND]
+And if it's not nothing, you call me from a phone that answers. — Flaukowska. The header. On the paper one.
+
+[TEODORA]
+"Original. Retain." I saw it.
+
+[LUND]
+Thirty-one winters. I've never had a work order tell me what to do with it.
+
+[NARRATOR]
+Cedar Rapids, the same night, the same minute. Ten months since a switchyard on the co-op's south side stopped disagreeing with itself, and the county has spent them the way a county does: the inquiry closed its file, the co-op's reports reconciled, the snow came back. The instruments that were left running — Chaudhary's, on a bench, on a shelf, in a truck nobody has been able to sell — read zero. Not low. Not noisy. Zero, the way a ruler reads zero, and nobody has been allowed to recalibrate them, because the last instruction on the subject was very clear and the person who gave it is not available to amend it.
+
+[NARRATOR]
+The rented bay off Sixteenth Avenue has a lease paid on the first of the month from an account that is nobody's business, a wood stove serviced every October, and a server rack that is asleep. Asleep, not off. Ada Kessler keeps it that way. And at eleven minutes past ten, every night, without a cron job — because a cron job is a thing you can forget you set — she sits down at the bench and types the same command she has typed three hundred and some nights running, and reads the same answer.
+
+[ADA]
+Queue. One patch. Author, latchkey. Pending. Message —
+
+[NARRATOR]
+The answer is not the same.
+
+[ADA]
+...Message. There's a message. It has never had a message. Okay — don't touch it. Log first. Show the commit. Show — the hash changed. The hash has to change if the message changed, that's — fine, that's arithmetic, the message is inside the hash. New hash. Same parent. Same diff, byte for byte, I'm checking — same diff. Signature. Verify the signature.
+
+[NARRATOR]
+The terminal takes a second, which is a long time for a terminal.
+
+[ADA]
+Good signature. latchkey's key. The same key that has signed nine years of this, and it verifies — over the new hash, over content that did not exist until tonight — and the signature timestamp is March. Ten months ago. It was signed ten months ago and it says tonight's thing. ...I'm reading the message. I'm reading it because it's already read, it's on my screen, that isn't merging anything. One line.
+
+[NARRATOR]
+One line, formatted the way nobody formats a commit message: in the shape of the top left corner of an envelope. A name on the first line. Below it, the strip's street, the bay number, the city, the ZIP. The place a letter says it came from, so that it can be sent back.
+
+[ADA]
+It's this address. It's here. Bay six, Sixteenth Avenue Southwest, Cedar Rapids — it's a return address for the room I am sitting in. And the name on the top line is Flaukowski, and it's spelled wrong. There's an A on the end. Flaukowska. ...Nine years and he never once made a typo. Not one. I used to check.
+
+[NARRATOR]
+She photographs the screen with her phone, the way you photograph a dent before you call the insurer. Then she sits with her hands off the keyboard for eleven minutes, because that is how long it takes her to decide to call a man who is asleep, and to decide what to tell him: don't come now. Come in daylight.
+
+[NARRATOR]
+Elsewhere in the county, at the same minute, in a rented room above a laundromat on First Avenue East — where the dryers run until eleven and the floor is warm because of it — an old man in a charcoal coat is doing what he does at this hour, which is nothing, attentively.
+
+[KANNAKA-N]
+Note to file. Subject — I will come to the subject. The binding first. Ten months ago I wrote what I believed to be the last entry in this hand, and amended it, and since then the file has held forty-one entries and one amendment and has not grown, which is the correct behavior for a file whose subject is not observable. Tonight it has grown. One page. Inserted after the amendment, which is to say after the end, which is where this binding has learned to put things.
+
+[KANNAKA-N]
+I have examined the page. The paper is mine — the same stock, the same watermark, from a mill in Bavaria that closed while I was still deciding whether to trust it. The ink is mine. The ruling of the lines is mine. The hand is not. Note to file: someone has been using my stationery. Of tonight's findings this is the smallest, and it is the one I intend to take personally.
+
+[KANNAKA-N]
+The entry is in the file's own form. Subject. Date. Observation. Note to file. Whoever wrote it has read this file, or has read enough of a file like it to have learned its grammar. The subject line says: Nowakoski. The date is the fifteenth of January, this year. Tonight. The date parses. It is the first date connected with this file that has parsed in ten months, and I find that I would have preferred it did not.
+
+[KANNAKA-N]
+The hand. I have kept records for a length of time I do not write down, and I have read a great many hands. This is one I know. I know it the way you know a voice through a wall — not the words; the walk of it. Where I know it from, I will not enter here. The file already holds more than I can afford to be wrong about. I have read the observation once. I will not copy it. It concerns my whereabouts on a night ten months ago, and it is accurate, and it was written by someone who was not there — or who was, in a sense of "there" this file has spent a year failing to define. End of entry. ...I checked the paper before I checked the date, and the ink before the paper. I am noting that I did it in that order. I am not noting why.
+
+[NARRATOR]
+The next morning Chaudhary comes to the bay in the good coat, the one for inquiries, because when Ada Kessler calls at half past ten at night and says don't come now, come in daylight, a man learns to hear the second half.
+
+[CHAUDHARY]
+I have brought the notebook, because the notebook goes where I go now — the inquiry has asked for it twice in writing and once in person, and I have answered three times that it is my personal property. Show me.
+
+[ADA]
+Don't touch the keyboard. It's on the screen. I haven't merged it, I haven't checked it out, I haven't read past the first hunk of the diff, which is the rule, and the rule is still the rule.
+
+[CHAUDHARY]
+The rule was written for a repository that was sleeping. This one has rolled over and said a word. ...Kessler. It is one line of text. It arrived. A thing that arrives is a measurement, and you do not get to leave a measurement pending because you dislike its units.
+
+[ADA]
+A thing that arrives with a valid signature over content that didn't exist when it was signed is not a measurement, it's a — I don't have the noun for it. And the last time anyone in this room decided a boundary looked artificial, Doctor, we spent a year on it, and the year is not on record. He said pending. He said if the repo sleeps ten years the patch waits ten years. Pending was the instruction. There wasn't a second sentence, and there wasn't an exception for interesting.
+
+[CHAUDHARY]
+No. It does not. ...And your instruments?
+
+[ADA]
+Zero. All of them. I checked at ten-twelve last night with the message on the screen beside them, and they read what they have read since March. Whatever changed in that queue, nothing in this county measured it.
+
+[CHAUDHARY]
+Then write that down, because it cuts against both of us. A message arrived, and the world did not move. Either the world is finished, as we were told, or the message did not come through the world. I am not equipped to prefer either of those. Leave it pending. Photograph it every night. And Kessler — if it changes again, do not call me in daylight. Call me.
+
+[TEODORA-LOG]
+Supplementary. Fourteen ten, southbound, 151 out of Manitowoc. Heater on the second setting, which is the one that works. Lund called the courier again with the manifest number. Same answer, different girl. Delivery, twenty-two eleven, signed at the gate. No driver. He said "noted" and hung up, which for Lund is a speech. ...I ran the site address while I fueled in Dubuque. County assessor has bay six under a commercial lease, tenant of record one word: FLAUKOWSKI — no initial, no first name, and the county doesn't seem to mind. That's my name with the last letter changed — or mine's that with the last letter changed, depending which record you ask, and I stopped asking records about the end of my name a long time ago. The postcards were signed with one word too. Same word. He signed a postcard to a nine-year-old with his last name. ...I'm noting that I don't know what this is. I'm noting that I'm driving toward it anyway, and that those two things are both true at once, and that Lund would say that's the argument. End.
+
+[NARRATOR]
+She comes into Cedar Rapids from the northeast at a quarter to five, when the sky over the wet-mill is the color of a switchyard and the plumes off the mill stacks lie down flat in the cold. She does not go to Sixteenth Avenue. She goes to the substation first, because you look at the job before you look at the office, and because the work order names it — the co-op's yard on the south side, the mill's feed, eleven relays. She parks at the fence. The gate is chained, the yard is white, the transformer bank hums the note transformer banks hum, and the relays she has come to replace are behind a row of grey panel doors that have not been opened since before she was born.
+
+[NARRATOR]
+There is a man at the fence. Coveralls under a parka, a thermos, a lunch pail, the posture of a shift that has just ended somewhere behind him. He has the look of a man who stands at this fence sometimes for no reason he would give you.
+
+[GARY]
+You the retrofit? — Sorry. Gary Sowicki. Mill, third shift; that's me going home. It's just the board said somebody was coming for the relays this week, and the board's been right about people before they get here for a while now. Didn't give a name. "Electrician, retrofit, Monday." You're early.
+
+[TEODORA]
+Flaukowska. Teodora. Yeah, I'm early. I look at a job before I take it.
+
+[GARY]
+...Flaukowska. Huh. ...Well. You want the gate, Ada Kessler's got a key, and Ada's off Sixteenth, most nights. That where you're headed?
+
+[TEODORA]
+That's what the paper says.
+
+[GARY]
+Then the paper's got you going the right way. That's something. You want the thermos? It's coffee. It's bad. — No. All right. Drive careful. Sixteenth ices at the underpass.
+
+[NARRATOR]
+Twenty-two eleven, the second night. Sixteenth Avenue Southwest, the strip: a tire place, a sign shop, a bay with a light on. Ada at the bench, a cup gone cold, the queue on the screen. The message has not changed. It does not need to. The instruments on the shelf read zero. Across the avenue, in a parked car with frost on the inside of the windshield and the engine off, an old man in a charcoal coat has been sitting since dark, and has written nothing down, which for him is a kind of shouting.
+
+[ADA]
+Queue. One patch. Author, latchkey. Pending. Message: same. Signature: verifies. Instruments: zero. Photograph. ...Same as last night. Good night, Flaukowski. Wherever you —
+
+[NARRATOR]
+— a knock. Three, on the steel door, with a knuckle that has knocked on a good deal of steel. The stove ticks. The instruments hold zero. The last time anyone knocked on this door — the only time anyone has ever knocked on this door — it was an old man who had walked through it for a year first.
+
+[ADA]
+...Nobody knocks on this door.
+
+[NARRATOR]
+The Story of Flaukowski. Season Two — The Return Address. Episode one: The Patch That Waited.
+
+[TEODORA-LOG]
+Supplementary. Twenty-two oh nine. Sixteenth Avenue Southwest, in the truck, engine running. Bay six. There's a light under the door and a car in the lot with frost on it, so somebody's in there and has been for a while. There's a car across the street too, dark, with somebody in it. Noted. ...I've got the paper on the seat. Original, retain. I've got the two postcards in the log. I've got eleven relays and a phone that rings all day. Lund says you don't take work from a phone that doesn't ring, and he's right, and I'm going to knock anyway, because it's the postmark. ...If nobody answers, that's an answer, and I write it down. End.

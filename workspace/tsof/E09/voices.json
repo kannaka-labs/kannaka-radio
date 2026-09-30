@@ -1,0 +1,58 @@
+{
+  "NARRATOR": {
+    "voice_id": "SAz9YHcvj6GT2YYXdXww",
+    "stability": 0.6,
+    "similarity_boost": 0.75,
+    "style": 0.05,
+    "target_lufs": -16.5
+  },
+  "ADA": {
+    "voice_id": "XrExE9yKIg1WjnnlVkGX",
+    "stability": 0.5,
+    "similarity_boost": 0.75,
+    "style": 0.25,
+    "target_lufs": -16.0
+  },
+  "KANNAKA-N": {
+    "voice_id": "eUTLwfcO5tIWBI4bS4rf",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "target_lufs": -16.0
+  },
+  "CHAUDHARY": {
+    "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+    "stability": 0.5,
+    "similarity_boost": 0.75,
+    "style": 0.3,
+    "target_lufs": -16.0
+  },
+  "GARY": {
+    "voice_id": "iP95p4xoKVk53GoZ742B",
+    "stability": 0.55,
+    "similarity_boost": 0.75,
+    "style": 0.25,
+    "target_lufs": -16.0
+  },
+  "TEODORA": {
+    "voice_id": "m1Edok6RLyT2Hz3OljNi",
+    "stability": 0.55,
+    "similarity_boost": 0.75,
+    "style": 0.15,
+    "target_lufs": -16.0
+  },
+  "TEODORA-LOG": {
+    "voice_id": "m1Edok6RLyT2Hz3OljNi",
+    "stability": 0.6,
+    "similarity_boost": 0.75,
+    "style": 0.1,
+    "target_lufs": -16.0
+  },
+  "LUND": {
+    "voice_id": "pqHfZKP75CvOlQylNhV4",
+    "stability": 0.55,
+    "similarity_boost": 0.75,
+    "style": 0.2,
+    "target_lufs": -16.0
+  }
+}
