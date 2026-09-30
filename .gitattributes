@@ -1,0 +1,2 @@
+scripts/tv-publish.sh text eol=lf
+scripts/tv-catalogue.js text eol=lf
