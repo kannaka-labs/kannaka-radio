@@ -87,7 +87,7 @@ gallery artifacts (2026-09-10 → 09-29), HRM recall (no hit; top result the Jul
 0.78, colour only). The phrase is Nick's, first used in this brief. What the record DOES hold, each a candidate
 referent; the script should not pick one as "the" meaning:
 
-1. **Pirate Ship Radio Station (PSRS), the radio's pirate ancestor.** `github.com/flaukowski/PSRS`, created
+1. **Pirate Ship Radio Station (PSRS), the radio's pirate ancestor.** `github:flaukowski/PSRS`, created
    **2022-11-05**, "Decentralized Autonomous Radio Station". Its README carries a radio.co "Listen Live!" link. A file
    in it named **`Kannaka`** (commit `f69a25b`, **2025-03-04 04:22 CST**, 275 bytes, the whole of it):
    > Pirate Ship Radio Statio
