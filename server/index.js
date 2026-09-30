@@ -191,7 +191,16 @@ function publishEarAttention(track, perc) {
 function onTrackHeard(track, perc) {
   publishEarAttention(track, perc);
   memoryBridge.storeHeardTrack(track, perc).then((r) => {
-    if (r && r.stored) console.log(`   \u{1F9E0} stored in HRM: "${track.title}" (importance ${r.importance})`);
+    if (r && r.stored) {
+      console.log(`   \u{1F9E0} stored in HRM: "${track.title}" (importance ${r.importance})`);
+      return;
+    }
+    // A skipped store used to leave nothing in the journal (2026-09-30: 162
+    // starts, 0 stores, no line saying why). One line per track, with the
+    // reason: a deliberate refusal names itself; a failed `kannaka remember`
+    // points at the [memory-bridge] line runKannaka already printed.
+    const why = memoryBridge.skipReason(track, perc) || "kannaka remember failed (see the [memory-bridge] line above)";
+    console.log(`   [memory-bridge] not stored: "${(track && track.title) || "?"}" — ${why}`);
   }).catch((e) => {
     console.warn(`   [memory-bridge] store failed: ${e && e.message}`);
   });

@@ -19,6 +19,11 @@ const KANNAKA_BIN = process.env.KANNAKA_BIN || (
 );
 
 const DEFAULT_TIMEOUT = 10000; // 10 seconds
+// `kannaka remember` loads and saves the whole store and then opens a NATS
+// connection for its event, so it deserves its own budget, like `dream`'s 30 s.
+// Nothing observed on O1 needed this (2026-09-30: 0 "[memory-bridge]" lines in
+// the journal, ever); it is headroom, not a fix.
+const REMEMBER_TIMEOUT = 60000; // 60 seconds
 
 // The binary actually invoked. Defaults to KANNAKA_BIN above; the modular
 // server calls configure({ bin }) with its own resolved path so the bridge
@@ -107,7 +112,7 @@ async function storeTrackMemory(track, perception) {
     memoryText,
     "--importance",
     importance
-  ]);
+  ], REMEMBER_TIMEOUT);
 
   if (stdout !== null) {
     return { stored: true, text: memoryText, importance: parseFloat(importance) };
@@ -127,9 +132,24 @@ async function storeTrackMemory(track, perception) {
  * @returns {Promise<Object|null>} storeTrackMemory's result, or null when skipped/failed
  */
 async function storeHeardTrack(track, perception) {
-  if (!track || track.commercial || !track.title) return null;
-  if (!perception || perception.source !== "kannaka-ear") return null;
+  if (skipReason(track, perception)) return null;
   return storeTrackMemory(track, perception);
+}
+
+/**
+ * Why storeHeardTrack() would refuse this track, or null when it would store.
+ * The refusals are deliberate (#289) and were invisible: on 2026-09-30 the O1
+ * journal showed 162 track starts against 0 stores before radio#341 and
+ * 54 against 38 after it, with no line saying why any track was skipped.
+ * onTrackHeard logs this once per track that is not stored, so a silent store
+ * always has a reason in the journal. Pure.
+ */
+function skipReason(track, perception) {
+  if (!track || !track.title) return "no title";
+  if (track.commercial) return "commercial";
+  if (!perception) return "no perception";
+  if (perception.source !== "kannaka-ear") return `perception not measured (source ${perception.source || "unknown"})`;
+  return null;
 }
 
 /**
@@ -349,7 +369,7 @@ async function storeTrackWithConsciousness(track, perception, consciousnessState
     memoryText,
     "--importance",
     importance
-  ]);
+  ], REMEMBER_TIMEOUT);
 
   if (stdout !== null) {
     return {
@@ -375,5 +395,6 @@ module.exports = {
   triggerDream,
   fetchDreams,
   getConsciousnessState,
+  skipReason,
   KANNAKA_BIN,
 };

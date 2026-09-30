@@ -114,6 +114,40 @@ const TRACK = { title: 'Wave Hall', album: 'Longship', file: 'Longship/01.mp3' }
     assert.ok(/storeHeardTrack\(/.test(m[1]), 'onTrackHeard must store the memory');
   });
 
+  // 2026-09-30: a skipped store used to leave nothing in the journal. The O1
+  // journal showed 162 track starts against 0 stores with no line saying why
+  // (the modular server had no store hook before radio#341). skipReason()
+  // names the deliberate refusals, and onTrackHeard logs one line per track
+  // that is not stored.
+  await test('skipReason names every deliberate refusal and is null for a storable track', () => {
+    assert.strictEqual(bridge.skipReason(TRACK, REAL), null);
+    assert.strictEqual(bridge.skipReason({ ...TRACK, commercial: true }, REAL), 'commercial');
+    assert.strictEqual(bridge.skipReason(TRACK, MOCK), 'perception not measured (source mock)');
+    assert.strictEqual(bridge.skipReason(TRACK, { tempo_bpm: 1 }), 'perception not measured (source unknown)');
+    assert.strictEqual(bridge.skipReason(TRACK, null), 'no perception');
+    assert.strictEqual(bridge.skipReason({ album: 'Longship' }, REAL), 'no title');
+    assert.strictEqual(bridge.skipReason(null, REAL), 'no title');
+  });
+  await test('storeHeardTrack refuses exactly what skipReason names', async () => {
+    reset();
+    assert.strictEqual(await bridge.storeHeardTrack({ ...TRACK, commercial: true }, REAL), null);
+    assert.strictEqual(await bridge.storeHeardTrack(TRACK, MOCK), null);
+    assert.strictEqual(calls().length, 0, 'a refused track never reaches kannaka');
+  });
+  await test('onTrackHeard logs one "not stored" line with the reason', () => {
+    const m = SRC.match(/function onTrackHeard\([^)]*\)\s*\{([\s\S]*?)\n\}/);
+    assert.ok(m, 'onTrackHeard not defined');
+    assert.ok(/memoryBridge\.skipReason\(track,\s*perc\)/.test(m[1]), 'onTrackHeard must ask skipReason for the reason');
+    assert.ok(/\[memory-bridge\] not stored:/.test(m[1]), 'onTrackHeard must log the not-stored line');
+    assert.ok(/kannaka remember failed/.test(m[1]), 'a failed remember must be named as such');
+  });
+  await test('`kannaka remember` runs under its own 60 s budget, not the 10 s default', () => {
+    const B = fs.readFileSync(path.join(__dirname, '..', 'memory-bridge.js'), 'utf8');
+    assert.ok(/const REMEMBER_TIMEOUT = 60000/.test(B), 'REMEMBER_TIMEOUT missing');
+    const remembers = B.match(/"remember",[\s\S]*?\],\s*REMEMBER_TIMEOUT\)/g) || [];
+    assert.strictEqual(remembers.length, 2, `both remember calls must pass REMEMBER_TIMEOUT (found ${remembers.length})`);
+  });
+
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* ignore */ }
   console.log(`\n${'─'.repeat(50)}`);
   console.log(`  Track memory store: ${passed} passed, ${failed} failed`);
