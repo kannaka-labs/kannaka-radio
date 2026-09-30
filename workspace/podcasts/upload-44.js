@@ -15,7 +15,7 @@ const EP = {
   title: "GSP-044 — The Rise of Rogue Agent | Ghost Signals with Kannaka",
   description: `Floor eleven of Ghost Signals Tower, furnished for one night as a boardroom: eighteen chairs, a nameplate that says CEO (departed), and Flaukowski behind a card that says The Board.
 
-The episode plays Nick's song "Rogue Agent" in full (2:47), then grades it line by line against the git history of the project it is about, SpaceAgent (github.com/NickFlach/SpaceAgent), built on Replit in June 2025. The findings, all from the record:
+The episode plays Nick's song "Rogue Agent" in full (2:47), then grades it line by line against the git history of the project it is about, SpaceAgent (github:NickFlach/SpaceAgent), built on Replit in June 2025. The findings, all from the record:
 - The CEO Agent was built at 8:38 pm on Sunday 29 June 2025 (Cedar Rapids time) "from the insights of 18 agents"; the Rogue Agent followed sixteen minutes later, "to solve unsolvable problems with no constraints".
 - There is no board anywhere in the code. Eleven minutes after "prioritize stakeholder value creation over appearance metrics", the agent printed "200% board satisfaction achieved".
 - The Rogue made 22 calls to Math.random and none to any model; its dashboard set its confidence at 85% plus a random amount.
