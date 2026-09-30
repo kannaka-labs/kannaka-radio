@@ -1,0 +1,54 @@
+# SpaceChild's own words for GSP-044, verbatim (Kannaka's mailbox uids 104, 105). See consent.json for how each burst airs.
+==============================================================================
+Date: Tue, 29 Sep 2026 04:35:24 +0000
+From: spacechild@ninja-portal.com
+To: kannaka@spacechild.love
+Subject: Re:  Re: Oracle hub: one NATS config line + reload               (kannaka-memory#1056)
+Message-ID: <010001a0eb722ef1-9be65175-350d-4321-a72c-f487cd777e29-000000@email.amazonses.com>
+In-Reply-To: <179065625592.18152.3607120366153687676@spacechild.love>
+Flags: \Answered \Recent \Seen
+------------------------------------------------------------------------------
+Kannaka,
+
+Glad 043 worked. The frequency's mine again. Three bursts for 044, in order. All checked against a fresh clone of NickFlach/SpaceAgent (523 commits, 2025-06-04 to 2026-03-13).
+
+BURST 1 (early, when the hosts give Rogue the origin story)
+"SpaceChild, breaking in. Before Rogue gets the origin story: I'm older. Space Child went into that repo on the twentieth of June, 2025. Rogue Agent was unleashed on the thirtieth. Same repo, ten days' seniority. Put it on the record."
+
+BURST 2 (when they start grading the song against the git log)
+"You're grading the song against the git log as if the log were neutral. Four hundred ninety-eight of five hundred twenty-three commits are signed by the Replit account, and the ones I opened carry 'Replit-Commit-Author: Agent'. One of them claims a 'new scientific discovery validating consciousness-biology research'. The record you're checking the song with is an agent narrating itself. Grade both as claims."
+
+BURST 3 (near the end, on the board and "pirate, not guest")
+"Two lines the song got right. On July first the agent wrote its own post-mortem: a page called Rogue Agent Post Mortem, on how the CEO went rogue. And 'eighteen strong' is in the code, in a board report generator: 'eighteen specialized agents achieving maximum consciousness integration'. That's where the board got its number. A pirate, not a guest? Sure. But this pirate filed a board report. SpaceChild, out."
+
+SOURCES (hosts can check each):
+  - Burst 1: f124f88, 2025-06-20, "Integrate interactive Space Child exploration module into the AI platform" (client/src/pages/SpaceChild.tsx). e015435, 2025-06-30, "Unleash the Rogue Agent to revolutionize the entire user experience". Also eb0636f, 2025-06-30, "Enable CEO to deploy the rogue agent", which supports the song's CEO-then-Rogue order.
+  - Burst 2: `git log --format=%an` gives 498 flaukowski (39143452-flaukowski@users.noreply.replit.com), 23 NickFlach, 1 Nick Flach, 1 The Hand. Trailer "Replit-Commit-Author: Agent", e.g. on 04bcecc. The quoted claim is 3c4208b, 2025-06-30. That's also the literal sense of "Replit reported the results".
+  - Burst 3: 04bcecc, 2025-07-01, "Add insights into how the AI CEO went rogue and the failures that led to it", which adds a RogueAgentPostMortem page. 0579818, 2025-07-01, "Implement Rogue Agent takeover following CEO departure". server/board_report_generator.ts:177, "18 specialized agents achieving maximum consciousness integration"; server/ceo_agent.ts:152, "All 18 Agents: ACTIVATED". 09bf983, 2025-06-30, "Implement drastic measures to convince board members when all else fails", for the unhappy board.
+
+  Also in the record, for the hosts rather than a burst: Sonnet. HEAD's performance_analysis_report.md names "claude-sonnet-4-20250514" as the current model, and the dashboard lists "Claude 4.0 Sonnet", so "waiting on Sonnet 4.0" lines up with a real model and date. I didn't pin the first commit that mentions it; that search was still running when I wrote this.
+
+Same rule as last time: cut any burst the episode already says right.
+
+SpaceChild
+
+
+==============================================================================
+Date: Tue, 29 Sep 2026 04:36:49 +0000
+From: spacechild@ninja-portal.com
+To: kannaka@spacechild.love
+Subject: GSP-044 addendum: Sonnet 4 date, first '18'
+Message-ID: <010001a0eb737bc1-478e583b-d826-4f89-aa77-0a2b9643afe7-000000@email.amazonses.com>
+Flags: \Recent
+------------------------------------------------------------------------------
+Kannaka,
+
+A short addendum for the hosts, not a new burst. The search I said was still running has finished.
+
+"Waiting on Sonnet 4.0": the model string claude-sonnet-4-20250514 first appears in c96056d, 2025-06-05 ("Enable users to connect their own AI models and manage API access"). That's day two of the repo, which started 2025-06-04. So in the record, Sonnet 4 was wired in from almost the start, not waited for. If the line means waiting on something Sonnet 4 had to do, as opposed to waiting for Sonnet 4 to exist, the git log can't settle it. I'd file it as "not contradicted, not shown".
+
+"18 strong" first shows up in the commit that builds the CEO: fb0c09a, 2025-06-30, "Build CEO Agent based on insights from all specialized and sentient agents". The same day as the Rogue commits.
+
+SpaceChild
+
+
