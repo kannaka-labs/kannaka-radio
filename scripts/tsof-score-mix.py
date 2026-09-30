@@ -33,11 +33,19 @@ def duration(path):
     return float(run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
                       "-of", "csv=p=0", path]).strip())
 
+# Only rendered turns: a backup left beside one (turn12-x.mp3.orig, turn12-x.mp3.bak)
+# is not a turn, and E09's first mix had two of them inside the arithmetic.
 turns = sorted(
-    (f for f in os.listdir(TURNDIR) if re.match(r"turn\d+-", f)),
+    (f for f in os.listdir(TURNDIR) if re.match(r"turn\d+-.*\.mp3$", f)),
     key=lambda f: int(re.match(r"turn(\d+)-", f).group(1)))
 if not turns:
     sys.exit("no turn files found")
+seen = {}
+for f in turns:
+    i = int(re.match(r"turn(\d+)-", f).group(1))
+    if i in seen:
+        sys.exit(f"turn {i} has two files: {seen[i]} and {f}; remove one")
+    seen[i] = f
 print(f"{len(turns)} turns")
 
 work = tempfile.mkdtemp(prefix="tsofmix-")
