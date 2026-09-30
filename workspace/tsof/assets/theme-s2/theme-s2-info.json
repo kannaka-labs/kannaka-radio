@@ -1,0 +1,24 @@
+{
+  "generated": "2026-09-29",
+  "pipeline": "sunoapi.org direct, V4_5PLUS",
+  "daughters_theme": {
+    "file": "songs/The Daughters.mp3",
+    "source": "theme-s2/extend-v0.mp3",
+    "how": "POST /api/v1/generate/extend of the S1 main theme (audioId 3fa2714b-0d3c-430c-a565-0a78a7178e10, continueAt 24s): the first 24s ARE the S1 motif (corr 0.997 vs theme-v0 at 5s), then new material (corr 0.14 at 40s, ~0 at 120s)",
+    "taskId": "8a181b66a8711ac74ebe2515cf1ad663",
+    "style": "cold cinematic industrial noir score, the sparse piano motif of the main theme answered by a second, younger melodic voice (music box, celesta, or a single cello) a fifth above, deep drones, distant harbor fog horn and ice creak, tape grain, slow build, wintry and restrained, two voices in dialogue, no vocals"
+  },
+  "bed_daughters": {
+    "file": "bed-daughters.mp3",
+    "source": "extend-v0.mp3 from 24s (the new material only), 2s fade-in"
+  },
+  "alternates": {
+    "plain_generate_taskId": "2c253583e4583cd7bd26442345ef4b50",
+    "files": [
+      "theme-s2/gen-v0.mp3",
+      "theme-s2/gen-v1.mp3",
+      "theme-s2/extend-v1.mp3"
+    ],
+    "cover_of_S1_theme_taskId": "dcc3da436378840e3004c1bd2f46cc3c (pending at write time)"
+  }
+}

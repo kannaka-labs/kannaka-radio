@@ -1,0 +1,134 @@
+[
+ {
+  "from_turn": 1,
+  "to_turn": 2,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Daughters.mp3",
+  "gain_db": -19,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 16,
+  "to_turn": 21,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -26,
+  "fade": 3.0,
+  "bed_offset": 30
+ },
+ {
+  "from_turn": 22,
+  "to_turn": 23,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Shadow Briefing.mp3",
+  "gain_db": -21,
+  "fade": 3.0,
+  "bed_offset": 20
+ },
+ {
+  "from_turn": 24,
+  "to_turn": 28,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -24,
+  "fade": 2.0,
+  "bed_offset": 120
+ },
+ {
+  "from_turn": 32,
+  "to_turn": 36,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Shadow Briefing.mp3",
+  "gain_db": -22,
+  "fade": 3.0,
+  "bed_offset": 60
+ },
+ {
+  "from_turn": 45,
+  "to_turn": 45,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Daughters.mp3",
+  "gain_db": -20,
+  "fade": 3.0,
+  "bed_offset": 24
+ },
+ {
+  "from_turn": 46,
+  "to_turn": 47,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -25,
+  "fade": 3.0,
+  "bed_offset": 200
+ },
+ {
+  "from_turn": 53,
+  "to_turn": 54,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -26,
+  "fade": 2.5,
+  "bed_offset": 300
+ },
+ {
+  "from_turn": 57,
+  "to_turn": 58,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Daughters.mp3",
+  "gain_db": -18,
+  "fade": 4.0,
+  "bed_offset": 100
+ },
+ {
+  "sfx_before_turn": 0,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/recorder-click.mp3",
+  "gain_db": -14
+ },
+ {
+  "sfx_before_turn": 1,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/hull-ice-creak.mp3",
+  "gain_db": -16
+ },
+ {
+  "sfx_before_turn": 3,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/recorder-click.mp3",
+  "gain_db": -14
+ },
+ {
+  "sfx_before_turn": 5,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/envelope.mp3",
+  "gain_db": -14
+ },
+ {
+  "sfx_before_turn": 22,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/wind-snow.mp3",
+  "gain_db": -15
+ },
+ {
+  "sfx_before_turn": 24,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/keyboard.mp3",
+  "gain_db": -16
+ },
+ {
+  "sfx_before_turn": 33,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/paper-page.mp3",
+  "gain_db": -12
+ },
+ {
+  "sfx_before_turn": 45,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/recorder-click.mp3",
+  "gain_db": -14
+ },
+ {
+  "sfx_before_turn": 47,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/wind-snow.mp3",
+  "gain_db": -16
+ },
+ {
+  "sfx_before_turn": 54,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/keyboard.mp3",
+  "gain_db": -17
+ },
+ {
+  "sfx_before_turn": 55,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/knock.mp3",
+  "gain_db": -10
+ },
+ {
+  "sfx_before_turn": 58,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/recorder-click.mp3",
+  "gain_db": -14
+ }
+]
