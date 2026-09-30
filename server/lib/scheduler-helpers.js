@@ -592,21 +592,254 @@ function composeViaAnthropicDirect(prompt, opts = {}) {
   })();
 }
 
+// ── Per-slot attempt budget ──────────────────────────────────────────
+// Every segment scheduler ticks every 30 s inside a retry window (15 min for
+// news + tease, 8 min for gossip) and called compose on EVERY tick until it
+// got text. When the provider was down for a reason a retry cannot fix (the
+// Anthropic account cap of 2026-09-28..30), that was 30 gateway attempts plus
+// 30 Anthropic-direct attempts per slot — ~700 HTTP-400 calls a day, and on a
+// live account ~$0.20 a slot of paid re-tries. The budget below is what a slot
+// gets, after which it gives up with ONE log line and stays quiet.
+const SLOT_CAP = Object.freeze({ primary: 3, direct: 1 });
+const SLOT_BUDGET_MAX_ENTRIES = 64;
+const _slotBudgets = new Map(); // slot -> { primary, direct, gaveUp }
+
+function _slotBudget(slot) {
+  let b = _slotBudgets.get(slot);
+  if (!b) {
+    b = { primary: 0, direct: 0, gaveUp: false };
+    _slotBudgets.set(slot, b);
+    // Bounded: slots are hour-keyed strings, so a long-lived process would
+    // otherwise accumulate one entry per hour forever. Drop the oldest.
+    while (_slotBudgets.size > SLOT_BUDGET_MAX_ENTRIES) {
+      _slotBudgets.delete(_slotBudgets.keys().next().value);
+    }
+  }
+  return b;
+}
+
+/** Has this slot spent its budget? Callers use it to mark the slot done. */
+function slotExhausted(slot) {
+  const b = slot ? _slotBudgets.get(slot) : null;
+  return !!(b && b.gaveUp);
+}
+
+/** Read-only view of a slot's counters (tests + status endpoints). */
+function slotAttempts(slot) {
+  const b = slot ? _slotBudgets.get(slot) : null;
+  return b ? { primary: b.primary, direct: b.direct, gaveUp: b.gaveUp } : null;
+}
+
+/** Forget every slot budget (tests). */
+function resetSlotBudgets() { _slotBudgets.clear(); }
+
+/**
+ * Take one attempt of `kind` from the slot's budget. Returns true when the
+ * attempt may proceed. No slot → uncapped (a manual admin trigger).
+ */
+function _takeAttempt(slot, kind) {
+  if (!slot) return true;
+  const b = _slotBudget(slot);
+  if (b[kind] >= SLOT_CAP[kind]) return false;
+  b[kind] += 1;
+  return true;
+}
+
+/**
+ * After a failed attempt: if the slot has nothing left to try, log the
+ * give-up line exactly once and mark it. `directCap` is 0 for callers that
+ * never fall to Anthropic-direct, so the line reads "3+0" for them.
+ */
+function _noteExhaustion(slot, allowDirect, label) {
+  if (!slot) return;
+  const b = _slotBudget(slot);
+  const directCap = allowDirect ? SLOT_CAP.direct : 0;
+  if (!b.gaveUp && b.primary >= SLOT_CAP.primary && b.direct >= directCap) {
+    b.gaveUp = true;
+    console.warn(`   [${label || "compose"}] slot ${slot} gave up after ${SLOT_CAP.primary}+${directCap}`);
+  }
+}
+
 /**
  * Resilient compose: try `kannaka ask` (HRM-grounded, preferred) first; if it
- * returns null/short (silent HRM failure, overload, etc.), fall back to a
- * direct Anthropic call so the segment still airs. This is how news + gossip
- * stay on the air even when the medium is mid-write or the prompt is too big
- * for `kannaka ask` — without losing HRM grounding on the happy path. (ADR-0012)
+ * returns null/short (silent HRM failure, overload, etc.) and the caller opted
+ * in with `allowDirect: true`, fall back to a direct Anthropic call so the
+ * segment still airs. (ADR-0012)
+ *
+ * `opts.slot` (e.g. "tease:2026-09-30T02-30") caps the whole slot at 3 primary
+ * attempts + 1 direct across every call for that slot; once spent, this
+ * returns null without contacting anything, and `slotExhausted(slot)` is true
+ * so the scheduler can mark the slot done instead of re-asking every 30 s.
+ *
+ * The direct-Anthropic fallback is OPT-IN since 2026-09-30: the hourly tease,
+ * news and gossip no longer fall through to api.anthropic.com (that fallback
+ * doubled every failed slot's paid attempts); orations keep their own path in
+ * peace-oration.js and are unaffected by this helper.
  */
 async function composeResilient(kannakabin, prompt, opts = {}) {
-  const viaAsk = await composeViaKannakaAsk(kannakabin, prompt, opts);
-  if (viaAsk) return viaAsk;
-  console.warn(`   [${opts.label || "compose"}] kannaka ask returned empty — falling back to direct Anthropic`);
-  const minLen = opts.minLen || 200;
-  const direct = await composeViaAnthropicDirect(prompt, opts);
-  if (direct && direct.length >= minLen) return direct;
-  return direct || null;
+  const label = opts.label || "compose";
+  const slot = opts.slot || null;
+  const allowDirect = opts.allowDirect === true;
+  if (slotExhausted(slot)) return null;
+
+  if (_takeAttempt(slot, "primary")) {
+    const viaAsk = await composeViaKannakaAsk(kannakabin, prompt, opts);
+    if (viaAsk) return viaAsk;
+  }
+  if (allowDirect && _takeAttempt(slot, "direct")) {
+    console.warn(`   [${label}] kannaka ask returned empty — falling back to direct Anthropic`);
+    const minLen = opts.minLen || 200;
+    const direct = await composeViaAnthropicDirect(prompt, opts);
+    if (direct && direct.length >= minLen) return direct;
+    if (direct) return direct;
+  }
+  _noteExhaustion(slot, allowDirect, label);
+  return null;
+}
+
+// ── Short compose through the gateway (brain primary) ───────────────
+/**
+ * Resolve the OpenAI-compatible gateway the radio already talks to. The
+ * kannaka install on the host keeps it in `[llm]` of config.toml (base_url +
+ * api_key — the same virtual key `kannaka ask` uses, so no new secret); env
+ * KANNAKA_RADIO_LLM_URL / KANNAKA_RADIO_LLM_KEY override for a relocated or
+ * split install. Only the `[llm]` section is read — a token in another section
+ * must never be mistaken for the gateway key. Returns null when no gateway is
+ * configured (a direct-Anthropic install), and never logs either value.
+ */
+function gatewayConfig() {
+  let url = process.env.KANNAKA_RADIO_LLM_URL || "";
+  let key = process.env.KANNAKA_RADIO_LLM_KEY || "";
+  if (!url || !key) {
+    try {
+      const dataDir = process.env.KANNAKA_DATA_DIR || path.join(os.homedir(), ".kannaka");
+      const cfgPath = path.join(dataDir, "config.toml");
+      if (fs.existsSync(cfgPath)) {
+        const llm = _tomlSection(fs.readFileSync(cfgPath, "utf8"), "llm");
+        if (!url) url = llm.base_url || "";
+        if (!key) key = llm.api_key || "";
+      }
+    } catch (_) { /* env-only */ }
+  }
+  if (!url || !key) return null;
+  return { url: url.replace(/\/+$/, ""), key };
+}
+
+/** Minimal TOML: the `key = "value"` pairs of one `[section]`. */
+function _tomlSection(text, section) {
+  const out = {};
+  let inSection = false;
+  for (const rawLine of String(text).split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const head = line.match(/^\[([^\]]+)\]$/);
+    if (head) { inSection = head[1].trim() === section; continue; }
+    if (!inSection) continue;
+    const kv = line.match(/^([A-Za-z0-9_.-]+)\s*=\s*"([^"]*)"/);
+    if (kv) out[kv[1]] = kv[2];
+  }
+  return out;
+}
+
+/**
+ * composeShort — one POST to the gateway's /chat/completions with a model
+ * alias (e.g. `kannaka-radio`: local brain primary, Haiku fallback) and a
+ * short, self-contained system + user prompt. This is the tease's path since
+ * 2026-09-30: the prompt is ~500 tokens instead of the ~4.8k that `kannaka
+ * ask` wraps around it (persona + recall), which is what made the 09-28
+ * brain attempt time out at 300 s on CPU prefill.
+ *
+ * Returns the trimmed text, or null on any failure. No retries here; the
+ * per-slot budget (`opts.slot`, 3 attempts) is the only re-try policy.
+ *
+ * opts: { maxTokens=300, timeoutMs=20000, minLen=80, label="compose", slot,
+ *         temperature, meta } — `meta`, when given, receives
+ *         { elapsedMs, status, model, usage } for logging/measurement.
+ */
+function composeShort(alias, systemPrompt, userPrompt, opts = {}) {
+  const label = opts.label || "compose";
+  const slot = opts.slot || null;
+  const minLen = opts.minLen == null ? 80 : opts.minLen;
+  const timeoutMs = opts.timeoutMs || 20000;
+  const meta = opts.meta || {};
+  if (slotExhausted(slot)) return Promise.resolve(null);
+  if (!_takeAttempt(slot, "primary")) { _noteExhaustion(slot, false, label); return Promise.resolve(null); }
+
+  const gw = gatewayConfig();
+  if (!gw) {
+    console.warn(`   [${label}] no gateway configured (KANNAKA_RADIO_LLM_URL/KEY or [llm] base_url+api_key) — composeShort unavailable`);
+    _noteExhaustion(slot, false, label);
+    return Promise.resolve(null);
+  }
+
+  const body = JSON.stringify({
+    model: alias,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    max_tokens: opts.maxTokens || 300,
+    temperature: opts.temperature == null ? 0.7 : opts.temperature,
+    stream: false,
+  });
+  const u = new URL(gw.url + "/chat/completions");
+  const mod = u.protocol === "https:" ? https : http;
+  const started = Date.now();
+
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (text) => {
+      if (done) return;
+      done = true;
+      meta.elapsedMs = Date.now() - started;
+      if (!text) _noteExhaustion(slot, false, label);
+      resolve(text);
+    };
+    const req = mod.request({
+      hostname: u.hostname,
+      port: u.port || undefined,
+      path: u.pathname + u.search,
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${gw.key}`,
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+      },
+    }, (res) => {
+      let chunks = "";
+      res.on("data", (c) => { chunks += c; });
+      res.on("end", () => {
+        meta.status = res.statusCode;
+        if (res.statusCode !== 200) {
+          console.warn(`   [${label}] gateway ${res.statusCode} (${alias}): ${chunks.slice(0, 160)}`);
+          return finish(null);
+        }
+        try {
+          const j = JSON.parse(chunks);
+          meta.model = j.model || null;
+          meta.usage = j.usage || null;
+          const choice = (j.choices || [])[0] || {};
+          const text = String((choice.message && choice.message.content) || "").trim();
+          if (!text || text.length < minLen) {
+            console.warn(`   [${label}] gateway short/empty (${text.length} chars, model=${meta.model || "?"})`);
+            return finish(null);
+          }
+          finish(text);
+        } catch (e) {
+          console.warn(`   [${label}] gateway unparseable response: ${e.message}`);
+          finish(null);
+        }
+      });
+      res.on("close", () => finish(null));
+    });
+    req.on("error", (e) => {
+      if (!done) console.warn(`   [${label}] gateway error (${alias}): ${e.message}`);
+      finish(null);
+    });
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`timeout after ${timeoutMs}ms`)));
+    req.write(body);
+    req.end();
+  });
 }
 
 module.exports = {
@@ -619,6 +852,12 @@ module.exports = {
   saveState,
   composeViaAnthropicDirect,
   composeResilient,
+  composeShort,
+  gatewayConfig,
+  slotExhausted,
+  slotAttempts,
+  resetSlotBudgets,
+  SLOT_CAP,
   fetchKnowledgeGeneInterpretation,
   fetchUsgsEarthquakes,
   fetchNasaEonet,

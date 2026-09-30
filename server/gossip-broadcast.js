@@ -29,6 +29,7 @@ const {
   saveState,
   fetchKnowledgeGeneInterpretation,
   composeResilient,
+  slotExhausted,
 } = require("./lib/scheduler-helpers");
 
 // The standalone GossipGhost OBC bot (ninjaportal-02 cron). The radio's
@@ -126,14 +127,22 @@ class GossipBroadcast {
     if (this._composedFor !== key) this._composed = null;
 
     this._preparingKey = key;
+    const slot = `gossip:${key}`;
     const fire = async () => {
       try {
         let text = this._composed;
         if (!text) {
           console.log(`\u{1F48B} Gossip slot reached: ${key} — composing...`);
-          text = await this._compose();
+          text = await this._compose(slot);
         }
         if (!text) {
+          if (slotExhausted(slot)) {
+            // Budget spent (3 attempts, no Anthropic-direct fallback since
+            // 2026-09-30): stop re-asking every 30 s for the rest of the window.
+            this._lastFired[key] = "gave_up";
+            try { saveState(this._stateFile, this._lastFired); } catch (_) {}
+            return;
+          }
           console.log(`   [gossip] compose failed or empty — retry next tick`);
           return;
         }
@@ -201,7 +210,7 @@ class GossipBroadcast {
     }
   }
 
-  async _compose() {
+  async _compose(slot) {
     // Primary: read the real GossipGhost agent's latest city column.
     const live = await this._fetchLatestGossipColumn();
     if (live) {
@@ -237,7 +246,7 @@ class GossipBroadcast {
       "",
       "Output ONLY the spoken column — no markdown headers with #, no quotes around the whole thing, no stage directions.",
     ].join("\n");
-    return composeResilient(this._kannakabin, prompt, { label: "gossip" });
+    return composeResilient(this._kannakabin, prompt, { label: "gossip", slot });
   }
 
   _say(text) {
