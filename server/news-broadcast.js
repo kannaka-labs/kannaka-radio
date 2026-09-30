@@ -33,6 +33,7 @@ const {
   fetchUsgsWater,
   fetchArxiv,
   composeResilient,
+  slotExhausted,
 } = require("./lib/scheduler-helpers");
 
 // Anti-repeat anchor framings — the prompt picks one per delivery.
@@ -134,6 +135,7 @@ class NewsBroadcast {
     if (this._composedFor !== key) this._composed = null;
 
     this._preparingKey = key;
+    const slot = `news:${key}`;
     const fire = async () => {
       try {
         let text = this._composed;
@@ -149,9 +151,16 @@ class NewsBroadcast {
           // unresolved world-state market against today's themes (so an
           // agent who predicted yesterday gets reputation feedback today).
           await this._resolveWorldStateMarkets(interp).catch(() => {});
-          text = await this._compose(interp);
+          text = await this._compose(interp, slot);
         }
         if (!text) {
+          if (slotExhausted(slot)) {
+            // Budget spent (3 attempts, no Anthropic-direct fallback since
+            // 2026-09-30): stop re-asking every 30 s for the rest of the window.
+            this._lastFired[key] = "gave_up";
+            try { saveState(this._stateFile, this._lastFired); } catch (_) {}
+            return;
+          }
           console.log(`   [news] compose failed or empty — retry next tick`);
           return;
         }
@@ -259,7 +268,7 @@ class NewsBroadcast {
   }
 
   // ── Compose ───────────────────────────────────────────────
-  async _compose(interp) {
+  async _compose(interp, slot) {
     const framing = pick(FRAMINGS);
     const themesLine = interp.themes && interp.themes.length
       ? `Themes the Flux analysis surfaced: ${interp.themes.join(", ")}.`
@@ -370,7 +379,7 @@ class NewsBroadcast {
       "",
       "Output ONLY the spoken bulletin — no headings, no quotes, no stage directions, no track titles.",
     ].join("\n");
-    return composeResilient(this._kannakabin, prompt, { label: "news" });
+    return composeResilient(this._kannakabin, prompt, { label: "news", slot });
   }
 
   // ── Deliver ───────────────────────────────────────────────

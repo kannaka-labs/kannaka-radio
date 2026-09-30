@@ -34,7 +34,21 @@ const {
   saveState,
   fetchKnowledgeGeneInterpretation,
   composeResilient,
+  composeShort,
+  gatewayConfig,
+  slotExhausted,
 } = require("./lib/scheduler-helpers");
+
+// Gateway alias the tease composes through: local kannaka-brain primary,
+// Haiku fallback (routed on the gateway side). Since 2026-09-30 the tease is
+// the ONE segment on this path — it was ~75% of the station's paid LLM spend
+// (24 slots a day through `kannaka ask` → Haiku at ~4.8k tokens each) and its
+// prompt is self-contained, so nothing HRM-grounded is lost by going direct.
+const TEASE_ALIAS = process.env.KANNAKA_RADIO_TEASE_MODEL || "kannaka-radio";
+// Headline material only: the first ~1100 chars of the interpretation (≈275
+// tokens), cut at a sentence. The whole short prompt lands ≈ 500–600 tokens,
+// which is what a CPU-hosted 8B can prefill inside the 20 s timeout.
+const TEASE_INPUT_MAX_CHARS = 1100;
 
 const TEASE_FRAMINGS = [
   "Open with the headline-in-one-sentence, then point listeners to the next news desk for the full read.",
@@ -62,6 +76,59 @@ const TEASER_OUTROS = [
   "That's the tease. Music coming back in.",
   "More at the next bulletin. Gene out.",
 ];
+
+/**
+ * Reduce the knowledge-gene interpretation to what a 30-second tease needs.
+ * Drops operator-facing paragraphs (decay tuning, "I recommend action_107")
+ * — they are instructions to the observer agent, not news — then keeps the
+ * leading paragraphs up to TEASE_INPUT_MAX_CHARS, cut at a sentence boundary.
+ */
+function headlineMaterial(text, maxChars = TEASE_INPUT_MAX_CHARS) {
+  const paras = String(text || "").split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+  const newsy = paras.filter((p) => !/\baction_\d+|\brecommend/i.test(p));
+  let out = (newsy.length ? newsy : paras).join("\n\n");
+  if (out.length > maxChars) {
+    out = out.slice(0, maxChars);
+    const cut = Math.max(out.lastIndexOf(". "), out.lastIndexOf(".\n"));
+    if (cut > maxChars * 0.5) out = out.slice(0, cut + 1);
+  }
+  return out;
+}
+
+/**
+ * The short system + user prompt for composeShort. Pure: same inputs, same
+ * prompts (framing is passed in so the caller keeps the random pick).
+ */
+function buildTeasePrompts(interp, leadingMain, framing) {
+  const system = [
+    "You are Gene, the news anchor on Kannaka Radio, delivering a 30-to-50-second TEASE between full news bulletins.",
+    "Do not refer to yourself as Kannaka. Kannaka is the station; you are the human-voiced anchor.",
+    "You read a live signal-layer interpretation of world-state data from the Flux Universe knowledge-gene feed.",
+    "Rules:",
+    "- 80 to 130 words. Hard cap 150. Plain spoken prose: no headings, no quotes, no lists, no stage directions.",
+    "- Pick ONE headline plus at most ONE supporting beat. Tease it; don't deliver the full bulletin.",
+    "- Never read symbol IDs (Φ_0353, s_0190, action_107) aloud — translate them into plain words.",
+    "- Use only facts present in the interpretation. Invent nothing.",
+    "- Mention the Flux Universe source once. End by pointing to the next full news desk (7 AM or 5 PM Central).",
+    "Output ONLY the spoken tease.",
+  ].join("\n");
+  const themesLine = interp.themes && interp.themes.length
+    ? `Themes: ${interp.themes.join(", ")}.`
+    : "";
+  const lead = leadingMain
+    ? "This tease airs about thirty minutes before a full bulletin: set up what's coming at the next news desk."
+    : "This tease airs at the half-hour between bulletins: what shifted since the last tick.";
+  const user = [
+    lead,
+    "",
+    "INTERPRETATION:",
+    headlineMaterial(interp.text),
+    "",
+    themesLine,
+    `Framing: ${framing}`,
+  ].filter((l) => l !== null).join("\n");
+  return { system, user };
+}
 
 class NewsTeaser {
   /**
@@ -135,6 +202,7 @@ class NewsTeaser {
     if (this._lastFired[key]) return;
 
     this._preparingKey = key;
+    const slot = `tease:${key}`;
     const fire = async () => {
       try {
         const interp = await fetchKnowledgeGeneInterpretation();
@@ -155,8 +223,15 @@ class NewsTeaser {
         // as a "next at the news desk" lead-in for 06:30 / 16:30.
         const leadingMain = (hour === 6 || hour === 16);
 
-        const text = await this._compose(interp, leadingMain);
+        const text = await this._compose(interp, leadingMain, slot);
         if (!text) {
+          if (slotExhausted(slot)) {
+            // Budget spent (3 attempts): stop asking every 30 s for the rest
+            // of the window. The give-up line was already logged by compose.
+            this._lastFired[key] = "gave_up";
+            try { saveState(this._stateFile, this._lastFired); } catch (_) {}
+            return;
+          }
           console.log(`   [tease] compose failed or empty — retry next tick`);
           return;
         }
@@ -203,8 +278,35 @@ class NewsTeaser {
   }
 
   // ── Compose ────────────────────────────────────────────────
-  _compose(interp, leadingMain) {
+  /**
+   * Default: the short prompt through the gateway alias (brain primary).
+   * RADIO_TEASE_VIA_ASK=1 (or no gateway configured on this host) keeps the
+   * pre-2026-09-30 `kannaka ask` path for rollback. `slot` caps attempts.
+   */
+  _compose(interp, leadingMain, slot) {
     const framing = pick(TEASE_FRAMINGS);
+    if (process.env.RADIO_TEASE_VIA_ASK === "1") {
+      return this._composeViaAsk(interp, leadingMain, framing, slot);
+    }
+    if (!gatewayConfig()) {
+      console.log(`   [tease] no gateway configured — composing via kannaka ask`);
+      return this._composeViaAsk(interp, leadingMain, framing, slot);
+    }
+    const { system, user } = buildTeasePrompts(interp, leadingMain, framing);
+    const meta = {};
+    return composeShort(TEASE_ALIAS, system, user, {
+      label: "tease", slot, minLen: 80, maxTokens: 320, timeoutMs: 20000, meta,
+    }).then((text) => {
+      if (text) {
+        const u = meta.usage || {};
+        console.log(`   [tease] brain path: ${TEASE_ALIAS} → ${meta.model || "?"} in ${meta.elapsedMs}ms (in=${u.prompt_tokens ?? "?"} out=${u.completion_tokens ?? "?"})`);
+      }
+      return text;
+    });
+  }
+
+  /** Pre-2026-09-30 path: the full prompt through `kannaka ask` (Haiku). */
+  _composeViaAsk(interp, leadingMain, framing, slot) {
     const themesLine = interp.themes && interp.themes.length
       ? `Themes the analysis surfaced: ${interp.themes.join(", ")}.`
       : "";
@@ -236,7 +338,7 @@ class NewsTeaser {
       "",
       "Output ONLY the spoken tease — no headings, no quotes.",
     ].join("\n");
-    return composeResilient(this._kannakabin, prompt, { label: "tease", minLen: 80 });
+    return composeResilient(this._kannakabin, prompt, { label: "tease", minLen: 80, slot });
   }
 
   // ── Deliver ────────────────────────────────────────────────
@@ -253,4 +355,4 @@ class NewsTeaser {
   }
 }
 
-module.exports = { NewsTeaser };
+module.exports = { NewsTeaser, buildTeasePrompts, headlineMaterial, TEASE_ALIAS, TEASE_FRAMINGS };
