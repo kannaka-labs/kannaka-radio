@@ -1,0 +1,25 @@
+# TSOF E10 (S2E02 The Best Bad Pie) — 24 slides, scene order; series mark open + close; only textures/locations reprise
+C:/Users/nickf/Source/flaukowski-story/art/28-series-mark.png
+C:/Users/nickf/Source/flaukowski-story/art/18-loc-workshop.png
+C:/Users/nickf/Source/flaukowski-story/art/04-portrait-ada.png
+C:/Users/nickf/Source/flaukowski-story/art/29-texture-industrial.png
+C:/Users/nickf/Source/flaukowski-story/art/17-loc-cedar-rapids.png
+C:/Users/nickf/Source/flaukowski-story/art/19-loc-substation.png
+C:/Users/nickf/Source/flaukowski-story/art/08-portrait-gary.png
+C:/Users/nickf/Source/flaukowski-story/art/14-still-ep6.png
+C:/Users/nickf/Source/flaukowski-story/art/06-portrait-chaudhary.png
+C:/Users/nickf/Source/flaukowski-story/art/12-still-ep4.png
+C:/Users/nickf/Source/flaukowski-story/art/30-texture-echo.png
+C:/Users/nickf/Source/flaukowski-story/art/02-portrait-flaukowski.png
+C:/Users/nickf/Source/flaukowski-story/art/10-still-ep2.png
+C:/Users/nickf/Source/flaukowski-story/art/18-loc-workshop.png
+C:/Users/nickf/Source/flaukowski-story/art/07-portrait-marta.png
+C:/Users/nickf/Source/flaukowski-story/art/01-hero.png
+C:/Users/nickf/Source/flaukowski-story/art/29-texture-industrial.png
+C:/Users/nickf/Source/flaukowski-story/art/03-portrait-kannaka.png
+C:/Users/nickf/Source/flaukowski-story/art/09-still-ep1.png
+C:/Users/nickf/Source/flaukowski-story/art/19-loc-substation.png
+C:/Users/nickf/Source/flaukowski-story/art/15-still-ep7.png
+C:/Users/nickf/Source/flaukowski-story/art/23-key-pair.png
+C:/Users/nickf/Source/flaukowski-story/art/17-loc-cedar-rapids.png
+C:/Users/nickf/Source/flaukowski-story/art/28-series-mark.png
