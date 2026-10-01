@@ -1,0 +1,11 @@
+{
+  "show": "gsp",
+  "name": "Ghost Signals (podcast)",
+  "tail": "flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+  "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+  "rules": [
+    "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair) or as a faceless silhouette.",
+    "Never any other face: no other person, host or guest is drawn with a face.",
+    "No text, letters, logos or signs anywhere in the image."
+  ]
+}

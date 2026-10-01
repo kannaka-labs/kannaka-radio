@@ -1,0 +1,11 @@
+{
+  "show": "tsof",
+  "name": "TSOF (audio drama)",
+  "tail": "monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+  "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+  "rules": [
+    "No faces at all: figures are seen from behind, in silhouette, or out of frame.",
+    "No text, letters, logos or signs anywhere in the image.",
+    "Cyan appears only on computation or instruments (screens, indicator lamps, gauges), never on people or scenery."
+  ]
+}
