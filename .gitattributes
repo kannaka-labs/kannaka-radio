@@ -1,2 +1,4 @@
 scripts/tv-publish.sh text eol=lf
 scripts/tv-catalogue.js text eol=lf
+# kannaka-art: qbraid_run.sh and kannaka_art.py are scp'd from the working tree to debain2/the GPU pod
+scripts/kannaka-art/** text eol=lf
