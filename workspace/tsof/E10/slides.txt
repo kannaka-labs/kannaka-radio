@@ -1,4 +1,4 @@
-# TSOF E10 (S2E02 The Best Bad Pie) — 24 slides, scene order; series mark open + close; only textures/locations reprise
+# TSOF E10 (S2E02 The Best Bad Pie) — 27 slides (the slideshow needs 27 at 44.2 s), scene order; series mark open + close; only textures/locations reprise
 C:/Users/nickf/Source/flaukowski-story/art/28-series-mark.png
 C:/Users/nickf/Source/flaukowski-story/art/18-loc-workshop.png
 C:/Users/nickf/Source/flaukowski-story/art/04-portrait-ada.png
@@ -22,4 +22,7 @@ C:/Users/nickf/Source/flaukowski-story/art/19-loc-substation.png
 C:/Users/nickf/Source/flaukowski-story/art/15-still-ep7.png
 C:/Users/nickf/Source/flaukowski-story/art/23-key-pair.png
 C:/Users/nickf/Source/flaukowski-story/art/17-loc-cedar-rapids.png
+C:/Users/nickf/Source/flaukowski-story/art/21-loc-archive.png
+C:/Users/nickf/Source/flaukowski-story/art/30-texture-echo.png
+C:/Users/nickf/Source/flaukowski-story/art/16-still-ep8.png
 C:/Users/nickf/Source/flaukowski-story/art/28-series-mark.png
