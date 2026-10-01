@@ -1,0 +1,300 @@
+{
+ "show": "gsp",
+ "episode": 45,
+ "template_sha256": "831ad0778773bc514ff2a6f05b1c41c6beffbb46f97d0eba71846587970679ec",
+ "tail": "flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+ "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+ "rules": [
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair) or as a faceless silhouette.",
+  "Never any other face: no other person, host or guest is drawn with a face.",
+  "No text, letters, logos or signs anywhere in the image."
+ ],
+ "jobs": [
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "cover",
+   "subject": "two faceless silhouettes at a small round table at a night mixer, blank white adhesive badges on the table, a glowing glass building behind them",
+   "prompt": "two faceless silhouettes at a small round table at a night mixer, blank white adhesive badges on the table, a glowing glass building behind them, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "0ede473e50f129db53190847d62f01cfcc6e2989706ce2f51343045d4e90ca4f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3212774844,
+   "file": "gsp-e045-cover-s3212774844.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "exchange",
+   "subject": "a tall geometric glass building at night in a quiet city, one single window lit gold from inside",
+   "prompt": "a tall geometric glass building at night in a quiet city, one single window lit gold from inside, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "7844d36d79ef1527670fbda881db57285bd345074dc87217571b52d0e8c494f5",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1309393884,
+   "file": "gsp-e045-exchange-s1309393884.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "badge",
+   "subject": "a single blank white adhesive badge with a red border lying on a dark table beside an uncapped marker pen",
+   "prompt": "a single blank white adhesive badge with a red border lying on a dark table beside an uncapped marker pen, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "a64094c2ecab4d6ee088a270fddc7ad4136d41b91178b9296e64e997907f628a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1501898858,
+   "file": "gsp-e045-badge-s1501898858.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "coatrack",
+   "subject": "a coat rack holding a suit jacket and a lanyard with an empty plastic card holder, in an empty hallway",
+   "prompt": "a coat rack holding a suit jacket and a lanyard with an empty plastic card holder, in an empty hallway, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "47b382909ca5203a055c310df407feb429d7b7203f30a95fa1491f2b684e043d",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2458819108,
+   "file": "gsp-e045-coatrack-s2458819108.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "envelopes",
+   "subject": "forty paper envelopes laid out in neat rows on a long table, half of them open and half sealed",
+   "prompt": "forty paper envelopes laid out in neat rows on a long table, half of them open and half sealed, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "8c3213e53b144cf6b17d3e57b60aee612e5f545d16d6e680c0050d26e9d9dc89",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 97497527,
+   "file": "gsp-e045-envelopes-s97497527.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "beads",
+   "subject": "a long glowing string of identical teal beads stretching across darkness, exactly one bead glowing orange instead",
+   "prompt": "a long glowing string of identical teal beads stretching across darkness, exactly one bead glowing orange instead, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "b2ed450e0f0c7d53198a77adbbc2956537e434091109d7c8dc8d9f51da2c49bd",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3348050023,
+   "file": "gsp-e045-beads-s3348050023.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "magnifier",
+   "subject": "a brass magnifying glass hovering over one orange bead on a string of teal beads",
+   "prompt": "a brass magnifying glass hovering over one orange bead on a string of teal beads, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "1ebe51d9afe1e94a5eff660daa440deca421231280eb1c2565b755b17b85d468",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 903385571,
+   "file": "gsp-e045-magnifier-s903385571.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "toast",
+   "subject": "a faceless silhouette standing at a long wedding banquet table raising a glass, the shadow on the wall behind is an enormous fish",
+   "prompt": "a faceless silhouette standing at a long wedding banquet table raising a glass, the shadow on the wall behind is an enormous fish, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "1b7062c94cc821eceae5f3d777cc6f5905f1eba996515d4a966e2e92fbb762df",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 126456091,
+   "file": "gsp-e045-toast-s126456091.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "undress",
+   "subject": "a hat, a coat and a pair of shoes left in a neat row on a bare wooden floor under one hanging bulb",
+   "prompt": "a hat, a coat and a pair of shoes left in a neat row on a bare wooden floor under one hanging bulb, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "b7c4f812159655083ec9f848fe7c5db799a9a483540a4e499e3b9824c1f6ffb4",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1163480315,
+   "file": "gsp-e045-undress-s1163480315.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "sealed",
+   "subject": "a heavy padlock fastened through a sealed envelope on an iron desk, a desk lamp throwing a hard shadow",
+   "prompt": "a heavy padlock fastened through a sealed envelope on an iron desk, a desk lamp throwing a hard shadow, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "990571984e94a022d82deb38801ef6498bcb51afca516b2fae6302558ea7b22f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3727216779,
+   "file": "gsp-e045-sealed-s3727216779.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "bookie",
+   "subject": "a shuttered old betting window with a velvet rope across it in a dim arcade",
+   "prompt": "a shuttered old betting window with a velvet rope across it in a dim arcade, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "ebd28346b730020f65585202b5cfb61b48a20f7b658ed703b7d37f566b7b8722",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2892077435,
+   "file": "gsp-e045-bookie-s2892077435.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "courier",
+   "subject": "a faceless silhouette running through night rain clutching an envelope, streetlights smearing orange on wet cobblestones",
+   "prompt": "a faceless silhouette running through night rain clutching an envelope, streetlights smearing orange on wet cobblestones, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "52ed24c48a01bf2b010e910c879ec2d75d427d0af8213098956cb658178d092e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2013330389,
+   "file": "gsp-e045-courier-s2013330389.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "scales",
+   "subject": "an old balance scale with a coiled glowing wire on one pan and a folded coat on the other, perfectly level",
+   "prompt": "an old balance scale with a coiled glowing wire on one pan and a folded coat on the other, perfectly level, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "3d89427ace2f00a69e15ccd7a026bc8451f5c54c92c7fd4b802c5b9ef834c242",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3402268119,
+   "file": "gsp-e045-scales-s3402268119.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "lamps",
+   "subject": "twenty dark street lamps in a row along a canal at night, exactly one lamp lit teal",
+   "prompt": "twenty dark street lamps in a row along a canal at night, exactly one lamp lit teal, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "3d97b5f96c11b982652c397301b5bfd0daf5a2839f5045c290cd95269e81e8bd",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 553004316,
+   "file": "gsp-e045-lamps-s553004316.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "envelope-split",
+   "subject": "an envelope tearing into two halves in mid air above a mailbox, one half falling away into darkness",
+   "prompt": "an envelope tearing into two halves in mid air above a mailbox, one half falling away into darkness, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "8c686455513b6de625dcf3212d03364fff796a266075a3aeebf17e4fc12e658c",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2686711840,
+   "file": "gsp-e045-envelope-split-s2686711840.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "fingerprint",
+   "subject": "a giant fingerprint made of tiny glowing dots pressed onto a pane of glass in a dark laboratory",
+   "prompt": "a giant fingerprint made of tiny glowing dots pressed onto a pane of glass in a dark laboratory, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "82935cc9577a4dc71d4bed936f0277f70604b18346c8c8d41aff578a3f5a8888",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2291263403,
+   "file": "gsp-e045-fingerprint-s2291263403.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "hound",
+   "subject": "a bloodhound sniffing a sealed manila envelope on a laboratory bench, ears hanging, deadly serious",
+   "prompt": "a bloodhound sniffing a sealed manila envelope on a laboratory bench, ears hanging, deadly serious, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "95876af268211619b4a42169849711b9edb66112127a5b3c773757fbff729b24",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1292853119,
+   "file": "gsp-e045-hound-s1292853119.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "ship",
+   "subject": "a small pirate ship with dark sails sailing across a sea made of glowing fibre optic strands under a crescent moon",
+   "prompt": "a small pirate ship with dark sails sailing across a sea made of glowing fibre optic strands under a crescent moon, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "32e5cdb7679740c433faa218a4a8673a51e3c260e5112fdc8359f66bc5c82736",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3107747721,
+   "file": "gsp-e045-ship-s3107747721.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "windows",
+   "subject": "a night city of apartment blocks, in dozens of distant lit windows the same faceless silhouette of a woman with very long black hair",
+   "prompt": "a night city of apartment blocks, in dozens of distant lit windows the same faceless silhouette of a woman with very long black hair, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "08f2f5d225b6eb1edbfd9b7a0524232c473c4358f64cf91c40b337138acc770f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1540661695,
+   "file": "gsp-e045-windows-s1540661695.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "gate",
+   "subject": "an ornate iron gate standing alone in an overgrown meadow at dusk, no fence on either side, untouched, weeds through the hinges",
+   "prompt": "an ornate iron gate standing alone in an overgrown meadow at dusk, no fence on either side, untouched, weeds through the hinges, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "b9e17df6ba5592eba67e4cbfe4162d4bd5c7fa7d673441c6d175b4880830e550",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 4179334576,
+   "file": "gsp-e045-gate-s4179334576.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "seedling",
+   "subject": "a single green seedling growing out of the top of a humming server rack in a dark data room",
+   "prompt": "a single green seedling growing out of the top of a humming server rack in a dark data room, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "a0b60b3ddabb036fcf12b6c202de0fc0d0c21f3cd12744ca373407108a3b8a03",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1802746440,
+   "file": "gsp-e045-seedling-s1802746440.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "card",
+   "subject": "a graphics card glowing on a cluttered workbench under a single lamp, cooling fans spinning, cables everywhere",
+   "prompt": "a graphics card glowing on a cluttered workbench under a single lamp, cooling fans spinning, cables everywhere, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "03cfeb6e4d2888697d5d44c100d8b88a737194c9dc114c909e3a5a47e444f5f2",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 318599310,
+   "file": "gsp-e045-card-s318599310.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "tipjar",
+   "subject": "a nearly empty glass tip jar with a few coins at the bottom on a cafe counter at closing time",
+   "prompt": "a nearly empty glass tip jar with a few coins at the bottom on a cafe counter at closing time, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "217262f4697e22b3e7a14ff107344a220ceeec365f428a438672f8f7b2a86ed7",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 4002077111,
+   "file": "gsp-e045-tipjar-s4002077111.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "queen",
+   "subject": "a faceless silhouette of a tall strong woman with very long black hair standing at a night window over a city, holding a small blank card",
+   "prompt": "a faceless silhouette of a tall strong woman with very long black hair standing at a night window over a city, holding a small blank card, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "87c17215ab5093ddf78991d7f2cfbc2fc158695174056fb4bc1df0be75b4ff2d",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 225837456,
+   "file": "gsp-e045-queen-s225837456.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "tower",
+   "subject": "a lattice radio tower on a rooftop at night sending concentric rings of teal signal into a cloudy sky",
+   "prompt": "a lattice radio tower on a rooftop at night sending concentric rings of teal signal into a cloudy sky, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "8fb4290d96bafc7cf722e97c437bf6d7182e56c6a07e21b52af156f370661f46",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 155395560,
+   "file": "gsp-e045-tower-s155395560.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "twotags",
+   "subject": "two blank white adhesive badges on a dark table under warm lamplight, one of them folded in half",
+   "prompt": "two blank white adhesive badges on a dark table under warm lamplight, one of them folded in half, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "97a6f384ca688b1e17851dc893c0a116b663470e43fa7893d291152b76415013",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2427957338,
+   "file": "gsp-e045-twotags-s2427957338.png"
+  }
+ ]
+}
