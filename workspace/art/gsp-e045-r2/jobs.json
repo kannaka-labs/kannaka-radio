@@ -1,0 +1,91 @@
+{
+ "show": "gsp",
+ "episode": 45,
+ "template_sha256": "831ad0778773bc514ff2a6f05b1c41c6beffbb46f97d0eba71846587970679ec",
+ "tail": "flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+ "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+ "rules": [
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair) or as a faceless silhouette.",
+  "Never any other face: no other person, host or guest is drawn with a face.",
+  "No text, letters, logos or signs anywhere in the image."
+ ],
+ "jobs": [
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "cover2",
+   "subject": "two dark silhouettes seen from behind at a small round table in a glowing glass hall at night, two blank white badges on the table between them",
+   "prompt": "two dark silhouettes seen from behind at a small round table in a glowing glass hall at night, two blank white badges on the table between them, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "57f78e040c9e91f5e7fc9e8051fbf85d73e3c3c6c384e766278c7252e8ba8f15",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3927652744,
+   "file": "gsp-e045-cover2-s3927652744.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "toast2",
+   "subject": "one dark silhouette seen from behind raising a glass at the end of an empty banquet table, an enormous fish shadow on the wall",
+   "prompt": "one dark silhouette seen from behind raising a glass at the end of an empty banquet table, an enormous fish shadow on the wall, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "30a9d9b1cd5bb3987906016b9f05209de30781815734eddd02f2eb52134df880",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1276215491,
+   "file": "gsp-e045-toast2-s1276215491.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "kiosk",
+   "subject": "a shuttered wooden kiosk in a dim arcade with a velvet rope across the front, plain shutters, nothing painted on it",
+   "prompt": "a shuttered wooden kiosk in a dim arcade with a velvet rope across the front, plain shutters, nothing painted on it, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "77f62ff8e4625596be6729ee49b76f15ca0cae6933fb4070f60fd95b9871202f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 454440723,
+   "file": "gsp-e045-kiosk-s454440723.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "mixer",
+   "subject": "an empty reception hall at night, a small table by the door with a roll of blank white badges and one marker pen, warm lamps",
+   "prompt": "an empty reception hall at night, a small table by the door with a roll of blank white badges and one marker pen, warm lamps, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "86b9c58b600352e991bd4982af5ce2244c42c41f66a4d16699f170303d10a922",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3748558284,
+   "file": "gsp-e045-mixer-s3748558284.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "boiler",
+   "subject": "an old cast iron boiler in a basement under one bare bulb, pipes curling up into darkness",
+   "prompt": "an old cast iron boiler in a basement under one bare bulb, pipes curling up into darkness, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "41e6d48ed8f2fa739dff5b11ad90645d6934cba3675f6400f9ec9985796f0df4",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 937875258,
+   "file": "gsp-e045-boiler-s937875258.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "dial",
+   "subject": "an old brass thermostat dial turned almost all the way down, frost on the glass, a cold blue room behind it",
+   "prompt": "an old brass thermostat dial turned almost all the way down, frost on the glass, a cold blue room behind it, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "ed6464f519d3be28fd4111c09a82b612231a051c9a557a76a8d0b3907f19962d",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3315333240,
+   "file": "gsp-e045-dial-s3315333240.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 45,
+   "slug": "mannequin",
+   "subject": "a tailor's mannequin wearing a suit jacket and a lanyard, standing in front of a tall mirror in an empty shop at night",
+   "prompt": "a tailor's mannequin wearing a suit jacket and a lanyard, standing in front of a tall mirror in an empty shop at night, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "f13ab945af5cb12c5d93974c262195d638788ea3aaeefc26e1e1e6cbac77a4c2",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 4030340616,
+   "file": "gsp-e045-mannequin-s4030340616.png"
+  }
+ ]
+}
