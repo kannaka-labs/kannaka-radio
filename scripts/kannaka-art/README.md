@@ -31,6 +31,24 @@ python scripts/podcast-slideshow.py --images-from $D/images.txt 43
 - **The ledger** is append-only JSONL with one row per accepted image. It records backend and dtype because fp16 and fp32 give different images for the same seed.
 - **The qBraid wrapper** `qbraid_run.sh` runs on debain2 with `~/qbraid-venv2`. It refuses to start while any instance is not TERMINATED, because a stopped pod still bills. It terminates its own instance in an EXIT trap, then prints strays and credits after.
 
+## Motion slideshow
+
+`scripts/motion-slideshow.py` takes the same image list and renders a moving version next to the still one. It writes `renders/GSP-0NN-motion.mp4` and never touches `GSP-0NN-slideshow.mp4`.
+
+```bash
+python scripts/motion-slideshow.py --images-from $D/images.txt 43 [--crf 22] [--grain light|normal] [--workers 2] [--wave-opacity 0.12]
+```
+
+- **Motion.** Each slide gets a slow Ken Burns push on the centre panel, with the blurred background drifting the other way. Segments, the cover card included, join with 1 s crossfades.
+- **Texture.** A faint waveform of the episode sits in the bottom band of the blurred side margins, never over the art. Seeded grain, scanlines and a vignette sit on top.
+- **Exact length.** Frames are planned as integers, so the video is exactly as long as the audio. The render is renamed into place only if ffprobe shows a duration within 0.1 s of the audio, the planned frame count and tv colour range. Otherwise it exits 1 and leaves a `.part.mp4`.
+- **Repeatable.** Pans and grain are seeded from the episode number, so a re-render is identical.
+- **Reuse.** A segment from an earlier run is reused only when ffprobe confirms its frame count, duration and format. Anything else is deleted and rendered again.
+- **Cost.** A 60 s sample took about 200 s of wall time and 22 MB at crf 22 with light grain on the i7 laptop, so a 20-minute episode is about an hour and roughly 440 MB.
+- **Waveform strength.** At the default 0.12 the waveform adds at most about 14 luma steps in the margins. Raise `--wave-opacity` if it should be clearly visible, or pass 0 to drop it. Run one render at a time, keep `--workers` at 2 here, and never run it beside a production render.
+
+Tests: `node test/motion-slideshow.test.js`. It also runs a 3-second synthetic render when ffmpeg is on PATH.
+
 ## Backends, measured 2026-09-30 (6 images per row, 1024 px)
 
 | Backend | Mode | Seconds per image | Cost |
