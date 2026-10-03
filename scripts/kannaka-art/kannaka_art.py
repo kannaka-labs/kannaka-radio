@@ -36,7 +36,9 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 DEFAULT_LEDGER = os.path.join(REPO, "workspace", "art", "ledger.jsonl")
 
 # One template file per register: templates/<show>.json. Adding a register is a JSON file, not code.
-SHOWS = tuple(sorted(n[:-5] for n in os.listdir(TEMPLATES) if n.endswith(".json")))
+# The GPU pod gets this file alone (qbraid_run.sh ships no templates/), and `gen` needs none,
+# so a missing directory means no registers here rather than a crash at import.
+SHOWS = tuple(sorted(n[:-5] for n in os.listdir(TEMPLATES) if n.endswith(".json"))) if os.path.isdir(TEMPLATES) else ()
 ALBUM_SHOW = "album"
 _ALBUM_IMAGE_RE = re.compile(r"^(cover|s[1-9])$")
 MODES = ("lightning", "base")
