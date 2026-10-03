@@ -163,8 +163,22 @@ function sepNormalise(s) {
   return s.replace(/[\/\\\uFF0F\uFF3C_:|]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function findAudioFile(trackName, musicDir) {
+function findAudioFile(trackName, musicDir, albumName) {
   const files = getFiles(musicDir);
+  // Titles repeat across albums ("Resonance" is on Neurogenesis and on A Field
+  // Guide to Kannaka). When the caller knows the album, look in that album's own
+  // folder first, so the DJ cannot play another album's song under this title.
+  // Albums without a folder of their own fall through to the library-wide search.
+  if (albumName) {
+    const folder = albumName.toLowerCase();
+    const own = files.filter(f => path.dirname(f).toLowerCase() === folder);
+    const hit = own.length ? matchTitle(trackName, own) : null;
+    if (hit) return hit;
+  }
+  return matchTitle(trackName, files);
+}
+
+function matchTitle(trackName, files) {
   const lower = trackName.toLowerCase();
   const norm = sepNormalise(lower);
 
