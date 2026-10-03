@@ -401,6 +401,19 @@ class TestAlbum(TmpCase):
         self.assertEqual(rc, 0, err)
 
 
+class TestStandalone(TmpCase):
+    def test_runs_without_templates_beside_it(self):
+        """qbraid_run.sh copies kannaka_art.py alone to the pod. Importing it there must not need templates/."""
+        import shutil, subprocess
+        shutil.copy(ka.__file__, self.p("kannaka_art.py"))
+        os.makedirs(self.p("out"))
+        write_png(self.p("out", "x.png"), 1024, 1024, noise=True)
+        r = subprocess.run([sys.executable, self.p("kannaka_art.py"), "gate", self.p("out")],
+                           capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("1 passed", r.stdout)
+
+
 class TestQbraid(TmpCase):
     def test_prints_the_wrapper_command_and_runs_nothing(self):
         jobs = self.p("jobs.json")
