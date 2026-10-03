@@ -11,6 +11,11 @@ Pipeline, in order:
   images-from DIR --cover SLUG --out FILE  list for scripts/podcast-slideshow.py --images-from
   qbraid      --jobs DIR/jobs.json --out DIR   PRINT (never run) the debain2 GPU command
 
+Albums (the /album-release art step; replaces OBC generate-image):
+
+  album-plan   --manifest M --episode N --out DIR   album manifest.json -> DIR/jobs.json + DIR/album-map.json
+  album-export DIR --dest WS                        accepted PNGs -> WS/{track slug}_{image name}.png
+
 Everything except `gen` is pure stdlib: torch and diffusers are imported inside `gen` only,
 so the planning, gate, ledger and list logic import and test without them.
 """
@@ -30,7 +35,10 @@ TEMPLATES = os.path.join(HERE, "templates")
 REPO = os.path.dirname(os.path.dirname(HERE))
 DEFAULT_LEDGER = os.path.join(REPO, "workspace", "art", "ledger.jsonl")
 
-SHOWS = ("gsp", "tsof")
+# One template file per register: templates/<show>.json. Adding a register is a JSON file, not code.
+SHOWS = tuple(sorted(n[:-5] for n in os.listdir(TEMPLATES) if n.endswith(".json")))
+ALBUM_SHOW = "album"
+_ALBUM_IMAGE_RE = re.compile(r"^(cover|s[1-9])$")
 MODES = ("lightning", "base")
 GATE_MIN_SIDE = 1024
 GATE_MIN_BYTES = 100_000
@@ -403,6 +411,83 @@ def run_gen(a):
 
 # ---------------------------------------------------------------- CLI
 
+def album_subjects(manifest):
+    """[{slug, subject}] and {slug: "<track slug>_<image name>"} from an album manifest.json
+    (tracks[].slug, tracks[].images[].name/prompt). Image names must be cover or s1..s9:
+    videos.js reads <track slug>_<name>.png, and two images sharing a name overwrite each other."""
+    tracks = manifest.get("tracks") if isinstance(manifest, dict) else None
+    if not isinstance(tracks, list) or not tracks:
+        raise ArtError("album manifest needs a non-empty \"tracks\" list")
+    subjects, mapping = [], {}
+    for ti, t in enumerate(tracks):
+        tslug = t.get("slug") if isinstance(t, dict) else None
+        if not isinstance(tslug, str) or not re.match(r"^[A-Za-z0-9][A-Za-z0-9_-]*$", tslug):
+            raise ArtError(f"tracks[{ti}] needs a slug of letters, digits, _ or -")
+        names = set()
+        for ii, im in enumerate(t.get("images") or []):
+            name, prompt = im.get("name"), im.get("prompt")
+            if not isinstance(name, str) or not _ALBUM_IMAGE_RE.match(name):
+                raise ArtError(f"{tslug} images[{ii}] name {name!r} must be cover or s1..s9")
+            if name in names:
+                raise ArtError(f"{tslug} has two images named {name!r}; the second would overwrite the first")
+            if not isinstance(prompt, str) or not prompt.strip():
+                raise ArtError(f"{tslug} {name} has no prompt")
+            names.add(name)
+            slug = f"{tslug.lower().replace('_', '-')}-{name}"
+            subjects.append({"slug": slug, "subject": prompt.strip()})
+            mapping[slug] = f"{tslug}_{name}"
+        if "cover" not in names:
+            raise ArtError(f"{tslug} has no cover image")
+    return subjects, mapping
+
+
+def album_export(d, dest, force=False):
+    """Copy every job's gate-passing PNG to DEST/<track slug>_<name>.png. All or nothing: a job
+    with no accepted image (missing, or deleted at visual review) stops the export before any copy."""
+    plan = load_jobs(os.path.join(d, "jobs.json"))
+    with open(os.path.join(d, "album-map.json"), encoding="utf-8") as f:
+        mapping = json.load(f)
+    passed = set(gate_dir(d)[0])
+    pairs, missing = [], []
+    for j in plan["jobs"]:
+        cands = [n for n in (image_name(j["show"], j["episode"], j["slug"], j["seed"], m) for m in MODES) if n in passed]
+        if not cands or j["slug"] not in mapping:
+            missing.append(j["slug"])
+            continue
+        pairs.append((os.path.join(d, cands[-1]), os.path.join(dest, mapping[j["slug"]] + ".png")))
+    if missing:
+        raise ArtError("no accepted image for: " + ", ".join(missing) + " (regenerate, then export again)")
+    clash = [dst for src, dst in pairs if os.path.exists(dst) and not force and sha256_file(dst) != sha256_file(src)]
+    if clash:
+        raise ArtError("would overwrite a different image (pass --force to replace): " + ", ".join(map(os.path.basename, clash)))
+    os.makedirs(dest, exist_ok=True)
+    for src, dst in pairs:
+        with open(src, "rb") as fi, open(dst, "wb") as fo:
+            fo.write(fi.read())
+    return pairs
+
+
+def cmd_album_plan(a):
+    with open(a.manifest, encoding="utf-8") as f:
+        subjects, mapping = album_subjects(json.load(f))
+    plan = build_plan(ALBUM_SHOW, a.episode, subjects)
+    os.makedirs(a.out, exist_ok=True)
+    dump_json(os.path.join(a.out, "jobs.json"), plan)
+    dump_json(os.path.join(a.out, "album-map.json"), mapping)
+    print(f"{a.out}: {len(plan['jobs'])} job(s) for {ALBUM_SHOW}-e{a.episode:03d}")
+    for j in plan["jobs"]:
+        print(f"  {j['slug']:<28} -> {mapping[j['slug']]}.png")
+    return 0
+
+
+def cmd_album_export(a):
+    pairs = album_export(a.dir, a.dest, force=a.force)
+    for src, dst in pairs:
+        print(f"{os.path.basename(src)} -> {dst}")
+    print(f"album-export: {len(pairs)} image(s) to {a.dest}")
+    return 0
+
+
 def cmd_plan(a):
     with open(a.subjects, encoding="utf-8") as f:
         subjects = json.load(f)
@@ -504,6 +589,18 @@ def build_parser():
     p.add_argument("--cover", required=True)
     p.add_argument("--out", required=True)
     p.set_defaults(fn=cmd_images_from)
+
+    p = sub.add_parser("album-plan", help="album manifest.json -> DIR/jobs.json + DIR/album-map.json")
+    p.add_argument("--manifest", required=True)
+    p.add_argument("--episode", required=True, type=int, help="album number; seeds derive from it")
+    p.add_argument("--out", required=True)
+    p.set_defaults(fn=cmd_album_plan)
+
+    p = sub.add_parser("album-export", help="copy accepted PNGs to DEST/<track slug>_<name>.png for videos.js")
+    p.add_argument("dir")
+    p.add_argument("--dest", required=True)
+    p.add_argument("--force", action="store_true", help="replace a different image already at the destination")
+    p.set_defaults(fn=cmd_album_export)
 
     p = sub.add_parser("qbraid", help="PRINT the debain2 command for one GPU session (runs nothing)")
     p.add_argument("--jobs", required=True)
