@@ -1272,7 +1272,7 @@ class DJEngine {
           continue;
         }
       }
-      const file = findAudioFile(title, musicDir);
+      const file = findAudioFile(title, musicDir, albumName);
       if (file) {
         trackMetas.push({
           title,
@@ -1458,7 +1458,7 @@ class DJEngine {
     for (const [albumName, album] of Object.entries(ALBUMS)) {
       for (let i = 0; i < album.tracks.length; i++) {
         const title = album.tracks[i];
-        const file = findAudioFile(title, musicDir);
+        const file = findAudioFile(title, musicDir, albumName);
         if (file) {
           this.state.playlist.push(file);
           this.state.playlistMeta.push({
@@ -2008,7 +2008,7 @@ class DJEngine {
     for (const [albumName, album] of Object.entries(ALBUMS)) {
       const tracks = album.tracks.map(title => ({
         title,
-        file: findAudioFile(title, musicDir) || null,
+        file: findAudioFile(title, musicDir, albumName) || null,
         tags: [albumName],
       }));
       if (!tagFilter || tagFilter === albumName) {

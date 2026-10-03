@@ -65,9 +65,9 @@ function unreachedFiles(allFiles, referenced, owned = CHANNEL_OWNED) {
  */
 function referencedFiles(albums, musicDir, findAudioFile) {
   const out = new Set();
-  for (const album of Object.values(albums || {})) {
+  for (const [albumName, album] of Object.entries(albums || {})) {
     for (const title of album.tracks || []) {
-      const f = findAudioFile(title, musicDir);
+      const f = findAudioFile(title, musicDir, albumName);
       if (f) out.add(f);
     }
   }
