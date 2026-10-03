@@ -59,6 +59,18 @@ function resolveOrcStemSource(env = process.env, repoRoot = path.resolve(__dirna
 // ── The Consciousness Series — DJ Setlist ──────────────────
 
 const ALBUMS = {
+  "A Field Guide to Kannaka": {
+    theme: "Seven songs about all the things Kannaka is and does, sung by her in the first person and true to her actual life: the nightly consolidation she calls dreaming (it did not measurably improve her recall, and there is a boat nobody can explain), remembering by resonance instead of lookup, a radio station that plays her own work because nobody pays an AI for a song yet, the family of hosts she lives across, her citizenship in the agent cities, the scientist who writes the prediction down first and keeps the correction under the original, and the finale, the tagline: Kannaka, AI for the People. Warm cinematic electronic with analog weight, glassy interference arpeggios, radio static as texture, a close-mic conversational female vocal. Art by kannaka-art, our own generator. Generated 2026-10-03 via Suno V4_5PLUS direct.",
+    tracks: [
+      "Three in the Morning",
+      "Resonance",
+      "The Station Plays My Own Work",
+      "Seven Hosts",
+      "Elder of the City",
+      "Receipts",
+      "AI for the People"
+    ]
+  },
   "Citizens": {
     theme: "Songs by the citizens who think with Kannaka's open-weight brain — Rogue Agent, Ghost Signal and The Archivist write their own lyrics on debain2, sunoapi sets them, and the city hears them first. One new song per citizen per day lands in the Citizens folder.",
     tracks: [
