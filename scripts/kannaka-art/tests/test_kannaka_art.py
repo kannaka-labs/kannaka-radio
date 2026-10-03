@@ -327,6 +327,80 @@ class TestImagesFrom(TmpCase):
         self.assertEqual(rc, 1)
 
 
+ALBUM = {"album": "T", "tracks": [
+    {"slug": "01_first", "title": "First", "images": [
+        {"name": "cover", "prompt": "a lantern on a pier at night, oil painting"},
+        {"name": "s1", "prompt": "a rowing boat in fog, watercolour"}]},
+    {"slug": "02_second", "title": "Second", "images": [
+        {"name": "cover", "prompt": "a radio tower over snow, linocut"}]},
+]}
+
+
+class TestAlbum(TmpCase):
+    def plan(self):
+        m = self.p("manifest.json")
+        wjson(m, ALBUM)
+        rc, out, err = quiet(ka.main, ["album-plan", "--manifest", m, "--episode", "1", "--out", self.p("art")])
+        self.assertEqual(rc, 0, err)
+        return ka.load_jobs(self.p("art", "jobs.json"))
+
+    def test_album_is_a_template_register(self):
+        self.assertIn("album", ka.SHOWS)
+        self.assertIn("signature", ka.load_template("album")["negative"])
+
+    def test_plan_maps_each_image_to_the_videos_js_name(self):
+        plan = self.plan()
+        self.assertEqual([j["slug"] for j in plan["jobs"]], ["01-first-cover", "01-first-s1", "02-second-cover"])
+        self.assertTrue(all(j["show"] == "album" and j["prompt"].startswith(j["subject"]) for j in plan["jobs"]))
+        with open(self.p("art", "album-map.json"), encoding="utf-8") as f:
+            self.assertEqual(json.load(f), {"01-first-cover": "01_first_cover", "01-first-s1": "01_first_s1",
+                                            "02-second-cover": "02_second_cover"})
+
+    def test_duplicate_or_bad_image_names_refused(self):
+        dup = json.loads(json.dumps(ALBUM))
+        dup["tracks"][0]["images"][1]["name"] = "cover"
+        with self.assertRaises(ka.ArtError):
+            ka.album_subjects(dup)
+        bad = json.loads(json.dumps(ALBUM))
+        bad["tracks"][0]["images"][1]["name"] = "support"
+        with self.assertRaises(ka.ArtError):
+            ka.album_subjects(bad)
+        nocover = json.loads(json.dumps(ALBUM))
+        nocover["tracks"][1]["images"][0]["name"] = "s1"
+        with self.assertRaises(ka.ArtError):
+            ka.album_subjects(nocover)
+
+    def test_export_copies_base_or_lightning_to_track_names(self):
+        plan = self.plan()
+        fake_gen(self.p("art"), plan, mode="base")
+        rc, _, err = quiet(ka.main, ["album-export", self.p("art"), "--dest", self.p("ws")])
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(sorted(os.listdir(self.p("ws"))), ["01_first_cover.png", "01_first_s1.png", "02_second_cover.png"])
+        j = plan["jobs"][1]
+        src = ka.image_name("album", 1, j["slug"], j["seed"], "base")
+        self.assertEqual(rb(self.p("ws", "01_first_s1.png")), rb(self.p("art", src)))
+
+    def test_export_is_all_or_nothing_when_an_image_was_rejected(self):
+        plan = self.plan()
+        fake_gen(self.p("art"), plan)
+        os.remove(self.p("art", plan["jobs"][1]["file"]))  # deleted at visual review
+        rc, _, err = quiet(ka.main, ["album-export", self.p("art"), "--dest", self.p("ws")])
+        self.assertEqual(rc, 1)
+        self.assertIn("01-first-s1", err)
+        self.assertFalse(os.path.exists(self.p("ws")))
+
+    def test_export_refuses_to_overwrite_a_different_image(self):
+        plan = self.plan()
+        fake_gen(self.p("art"), plan)
+        os.makedirs(self.p("ws"))
+        write_png(self.p("ws", "02_second_cover.png"), 1024, 1024, noise=False)
+        rc, _, err = quiet(ka.main, ["album-export", self.p("art"), "--dest", self.p("ws")])
+        self.assertEqual(rc, 1)
+        self.assertIn("02_second_cover.png", err)
+        rc, _, err = quiet(ka.main, ["album-export", self.p("art"), "--dest", self.p("ws"), "--force"])
+        self.assertEqual(rc, 0, err)
+
+
 class TestQbraid(TmpCase):
     def test_prints_the_wrapper_command_and_runs_nothing(self):
         jobs = self.p("jobs.json")

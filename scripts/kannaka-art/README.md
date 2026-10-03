@@ -31,6 +31,27 @@ python scripts/podcast-slideshow.py --images-from $D/images.txt 43
 - **The ledger** is append-only JSONL with one row per accepted image. It records backend and dtype because fp16 and fp32 give different images for the same seed.
 - **The qBraid wrapper** `qbraid_run.sh` runs on debain2 with `~/qbraid-venv2`. It refuses to start while any instance is not TERMINATED, because a stopped pod still bills. It terminates its own instance in an EXIT trap, then prints strays and credits after.
 
+## Albums
+
+The `/album-release` art step used OBC's `generate-image`. Albums now use this generator too, under the `album` register (`templates/album.json`). Its tail adds only finish, because each image prompt carries its own style.
+
+```bash
+A=scripts/kannaka-art/kannaka_art.py
+D=workspace/art/album-field-guide
+
+# manifest.json is the album's (tracks[].slug, tracks[].images[] of {name, prompt}); names are cover, s1..s9
+python $A album-plan --manifest manifest.json --episode 1 --out $D     # --episode = album number, seeds derive from it
+python $A ledger check --jobs $D/jobs.json
+python $A qbraid --jobs $D/jobs.json --out $D --mode base             # prints the one-GPU-session commands
+python $A gate $D                                                     # then look at every image; delete any with a face, text or signature
+python $A album-export $D --dest /path/to/album/workspace             # writes <track slug>_<name>.png for videos.js
+```
+
+- `album-export` is all or nothing. If any image is missing, for example because it was deleted at visual review, nothing is copied and the slug is named. Regenerate it, then export again.
+- It refuses to overwrite a different image at the destination unless you pass `--force`.
+- Image names other than `cover` and `s1`..`s9` are refused, as are two images with one name. `videos.js` reads `<slug>_<name>.png`, and WHAT PERSISTED lost two thirds of its art to three images all named `support`.
+- SDXL paints signatures and initials into corners even with `signature` in the negative prompt, so the visual pass has to look at the corners.
+
 ## Motion slideshow
 
 `scripts/motion-slideshow.py` takes the same image list and renders a moving version next to the still one. It writes `renders/GSP-0NN-motion.mp4` and never touches `GSP-0NN-slideshow.mp4`.

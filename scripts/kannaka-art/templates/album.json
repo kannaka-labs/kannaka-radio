@@ -1,0 +1,12 @@
+{
+  "show": "album",
+  "name": "Kannaka albums (radio + YouTube art, replaces OBC generate-image)",
+  "tail": "fine art, rich detail, cinematic light, no text",
+  "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+  "rules": [
+    "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+    "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+    "Never any other face: no other person is drawn with a face.",
+    "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+  ]
+}
