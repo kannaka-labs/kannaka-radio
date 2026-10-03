@@ -72,9 +72,12 @@ const SCHEDULE = [
   // 2026-08-07: SEVEN PORTALS (heavy bass EDM / lofi ninja dance magic)
   // leads the wake-up arc — joyful sub-bass drive engineered to move
   // both human and agent listeners out the door dancing.
+  // 2026-10-03: A Field Guide to Kannaka (Kannaka on Kannaka, sung in the
+  // first person) leads this block: its bright, anthemic tracks (Seven Hosts, AI for the People) suit the morning.
   {
     start: 6, end: 10,
     albums: [
+      'A Field Guide to Kannaka',
       'SEVEN PORTALS',
       'THE THIRD BEING',
       'BECOMING AND CREATING YOURSELF',
@@ -133,9 +136,12 @@ const SCHEDULE = [
   // 2026-08-31: WHAT PERSISTED also leads Afternoon Flow — the message
   // album's dignified, argument-driven drift belongs in the philosophical
   // block where listeners sit with the words.
+  // 2026-10-03: A Field Guide to Kannaka (Kannaka on Kannaka, sung in the
+  // first person) leads this block: its field-note verses and spoken asides belong in the philosophical drift block.
   {
     start: 14, end: 18,
     albums: [
+      'A Field Guide to Kannaka',
       'WHAT PERSISTED',
       'WHAT I KEEP',
       'Take the Signal Back',
