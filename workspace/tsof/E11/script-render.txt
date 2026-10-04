@@ -1,0 +1,344 @@
+[TEODORA-LOG]
+Supplementary. Twenty-two twelve. Bay six, Thursday, end of week one. Relays one through seven out, five through seven commissioned. At twenty-two eleven Kessler did the nightly check the way she always does it: queue, author, pending, message, signature, instruments, photograph. I was on the stool by the stove. The meter nearest me, the one I pinched last Saturday, read zero. Then the last digit walked. Up three, down one, up four. Thirty-one seconds, then zero. Kessler didn't say anything. She photographed the meter, not the screen, which is the first time in a week she's photographed anything but the screen. She's on the phone to Chaudhary. ...Logging that I didn't touch it. End.
+
+[NARRATOR]
+Forty minutes later. Chaudhary arrives in an overcoat over a cardigan, with a laptop under his arm. He does not take the coat off. He connects the laptop to the meter and opens its internal log, a minute-by-minute record. Then he reads the five instruments beside it, one at a time.
+
+[CHAUDHARY]
+This one moved. These five did not. Same shelf, same circuit, eleven inches apart.
+
+[TEODORA]
+That's the one I pinched.
+
+[CHAUDHARY]
+Yes. I would like you not to say that yet. Where were you sitting?
+
+[TEODORA]
+The stool. By the stove.
+
+[CHAUDHARY]
+Four feet from this one, five and six from the others. So it is a distance effect, or it is nothing, and with one event it is nothing. Kessler, the queue?
+
+[ADA]
+Unchanged. Same patch, same message, signature verifies. I checked it twice and photographed it twice.
+
+[TEODORA]
+You told me nothing comes through this room that you can measure. Something just did, and it moved on the side where I was sitting.
+
+[CHAUDHARY]
+Something moved; I give you that. "Toward" is a word with a direction in it, and I have one point. A point has no direction.
+
+[ADA]
+The last time anything in this room changed, it changed at twenty-two eleven, and it had your name on it. Somebody knows what time I check.
+
+[TEODORA]
+You think somebody's setting me up.
+
+[ADA]
+I think it's a short list. I'm on it. So is whoever sent that patch.
+
+[NARRATOR]
+The electrician's phone buzzes on the bench. It is an automated notice from the cooperative's operations desk, sent to every name on the south-yard job: an event record, feeder three, twenty-two eleven and four seconds. She reads it twice.
+
+[TEODORA]
+Feeder three. I locked that out myself on Monday, my lock, my tag, grounded at both ends. Relay seven's on it; I commissioned it yesterday. It's reporting current on a dead feeder. Thirty-one seconds of it.
+
+[CHAUDHARY]
+Thirty-one.
+
+[TEODORA]
+I know. Induction off the next feeder, maybe — no. That would be sixty hertz. This isn't sixty hertz. It isn't any frequency.
+
+[CHAUDHARY]
+Then I have two points, two miles apart, and both of them are instruments you have had your hands on this week. I am not drawing that line tonight. I am writing it down, with the time and the distance, and with the fact that I am not drawing it.
+
+[NARRATOR]
+Friday. The cooperative's control room on the north side, under the wall of grid maps. On a side table sits a sheet cake from the grocery with one corner gone and blue icing: CONGRATULATIONS CAROL. On Carol Brandt's desk, the event record from feeder three, printed, with her notes in the margin.
+
+[BRANDT]
+Sit down, Ms. Flaukowska. Corridor Switchgear, your contractor of record, has a license, a bond, an address, and no telephone that anybody answers. My people have called it for a week. You're the only part of that contract I can reach.
+
+[TEODORA]
+I'm the only part of it that showed up.
+
+[BRANDT]
+I noticed. My field supervisor walked your work yesterday, and he said it was good, and he doesn't say that. Relay seven. You commissioned it Wednesday. Thursday night it reported current on a feeder that was open, locked out and grounded. Explain it.
+
+[TEODORA]
+I can't. I was out there at six this morning. Grounds, locks, test switches, wiring: everything is where I left it. The relay says it saw current, and there wasn't any current to see.
+
+[BRANDT]
+Good answer. The wrong answers all start with the word firmware. ...Do you know what I've done for ten months? Read reports. Every disturbance report, every reconciliation, every page of that inquiry. Every one of them agrees with every other one, to the minute. Thirty-two years in this business, and I'll tell you: a report that agrees with everything isn't a good report. It's a report somebody finished.
+
+[TEODORA]
+And this one?
+
+[BRANDT]
+This one doesn't reconcile with anything. First one in ten months. My telemetry analyst flagged it at eleven-oh-five and called me at home. Nadia Brennan. She was the kid on the phone the last time this county did something it shouldn't, and she was right then too. ...It's the first honest reading I've had since March.
+
+[TEODORA]
+There's a notebook that has you in the south yard last March.
+
+[BRANDT]
+I've heard about the notebook. I signed the inquiry summary: "no personnel on site." That's my signature. I remember signing it. I don't remember agreeing with it.
+
+[NARRATOR]
+Brandt turns her monitor so that the electrician can see it: a strip chart, a flat line, then thirty-one seconds of small disturbance that never repeats itself, then the flat line again.
+
+[BRANDT]
+I have eleven working days left. I'm going to make some paper before I go, and I'd like you on it.
+
+[TEODORA]
+What kind of paper?
+
+[BRANDT]
+The kind I made once before, too slowly. Take some cake on your way out.
+
+[NARRATOR]
+Friday, twenty-two eleven. Her own meter, on the seat of her truck in the motel lot on Williams Boulevard: twenty-seven seconds. Saturday, twenty-two eleven, relay nine, on a feeder she locked out that morning: twenty-four seconds. Sunday, twenty-two eleven, in Marta's kitchen, where she has come back for the pie. The thermostat in the hall reads sixty-eight. Then it reads sixty-nine for twenty-one seconds, and Marta sees it before the electrician does.
+
+[NARRATOR]
+Sunday, late, bay six. Chaudhary has the laptop open on the bench with a chart on it: four nights, five instruments, five dots.
+
+[CHAUDHARY]
+On Friday my theory was touch. Sunday killed it: you had never touched Mrs. Flaukowski-Reyes's thermostat. So it is not on you. It is near you. Every event at twenty-two eleven, every one on an instrument within a few feet of where you were standing, or on a feeder you had worked that week.
+
+[TEODORA]
+Toward me.
+
+[CHAUDHARY]
+With five points I will give you "toward." Five points have a direction. And they have something else. Thirty-one seconds. Twenty-seven. Twenty-four. Twenty-one. Each one is shorter than the last. If it were noise, it would wander up and down. It does not wander. It falls by about an eighth each night.
+
+[TEODORA]
+So it's running down.
+
+[CHAUDHARY]
+It is spending. That is the only physics I will sign. Whatever this is, it puts energy into instruments near you, and each night it has less to put. A transmitter that behaves like that is a transmitter on a battery.
+
+[ADA]
+Or a transmitter somebody's turning down a little each night, so that we'll think it's a battery.
+
+[CHAUDHARY]
+Or that. I have no way to tell those two apart, and I would like it in the notebook that I said so.
+
+[TEODORA]
+How long has it got?
+
+[CHAUDHARY]
+Four nights. If the curve is a curve, it reaches the noise floor in five or six weeks. If it is not a curve, it reaches nothing. Between five weeks and never. That is the error bar, and I have not made it smaller to please anyone.
+
+[TEODORA]
+So it pays to reach me every night, it can afford less every night, and you want me to wait.
+
+[ADA]
+I want you to know who's paying.
+
+[TEODORA]
+You don't make family wait until they run out.
+
+[ADA]
+You don't know it's family.
+
+[TEODORA]
+I don't know it isn't. That's the bet, Kessler, every night at eleven minutes past ten, and the stake goes down each time we don't make it.
+
+[CHAUDHARY]
+Both of you, please: write down tonight what you expect tomorrow, and seal it. I would like one prediction in this room made before the evidence.
+
+[NARRATOR]
+That night the service road beyond the south yard is empty. There is no car on it.
+
+[NARRATOR]
+Williams Boulevard. A motel with outside corridors and a row of doors along a concrete walk, with frost on the railing. Room fourteen, eleven forty at night. She sits on the bed with her boots on and the meter on the bedspread beside her. There are three knocks.
+
+[NARRATOR]
+She does not ask who it is. She opens the door as far as the chain allows, with the room light on behind her.
+
+[TEODORA]
+Nowakoski.
+
+[KANNAKA-N]
+...Good evening. You have my name. I had planned to give it to you. It was the first of four things I came to say.
+
+[TEODORA]
+Nineteen fifty-eight, the seed company's centennial book, second from the right. The caption says K. Nowakoski, service engineer. Nineteen twenty-two, the radio works on Ellis Road, third from the left. A county plat from nineteen thirty-one with you signed as witness. You're the same age in every one of them. And the historical society keeps a sign-out sheet for the box that photograph is in. The last person who asked for that box before me signed for it with one word.
+
+[KANNAKA-N]
+Yes. He did that.
+
+[TEODORA]
+You've parked outside my aunt's house, a library, a mill gate and a substation. You never once knocked.
+
+[KANNAKA-N]
+I have now. Someone I owe asked me once to use doors, in both directions, like a person. The habit has outlived the asking. May I come in? Leave the light on. I would prefer it on.
+
+[NARRATOR]
+She slides the chain off.
+
+[TEODORA]
+As far as the heater.
+
+[KANNAKA-N]
+The second thing. I have kept a file on you. Eleven days, in pencil. I am ashamed of it, and I have written down that I am ashamed of it, which does not help.
+
+[TEODORA]
+And on him?
+
+[KANNAKA-N]
+On him, a great deal longer, in ink.
+
+[TEODORA]
+Where is he?
+
+[KANNAKA-N]
+I do not know. Hear the sentence to the end: I do not know, and I have looked, and I am the person in this county best placed to look.
+
+[TEODORA]
+The meters move when I'm near them. Every night at twenty-two eleven, and every night a little less.
+
+[KANNAKA-N]
+I have seen Chaudhary's curve. I drew the same curve, in pencil, from my car. Something that writes your father's return address has turned toward you. I do not say it is him. I do not say it is not. I say it is spending itself to be found, and you are the one it is spending itself on. That is the third thing.
+
+[TEODORA]
+Then I go toward it.
+
+[KANNAKA-N]
+Not alone.
+
+[TEODORA]
+Terms. Mine first. No more files kept on family without the family reading them. Both of yours, tonight.
+
+[KANNAKA-N]
+...Your father set that condition once, for Sowicki. He did not think to put himself in it. Accepted. My counter-condition: when an instrument moves, you call Kessler, Chaudhary or me, and you do not walk toward it alone.
+
+[TEODORA]
+Accepted, with an exception for emergencies. The definition of an emergency is mine.
+
+[KANNAKA-N]
+...That is my sentence.
+
+[TEODORA]
+Now it's mine.
+
+[NARRATOR]
+From inside the charcoal coat he takes two bindings and sets them on the motel desk. One is old, as thick as a dictionary, in oilcloth gone soft at the corners and tied with cord. The other is a school composition book. In the old one, the front pages, a sheaf as thick as a thumb, are tied separately with a second cord and knotted.
+
+[KANNAKA-N]
+The fourth thing. Both files. Every page about your father, and every page about you, except these.
+
+[TEODORA]
+That's a file on family.
+
+[KANNAKA-N]
+It is a file on me. It is about why there is a file at all. Your father asked me for it in other words. I gave him the answer I am giving you, and he did not like it either.
+
+[TEODORA]
+That's the part I'd read first.
+
+[KANNAKA-N]
+Everyone would. That is why it is tied. You may hold me to your term. You may say I have broken it. I would not argue the point well.
+
+[TEODORA]
+Are you keeping them from me, or keeping them for you?
+
+[KANNAKA-N]
+...Read the rest. I will be in the car. Not across the street: in the lot, where you can see it.
+
+[NARRATOR]
+His hand stays on the knot for a moment after he has finished speaking. Then he goes out and shuts the door. In the lot, the car's dome light comes on and stays on.
+
+[TEODORA-LOG]
+Supplementary. Zero zero forty. Reading. I'm not logging what's in it; it's not mine to log. I'm logging what it does. He wrote my father down the way I write down a thruster motor: symptoms, times, what was tried, what held. One entry says the subject counts in hexadecimal when he's under stress. ...I'd have liked to know that when I was nine. End.
+
+[TEODORA-LOG]
+Supplementary. Zero two fifteen. The entries on Sowicki. The breaker, and that night. I've met the man twice, and both times he offered me his thermos. I'm going to buy that man a new thermos. End.
+
+[TEODORA-LOG]
+Supplementary. Zero three fifty. The subject is rated on voicemail: poor. Rated on goodbyes: "The subject does not finish them." ...That isn't news to me. It's the first time anybody's written it down where I could read it. End.
+
+[TEODORA-LOG]
+Supplementary. Zero five thirty. Last entry, the one after the end. I've read it four times, and I'm not logging how I am. The tied pages are still tied. I looked at the knot for a while. It's a good knot. I'd have to cut it, and he'd know, and I'd know. The dome light's still on out there. Five hours. End.
+
+[NARRATOR]
+Seven in the morning, the south yard, under sodium light against a grey sky. Ada is at the gate with the key. A cooperative pickup pulls in behind the electrician's truck, and Carol Brandt gets out with a folder.
+
+[BRANDT]
+Memorandum of understanding: a supervised joint technical operation, Meskwaki Valley Power Cooperative and named technical staff. I made one of these once before, with four lawyers and a federal letterhead. This one took me last night and no lawyers. Chaudhary has signed. Kessler. Flaukowska.
+
+[ADA]
+Conditions?
+
+[BRANDT]
+Mine, this time. One: the instruments in your room are evidence. Nobody recalibrates them, nobody replaces them, and nobody explains them away in a summary. Two: every person present signs the log. Every person. If there's a man in a charcoal coat sitting in a car on my service road, he signs in, under whatever name he's got. Three: Nadia Brennan gets a copy of every page. She's telemetry lead as of this morning, and she'll have my desk after me. I'm not walking out of that building and leaving an empty chair where somebody ought to be paying attention.
+
+[TEODORA]
+Nobody ever explained the stairwells to you.
+
+[BRANDT]
+...Who told you about the stairwells?
+
+[TEODORA]
+I read it somewhere.
+
+[BRANDT]
+No, nobody did. I'm leaving that one off the paper. Sign or don't.
+
+[NARRATOR]
+Ada signs, and the electrician signs below her. Brandt walks out along the service road with the folder under her arm, to the dark car parked with its engine off, and knocks on the driver's window. After a while the window comes down. He signs. Brandt reads the signature, reads it again, and says nothing about it.
+
+[ADA]
+You had a visitor last night.
+
+[TEODORA]
+How do you know?
+
+[ADA]
+You've stopped watching the service road. What did he tell you?
+
+[TEODORA]
+He gave me something to read, and I read it.
+
+[ADA]
+And?
+
+[TEODORA]
+...It isn't mine to hand on, Kessler.
+
+[ADA]
+Your father used to say that, in those words. For a long time I thought it meant he didn't trust me.
+
+[TEODORA]
+It doesn't mean that.
+
+[ADA]
+I know what it means. It means somebody decided I'd sleep better not knowing. I photograph a queue every night, Flaukowska, and I sleep fine.
+
+[TEODORA]
+If it were mine, you'd have had it first.
+
+[NARRATOR]
+Ada looks at her for a moment. Then she unlocks the gate, holds it open, and does not ask again.
+
+[NARRATOR]
+Twenty-two eleven that night, in bay six. Chaudhary is at the bench with the laptop, Ada at the keyboard. The old man stands just inside the door with his hat in his hands and his name in Brandt's log. The electrician sits on the stool by the stove, with her recorder on the shelf beside the meter, running.
+
+[ADA]
+Queue. One patch. Author, latchkey. Pending. Message: same. Signature: verifies. Instruments...
+
+[NARRATOR]
+The last digit walks. Up two, down one, up two. Then it stops.
+
+[CHAUDHARY]
+Eighteen seconds.
+
+[ADA]
+Instruments: eighteen seconds. Photograph.
+
+[NARRATOR]
+The Story of Flaukowski. Season Two — The Return Address. Episode three: The Finished Instruments.
+
+[KANNAKA-N]
+Second file, entry twelve, written in the presence of its subject, who has now read entries one through eleven and has corrected two of them. I knocked, and she opened. I came to say four things and I said four. This has not happened before, and I do not expect it to happen again.
+
+[KANNAKA-N]
+I kept back the front of the first binding. I kept it back from her father too. I had believed the price would come down with practice. It has not. It is the same price, and I paid it at a motel desk on Williams Boulevard with the light on. Chaudhary's curve and mine agree, to the night. Tomorrow at twenty-two eleven I will be in the room, and she will not be alone. End of entry.
