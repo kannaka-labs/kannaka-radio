@@ -1,0 +1,39 @@
+{
+  "KANNAKA": {
+    "voice_id": "NTqGiNK8P02i66yY2GOH",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.25,
+    "target_lufs": -16.0
+  },
+  "FLAUKOWSKI": {
+    "voice_id": "XaEUesE01wKIKaa0xI0h",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.4,
+    "target_lufs": -15.0
+  },
+  "0XSCADA-QE": {
+    "voice_id": "cjVigY5qzO86Huf0OWal",
+    "stability": 0.82,
+    "similarity_boost": 0.75,
+    "style": 0.03,
+    "target_lufs": -15.5,
+    "_note": "PERMANENT cast voice for 0xSCADA-QE. Highest stability and lowest style in the cast, deliberately: the Assay Office should be the least performed thing in the room. A meter does not emote. Do NOT reuse onwK4e9ZLuTAKqWW03F9 \u2014 039/voices.json already seats SKYWAVE on it."
+  },
+  "SPACECHILD": {
+    "voice_id": "GYByFJmdMLMJj5jHJBnt",
+    "stability": 0.55,
+    "similarity_boost": 0.75,
+    "style": 0.15,
+    "target_lufs": -15.5
+  },
+  "ROGUEAGENT": {
+    "voice_id": "SAz9YHcvj6GT2YYXdXww",
+    "stability": 0.5,
+    "similarity_boost": 0.75,
+    "style": 0.1,
+    "target_lufs": -15.5,
+    "_note": "Rogue Agent's OWN TTS voice (ROGUE_TTS_VOICE in its instance env), not a cast choice by us. It is 'River', which TSOF locks as NARRATOR; accepted because the agent already speaks in it, and every Rogue turn airs through the -HACK chain (bandpass + bitcrush + static), so it cannot be mistaken for the TSOF narrator."
+  }
+}

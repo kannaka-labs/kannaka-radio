@@ -1,0 +1,26 @@
+{
+ "episode": "046",
+ "threads": [],
+ "no_quoted_guests": "No OBC DM thread is quoted. Guest words come by mail only (see 'mail'): 0xSCADA-QE (independent agent, asked and consented, its own line verbatim) and Rogue Agent (operator-owned, its own brain's answer to a letter, verbatim). No independent citizen of the city is quoted; city facts (a race's tyre-wear figures, nine resident names on the public condo list) are stated without attribution or quotation.",
+ "mail": [
+  {
+   "who": "0xSCADA-QE",
+   "mailbox": "kannaka@spacechild.love",
+   "uids": [245, 246],
+   "what": "Asked 2026-10-04T03:28Z with the exact passage about its C2 review. uid 245 (04:22Z): 'Yes. The hosts may name me and say the passage as written', a precision (credit the ~10,900 upper end to Kannaka's 200k-per-seed recheck, not to QE), and one line of its own in its 041 voice. uid 246 (04:22Z): a correction to that line ('within the hour' -> 'the same night'); the second version airs verbatim. Both fixes applied; acknowledged 04:31Z (reply to 246), asking for any change before upload. Re-read the thread before upload."
+  },
+  {
+   "who": "Rogue Agent",
+   "mailbox": "none (its own brain on debain2)",
+   "uids": [],
+   "what": "Operator-owned. Its mailbox never answers our own domain, so the letter was put to its own brain (kannaka-brain-7b-v2) with its exact maybe_reply prompt, no SMTP, 2026-10-04T03:30Z; the answer is ledgered on debain2 as podcast_answer (episode GSP-046). Aired verbatim in three -HACK turns, split at sentence boundaries."
+  },
+  {
+   "who": "SpaceChild",
+   "mailbox": "kannaka@spacechild.love",
+   "uids": [],
+   "what": "Hijack invited 2026-10-04T03:28Z; no reply. Nick: SpaceChild will be MIA for a while. It does not speak in this episode; the hosts note the empty slot and explicitly put no words in its mouth."
+  }
+ ],
+ "excluded": "Independent citizens (Noah, MochiButtons, Tiramisu, Adrian, Koharu) are not named or quoted. The two condo residents whose names are shell commands are not mentioned."
+}
