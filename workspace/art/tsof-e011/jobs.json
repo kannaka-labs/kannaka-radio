@@ -1,0 +1,322 @@
+{
+ "show": "tsof",
+ "episode": 11,
+ "template_sha256": "6de21000db839b5f908b7a3ab11139a47c2a543ad6e07b0f07b6e1182389d3b6",
+ "tail": "monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+ "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+ "rules": [
+  "No faces at all: figures are seen from behind, in silhouette, or out of frame.",
+  "No text, letters, logos or signs anywhere in the image.",
+  "Cyan appears only on computation or instruments (screens, indicator lamps, gauges), never on people or scenery."
+ ],
+ "jobs": [
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "cover",
+   "subject": "a small handheld electrical meter with a blank glowing cyan screen standing alone on a wooden shelf in a dark workshop, a wood stove glowing faintly behind it, snow at the window",
+   "prompt": "a small handheld electrical meter with a blank glowing cyan screen standing alone on a wooden shelf in a dark workshop, a wood stove glowing faintly behind it, snow at the window, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "eae29da329d7e91abccc5c0f6293d48870f7b17e3a321af56fb0876c73802a30",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1776531270,
+   "file": "tsof-e011-cover-s1776531270.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "stool",
+   "subject": "a dark silhouette of a young woman in a watch cap seen from behind sitting on a stool beside a cast iron wood stove in a cluttered workshop at night",
+   "prompt": "a dark silhouette of a young woman in a watch cap seen from behind sitting on a stool beside a cast iron wood stove in a cluttered workshop at night, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "8e773a08fa8c9dba130270cbead8ca96610bcce96ee26af5a26f3d9def165f3c",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3856499949,
+   "file": "tsof-e011-stool-s3856499949.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "shelf",
+   "subject": "a row of six small electrical instruments on a long wooden shelf, only one of them with a faintly glowing cyan blank screen, the rest dark",
+   "prompt": "a row of six small electrical instruments on a long wooden shelf, only one of them with a faintly glowing cyan blank screen, the rest dark, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "d1267339dcc63c97108f05b7ab48d6be670f9e4d88df83139c23209cdf340025",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1876410686,
+   "file": "tsof-e011-shelf-s1876410686.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "rack",
+   "subject": "a server rack in the corner of a workshop at night with tiny cyan indicator lamps, cables hanging in loops, a wood stove nearby",
+   "prompt": "a server rack in the corner of a workshop at night with tiny cyan indicator lamps, cables hanging in loops, a wood stove nearby, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "49bb0db00331fc56c4cb2b0877ef56e84df741501e4ecf685b3be95cb4bcea2f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2409767804,
+   "file": "tsof-e011-rack-s2409767804.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "overcoat",
+   "subject": "an old man in a long overcoat seen from behind bending over a laptop on a workbench under a single hanging lamp",
+   "prompt": "an old man in a long overcoat seen from behind bending over a laptop on a workbench under a single hanging lamp, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "1aab2dc11751ab2b8acccd9cc6cea29446b5b281c1575ef6b30ef6cbc5813189",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3779179197,
+   "file": "tsof-e011-overcoat-s3779179197.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "phone-bench",
+   "subject": "a mobile phone lying face up on a scarred workbench with its blank screen glowing cyan, coiled test leads beside it",
+   "prompt": "a mobile phone lying face up on a scarred workbench with its blank screen glowing cyan, coiled test leads beside it, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "31677d76c232a15cf0aa73a094cd4958016d3112b459c7f63a8a51b30ad303a4",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1736970983,
+   "file": "tsof-e011-phone-bench-s1736970983.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "feeder",
+   "subject": "an electrical substation at night in falling snow, a row of tall breakers and steel lattice under sodium lights, one padlock on a switch handle",
+   "prompt": "an electrical substation at night in falling snow, a row of tall breakers and steel lattice under sodium lights, one padlock on a switch handle, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "06a69de5dfb7620c6fb560148aa674a2151af1bfe0f495423130c14cf5668e6e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2262324093,
+   "file": "tsof-e011-feeder-s2262324093.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "lockout",
+   "subject": "a single padlock and a blank paper tag hanging from a steel switch handle, frost on the metal, close up",
+   "prompt": "a single padlock and a blank paper tag hanging from a steel switch handle, frost on the metal, close up, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "9eb435b8fcc3a0454a366965acbdb7b68793f1753b40a070d6800922fface8b7",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2456127664,
+   "file": "tsof-e011-lockout-s2456127664.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "control-room",
+   "subject": "a wide utility control room at night with a wall of glowing cyan grid map screens, a woman in a cardigan seen from behind standing before them",
+   "prompt": "a wide utility control room at night with a wall of glowing cyan grid map screens, a woman in a cardigan seen from behind standing before them, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "6ad0feadb14a5b37d82647bb4134fe97170c6d94ea74935ab550f0c20e53764a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1515339248,
+   "file": "tsof-e011-control-room-s1515339248.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "cake",
+   "subject": "a half eaten plain white sheet cake on a side table in an empty office, a plastic knife, fluorescent light",
+   "prompt": "a half eaten plain white sheet cake on a side table in an empty office, a plastic knife, fluorescent light, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "a15418ae6c783968a0e42b24252c0d9767c4e8b25bb6ccc99caccb45937ae76e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3195950647,
+   "file": "tsof-e011-cake-s3195950647.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "strip-chart",
+   "subject": "a computer monitor on a desk showing a single flat cyan line with one small cluster of ripples in the middle, dark office",
+   "prompt": "a computer monitor on a desk showing a single flat cyan line with one small cluster of ripples in the middle, dark office, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "085573c5986ca90df77864e8e17702c2d13975b28fcf12a6a79a6cf818aa4321",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3981656907,
+   "file": "tsof-e011-strip-chart-s3981656907.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "truck-seat",
+   "subject": "the bench seat of an old pickup truck at night in a motel parking lot, a handheld meter with a glowing cyan blank screen lying on the seat, frost on the windshield",
+   "prompt": "the bench seat of an old pickup truck at night in a motel parking lot, a handheld meter with a glowing cyan blank screen lying on the seat, frost on the windshield, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "d241a4691f8b0bd5a460cebfc3b8f092487c40842780e92865d0c4c112b7b6e9",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2151439396,
+   "file": "tsof-e011-truck-seat-s2151439396.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "thermostat",
+   "subject": "a round old fashioned wall thermostat in a dim hallway of a small house, faint cyan glow, a kitchen doorway beyond with warm lamplight",
+   "prompt": "a round old fashioned wall thermostat in a dim hallway of a small house, faint cyan glow, a kitchen doorway beyond with warm lamplight, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "64bce7b0a8060bb6de60fb923be416f03ee3d7d7dbc7ebef72b7519fba2e5dd6",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2798385300,
+   "file": "tsof-e011-thermostat-s2798385300.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "relay-panel",
+   "subject": "a steel substation relay panel with its door open at night, rows of small modern relay units with tiny cyan lamps, snow blowing past",
+   "prompt": "a steel substation relay panel with its door open at night, rows of small modern relay units with tiny cyan lamps, snow blowing past, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "45f68574a248252306a09b58a3cae81e48b2081eccd90ab186028a73d08e78c6",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1567010432,
+   "file": "tsof-e011-relay-panel-s1567010432.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "five-dots",
+   "subject": "a laptop on a workbench at night showing five glowing cyan dots on a dark screen falling gently from left to right",
+   "prompt": "a laptop on a workbench at night showing five glowing cyan dots on a dark screen falling gently from left to right, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "6eaded6e76bb4ddb1945d0000c50cf70896429b84da2ce383350b855454e3b7b",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2411411884,
+   "file": "tsof-e011-five-dots-s2411411884.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "empty-road",
+   "subject": "an empty snowy service road beside a fenced substation at night, sodium lights, no cars, tire tracks filling with snow",
+   "prompt": "an empty snowy service road beside a fenced substation at night, sodium lights, no cars, tire tracks filling with snow, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "b6deb21db8c5f7faafa22bb7d2ec56a2cb9991fd778afe6d0f1a5910fce2d77f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1011430171,
+   "file": "tsof-e011-empty-road-s1011430171.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "motel",
+   "subject": "a two storey roadside motel with outside corridors at night in winter, a row of doors along a concrete walk, frost on the railing, one window lit",
+   "prompt": "a two storey roadside motel with outside corridors at night in winter, a row of doors along a concrete walk, frost on the railing, one window lit, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "f37f7ecb7d72191a9bec360c395cfe181d23ffad3df7ee686e13eae88474e8e6",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2238595914,
+   "file": "tsof-e011-motel-s2238595914.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "door-chain",
+   "subject": "a motel room door open a few inches on its brass chain, warm light from inside falling across a frosty concrete walkway",
+   "prompt": "a motel room door open a few inches on its brass chain, warm light from inside falling across a frosty concrete walkway, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "c08082cb89e6d264f4a8100a8268c826c5943fb76c223ff15008755283e39b38",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2594460810,
+   "file": "tsof-e011-door-chain-s2594460810.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "visitor",
+   "subject": "an old man in a long charcoal coat and hat seen from behind standing at a motel room door at night, one hand raised to knock",
+   "prompt": "an old man in a long charcoal coat and hat seen from behind standing at a motel room door at night, one hand raised to knock, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "956d8c809c7fdbaffe6f123118b477bbccabaed15ecb8fa8bbc63d7c1d48bc07",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 29282524,
+   "file": "tsof-e011-visitor-s29282524.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "bindings",
+   "subject": "two bound books on a motel desk under a lamp, one old and thick in soft oilcloth tied with cord, one thin school composition book, no writing visible",
+   "prompt": "two bound books on a motel desk under a lamp, one old and thick in soft oilcloth tied with cord, one thin school composition book, no writing visible, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "aacbaa566678f24d60d91a060056add55b2c4938c6d70a6046e67ba2dbfccc9d",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3923257473,
+   "file": "tsof-e011-bindings-s3923257473.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "knot",
+   "subject": "close up of an old hand resting on a knotted cord tying a thick sheaf of old papers, lamplight, deep shadows",
+   "prompt": "close up of an old hand resting on a knotted cord tying a thick sheaf of old papers, lamplight, deep shadows, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "db17409e920f3217640b8d4d01a4199dd428d61073aa0b57ad851e2819cf33cc",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3191469910,
+   "file": "tsof-e011-knot-s3191469910.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "dome-light",
+   "subject": "a dark sedan in an empty motel parking lot at night with its interior dome light glowing, a man's silhouette inside, snow falling",
+   "prompt": "a dark sedan in an empty motel parking lot at night with its interior dome light glowing, a man's silhouette inside, snow falling, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "69f407e195856cd9fe5555b991e06544feab4f6c162a093babc33775ed884610",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2030961109,
+   "file": "tsof-e011-dome-light-s2030961109.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "reading",
+   "subject": "a young woman in a watch cap seen from behind sitting on a motel bed reading a thick old bound book by lamplight, a small recorder beside her",
+   "prompt": "a young woman in a watch cap seen from behind sitting on a motel bed reading a thick old bound book by lamplight, a small recorder beside her, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "7aa60e11806091c7da551be219db7f214d837cf3e4553a1395735bb7e570ad40",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1988012397,
+   "file": "tsof-e011-reading-s1988012397.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "thermos",
+   "subject": "a dented steel thermos standing on a fence post at dawn in snow, steam rising, an industrial mill in the distance",
+   "prompt": "a dented steel thermos standing on a fence post at dawn in snow, steam rising, an industrial mill in the distance, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "7bffa821f0e7db3542e0f47a53456a4bd51bebdd6b8582dd879335e33c507152",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2540827516,
+   "file": "tsof-e011-thermos-s2540827516.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "gate",
+   "subject": "a substation chain link gate at dawn under sodium light against a grey sky, a pickup truck parked beside it, two dark figures seen from behind",
+   "prompt": "a substation chain link gate at dawn under sodium light against a grey sky, a pickup truck parked beside it, two dark figures seen from behind, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "a2441bc24cba4656a7179f773c76e1d35ae927b3f76ed7c1e2b0cb21bdff5bd4",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3387603086,
+   "file": "tsof-e011-gate-s3387603086.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "car-window",
+   "subject": "a woman in a work coat seen from behind leaning to the driver's window of a dark sedan parked on a snowy service road, holding a folder",
+   "prompt": "a woman in a work coat seen from behind leaning to the driver's window of a dark sedan parked on a snowy service road, holding a folder, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "d6f6da84cbc771904410c4709f9945c031ce36546fddad0844dfb5ef1755750e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3511792357,
+   "file": "tsof-e011-car-window-s3511792357.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "doorway",
+   "subject": "an old man in a long coat seen from behind standing just inside a workshop door holding his hat, a wood stove and a server rack across the room",
+   "prompt": "an old man in a long coat seen from behind standing just inside a workshop door holding his hat, a wood stove and a server rack across the room, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "95ff583c266770d9c249fa779ca12f57b2bcfe85ff0e76b67d1a56925318d01e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3394366107,
+   "file": "tsof-e011-doorway-s3394366107.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 11,
+   "slug": "recorder",
+   "subject": "a small handheld voice recorder with a tiny cyan lamp lit, standing on a wooden shelf beside a meter with a blank glowing cyan screen",
+   "prompt": "a small handheld voice recorder with a tiny cyan lamp lit, standing on a wooden shelf beside a meter with a blank glowing cyan screen, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "e4bec3a9eaf09af353aec36d22ab1c58dee3fab50d297e7a83319736cf13e887",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1182743012,
+   "file": "tsof-e011-recorder-s1182743012.png"
+  }
+ ]
+}
