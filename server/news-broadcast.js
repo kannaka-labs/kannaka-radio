@@ -151,6 +151,20 @@ class NewsBroadcast {
           // unresolved world-state market against today's themes (so an
           // agent who predicted yesterday gets reputation feedback today).
           await this._resolveWorldStateMarkets(interp).catch(() => {});
+          // Open this slot's world-state market as soon as the Flux themes are
+          // in hand, NOT only after the bulletin airs. The market is built from
+          // the themes and resolved against the next slot's themes; the bulletin
+          // text never enters it. Gating it on delivery meant an LLM outage
+          // silenced the market loop too: during the Anthropic account cap
+          // (2026-09-21..29) no bulletin composed, so no world-state market
+          // opened for nine days. Once per slot (and the hub is checked for an
+          // existing market for this slot, which survives a restart).
+          if (this._marketOpenedFor !== key) {
+            this._marketOpenedFor = key;
+            await this._openWorldStateMarket(interp, key).catch((e) =>
+              console.warn(`   [news] world-state market open failed: ${e.message}`)
+            );
+          }
           text = await this._compose(interp, slot);
         }
         if (!text) {
@@ -174,15 +188,6 @@ class NewsBroadcast {
           try { saveState(this._stateFile, this._lastFired); }
           catch (e) { console.warn(`   [news] could not persist state: ${e.message}`); }
           console.log(`\uD83D\uDCF0 News broadcast delivered: ${key}`);
-          // Open a new world-state market locked to today's themes so the
-          // three constellation agents predict whether tomorrow's bulletin
-          // will rhyme. Resolution happens at the next bulletin via theme
-          // overlap (see _resolveWorldStateMarkets above).
-          if (interp) {
-            await this._openWorldStateMarket(interp, key).catch((e) =>
-              console.warn(`   [news] world-state market open failed: ${e.message}`)
-            );
-          }
         } else {
           console.log(`   [news] voiceDJ busy — retry next tick`);
         }
@@ -200,6 +205,9 @@ class NewsBroadcast {
     if (!this._gsHub) return;
     const themes = (interp.themes || []).slice(0, 5);
     if (themes.length === 0) return;
+    // One market per slot, even across a restart inside the slot's window.
+    const active = await this._gsHub.listMarkets({ active: true, tag: "world-state", limit: 20 }).catch(() => []);
+    if (active.some((m) => m && m.metadata && m.metadata.slot_key === slotKey)) return;
     const market = await this._gsHub.createMarket({
       question: `Will tomorrow's news desk surface any of these themes: ${themes.slice(0, 3).join(" / ")}?`,
       ttl_sec: 13 * 60 * 60, // 13h — slot+1 fires at +12h, leaves headroom
