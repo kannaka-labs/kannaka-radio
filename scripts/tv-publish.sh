@@ -28,6 +28,9 @@
 # NOT in it (not public, not in a carried playlist, or a title without a GSP-/TSOF- prefix that
 # is also under the nine-minute music floor) · 5 reload refused.
 #
+# Every `node -e` that receives the id passes it after `--`: YouTube ids may begin with '-'
+# (TSOF E11 is -0qNLwU-S4I), and node otherwise parses one as its own option ("bad option").
+#
 # It does not restart anything: the transmitter reloads in place. It never touches the radio.
 set -euo pipefail
 
@@ -120,7 +123,7 @@ if [[ -z "$WHERE" ]]; then
     if(hit.privacy!=="public")console.error("  build-slate carries PUBLIC videos only (a private one is a dead embed on air)");
     if(!hit.seconds)console.error("  no duration yet — YouTube is still processing it; re-run in a few minutes");
     if(!/^(GSP|TSOF)[- ]/i.test(hit.title))console.error("  title has no GSP-/TSOF- prefix, so it is treated as music and must be 1–9 minutes");
-  ' "$CAT" "$ID" 2>&1 || true
+  ' -- "$CAT" "$ID" 2>&1 || true
   rm -f "$CAT" /tmp/kannaka-tv-catalogue.js
   exit 4
 fi
@@ -129,7 +132,7 @@ rm -f "$CAT" /tmp/kannaka-tv-catalogue.js
 node -e '
   const f=JSON.parse(require("fs").readFileSync("data/features.json","utf8")).find(x=>x.ref===process.argv[1]);
   if(f)console.log(`carried as ${f.series} · ${f.episode||""} "${f.title}" (${Math.round(f.duration/60)} min, published ${f.published})`);
-' "$ID"
+' -- "$ID"
 echo "carried: $ID as $WHERE"
 
 # Best effort: is it already booked? The guide has no payloads, so ask each feature segment.
@@ -145,7 +148,7 @@ node -e '
     }
     console.log(`not yet booked in the next 12 h (${feats.length} long-form slots checked). Features air in Prime 18–22 Chicago; the picker takes the least-recently-aired quarter first, so a new episode is due at the next Prime pass.`);
   })().catch(e=>console.log("rundown check skipped: "+e.message));
-' "$ID" "$API"
+' -- "$ID" "$API"
 
 curl -s -m 10 "$API/api/health" | node -e 'let b="";process.stdin.on("data",d=>b+=d).on("end",()=>{try{const j=JSON.parse(b);console.log(`health: onAir=${j.onAir} features=${j.features} music=${j.music} segments=${j.segments}`)}catch{console.log("health: unreadable")}})'
 
