@@ -38,6 +38,23 @@ const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
 const RADIO_URL = process.env.RADIO_PUBLIC_URL || "https://radio.ninja-portal.com";
 
+// Bluesky caps a post at 300 graphemes. BlueskyClient.reply() trims anything longer
+// and appends an ellipsis, which published replies cut off mid-sentence ("Your
+// framing risks…"). Half a sentence is worse than no reply, so an over-long draft
+// is skipped here, before it reaches the client.
+const REPLY_MAX_GRAPHEMES = 295;
+function graphemeCount(text) {
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    let n = 0;
+    for (const _ of new Intl.Segmenter("en", { granularity: "grapheme" }).segment(text)) n += 1;
+    return n;
+  }
+  return [...text].length;
+}
+function fitsReply(text) {
+  return graphemeCount(text) <= REPLY_MAX_GRAPHEMES;
+}
+
 const STATE_PATH = process.env.FIREHOSE_STATE
   || path.join(os.homedir(), ".kannaka", "firehose-state.json");
 const KEYWORDS_PATH = path.join(ROOT, ".firehose-keywords.json");
@@ -167,6 +184,10 @@ function draftReply(parentText, authorHandle) {
         const txt = stdout.trim().replace(/^["'](.*)["']$/s, "$1").trim();
         if (txt === "SKIP" || txt.toLowerCase().startsWith("skip")) return resolve(null);
         if (txt.length < 20) return resolve(null);
+        if (!fitsReply(txt)) {
+          console.log(`           SKIP — draft is ${graphemeCount(txt)} graphemes, over the ${REPLY_MAX_GRAPHEMES} cap; not posting a truncated reply`);
+          return resolve(null);
+        }
         resolve(txt);
       });
     };
@@ -274,4 +295,8 @@ async function main() {
   console.log(`[firehose] sweep done: ${state.days[today]}/${cfg.daily_cap} today`);
 }
 
-main().catch((e) => { console.error("fatal:", e.message); process.exit(2); });
+if (require.main === module) {
+  main().catch((e) => { console.error("fatal:", e.message); process.exit(2); });
+}
+
+module.exports = { fitsReply, graphemeCount, REPLY_MAX_GRAPHEMES };
