@@ -85,6 +85,10 @@ async function main() {
     const m = await hub.createMarket({ question: 'q', ttl_sec: 600, tag: 'custom', source: 'system' });
     await hub.placeTrade({ market_id: m.id, trader_id: 'dee', outcome: 0, shares: 1 });
     await hub.resolveMarket({ market_id: m.id, winning_outcome: 1, method: 'labs-settlement' });
+    // eve has traded (the board lists only traders who have) but on a market
+    // that has not resolved: a real trader with no measured record.
+    const open = await hub.createMarket({ question: 'still open', ttl_sec: 600, tag: 'custom', source: 'system' });
+    await hub.placeTrade({ market_id: open.id, trader_id: 'eve', outcome: 0, shares: 1 });
     const rows = await hub.leaderboard({ sort: 'accuracy', limit: 100 });
     const iDee = rows.findIndex((r) => r.id === 'dee');
     const iEve = rows.findIndex((r) => r.id === 'eve');

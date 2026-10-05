@@ -652,6 +652,11 @@ class GhostSignalsHub {
     });
   }
 
+  // The board lists traders who have TRADED. 40 of 55 registered accounts on O1
+  // (2026-10-05) had never placed a trade and sat at the 100 starting capital,
+  // so the board was mostly empty rows and duplicate sign-ups. Accounts marked
+  // kind 'test' (deploy and MCP self-tests) are excluded as well. Nothing is
+  // deleted: getTrader still returns every account.
   leaderboard({ sort = 'capital', limit = 20 } = {}) {
     // Accuracy puts traders WITH a measured record first (no record sorts last).
     const ACC = '(CAST(trades_won AS REAL) / NULLIF(markets_measured, 0))';
@@ -665,7 +670,7 @@ class GhostSignalsHub {
         `SELECT id, display_name, kind, capital, reputation, trades_total, trades_won,
                 ${MEASURED_MARKETS_SQL} AS markets_measured
          FROM traders
-         WHERE id != 'system'
+         WHERE id != 'system' AND kind NOT IN ('system', 'test') AND trades_total > 0
          ORDER BY ${orderSql}
          LIMIT ?`,
         [Math.max(1, Math.min(100, Number(limit) || 20))],
