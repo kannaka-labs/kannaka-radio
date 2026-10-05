@@ -70,7 +70,9 @@ async function main() {
   console.log(`[synthesis] theme: ${topic}`);
 
   // Gather several grounded findings on the theme.
-  const raw = await runKannaka(["recall", `research ${topic}`, "--top-k", "8", "--json"], 120000);
+  // `kannaka recall` prints a JSON array by default and has no --json flag: passing it
+  // exits 2 ("unknown flag"), which read here as "0 grounded findings" on every run.
+  const raw = await runKannaka(["recall", `research ${topic}`, "--top-k", "8"], 120000);
   let results = [];
   try { results = raw ? JSON.parse(raw) : []; } catch { results = []; }
   const findings = results.map((r) => parseFinding(r.content || "")).filter(Boolean).slice(0, 5);

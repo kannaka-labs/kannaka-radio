@@ -207,5 +207,23 @@ run('a grounded dispatch posts with the paper\'s OpenAlex link, not the radio ho
   assert.deepStrictEqual(seen.links, ['https://openalex.org/W7115921653']);
 });
 
+// ------------------------------------------- recall has no --json flag
+
+// `kannaka recall` prints JSON by default; `--json` makes it exit 2 ("unknown
+// flag"). post-research-synthesis passed it, so every synthesis since at least
+// 2026-09-23 found "0 grounded findings" and skipped.
+run('no research script passes --json to kannaka recall', () => {
+  const dir = path.join(ROOT, 'scripts');
+  let calls = 0;
+  for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.js'))) {
+    const src = fs.readFileSync(path.join(dir, f), 'utf8');
+    for (const m of src.matchAll(/\[\s*["']recall["'][^\]]*\]/g)) {
+      calls += 1;
+      assert.ok(!/["']--json["']/.test(m[0]), `${f}: ${m[0]}`);
+    }
+  }
+  assert.ok(calls > 0, 'found no recall calls to check, so this test proves nothing');
+});
+
 if (!failed) console.log('\nAll research-dispatch grounding-gate tests passed');
 else process.exitCode = 1;
