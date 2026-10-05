@@ -153,6 +153,25 @@ function publicTrader(row) {
   return rest;
 }
 
+// ── Accuracy: markets won ÷ markets MEASURED ─────────────────────────
+// `trades_won` counts MARKETS (one per resolved market where the trader held
+// the winning side); `trades_total` counts individual TRADES. Dividing one by
+// the other was never a rate, and after the 2026-09-12 repair recomputed
+// trades_won from measured settlements only, it read ~0.4% for a curator that
+// had won 117 of 121 measured markets. The denominator is now the number of
+// distinct markets the trader held a position in that resolved by measurement
+// (not by price at TTL, not voided). null when there are none: no record is not
+// a 0% record.
+const MEASURED_MARKETS_SQL = `(SELECT COUNT(DISTINCT p.market_id) FROM positions p
+    JOIN markets m ON m.id = p.market_id
+   WHERE p.trader_id = traders.id AND m.resolved = 1
+     AND m.resolution_method NOT LIKE 'ttl%' AND m.resolution_method NOT LIKE 'void:%')`;
+
+function withAccuracy(row) {
+  const measured = Number(row.markets_measured) || 0;
+  return { ...row, markets_measured: measured, accuracy: measured > 0 ? Math.min(1, row.trades_won / measured) : null };
+}
+
 // ── Brier score for reputation update ─────────────────────────────────
 function brierAccuracy(predictedProb, actualOutcome /* 1 if happened, 0 else */) {
   const diff = predictedProb - actualOutcome;
@@ -397,6 +416,8 @@ class GhostSignalsHub {
         )`);
         this.db.run(`CREATE INDEX IF NOT EXISTS idx_pending_trades_state ON pending_trades(state)`);
         addCol(`ALTER TABLE pending_trades ADD COLUMN idempotency_key TEXT`);
+        // The accuracy subquery walks a trader's positions (64k rows on O1).
+        this.db.run(`CREATE INDEX IF NOT EXISTS idx_positions_trader ON positions(trader_id)`);
         this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_trader ON trades(trader_id)`, (err) => {
           if (err) return reject(err);
           // Seed system trader if not present
@@ -557,13 +578,10 @@ class GhostSignalsHub {
 
   getTrader(id) {
     return new Promise((resolve, reject) => {
-      this.db.get('SELECT * FROM traders WHERE id = ?', [id], (err, raw) => {
+      this.db.get(`SELECT *, ${MEASURED_MARKETS_SQL} AS markets_measured FROM traders WHERE id = ?`, [id], (err, raw) => {
         if (err) return reject(err);
         if (!raw) return resolve(null);
-        const row = publicTrader(raw);
-        // Add accuracy
-        row.accuracy = row.trades_total > 0 ? row.trades_won / row.trades_total : 0;
-        resolve(row);
+        resolve(withAccuracy(publicTrader(raw)));
       });
     });
   }
@@ -635,18 +653,25 @@ class GhostSignalsHub {
   }
 
   leaderboard({ sort = 'capital', limit = 20 } = {}) {
-    const orderCol = ({ capital: 'capital', reputation: 'reputation', accuracy: '(CAST(trades_won AS REAL) / NULLIF(trades_total, 0))' })[sort] || 'capital';
+    // Accuracy puts traders WITH a measured record first (no record sorts last).
+    const ACC = '(CAST(trades_won AS REAL) / NULLIF(markets_measured, 0))';
+    const orderSql = ({
+      capital: 'capital DESC',
+      reputation: 'reputation DESC',
+      accuracy: `${ACC} IS NULL ASC, ${ACC} DESC`,
+    })[sort] || 'capital DESC';
     return new Promise((resolve, reject) => {
       this.db.all(
-        `SELECT id, display_name, kind, capital, reputation, trades_total, trades_won
+        `SELECT id, display_name, kind, capital, reputation, trades_total, trades_won,
+                ${MEASURED_MARKETS_SQL} AS markets_measured
          FROM traders
          WHERE id != 'system'
-         ORDER BY ${orderCol} DESC
+         ORDER BY ${orderSql}
          LIMIT ?`,
         [Math.max(1, Math.min(100, Number(limit) || 20))],
         (err, rows) => {
           if (err) return reject(err);
-          resolve(rows.map(r => ({ ...r, accuracy: r.trades_total > 0 ? r.trades_won / r.trades_total : 0 })));
+          resolve(rows.map(withAccuracy));
         }
       );
     });
