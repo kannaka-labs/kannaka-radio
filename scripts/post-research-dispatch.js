@@ -29,6 +29,8 @@ const ROOT = path.resolve(__dirname, "..");
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
 const RADIO_URL = process.env.RADIO_PUBLIC_URL || "https://radio.ninja-portal.com";
+// `kannaka dispatch` recalls over the whole medium; on O1 it takes ~2.5 min under load (144 s measured 2026-10-05).
+const DISPATCH_TIMEOUT_MS = 300000;
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
@@ -41,7 +43,12 @@ function runKannaka(cliArgs, timeout = 60000) {
       timeout,
       maxBuffer: 1024 * 1024,
       env: { ...process.env, KANNAKA_QUIET: "1" },
-    }, (err, stdout) => resolve(err ? null : (stdout || "").trim()));
+    }, (err, stdout) => {
+      // Say WHY there is no output. A killed run used to read as "no grounding",
+      // which hid a 144 s dispatch behind a 60 s timeout for days (2026-10-04).
+      if (err) console.error(`[research-dispatch] kannaka ${cliArgs[0]} failed: ${err.killed ? `timed out after ${timeout / 1000} s` : (err.message || err.code)}`);
+      resolve(err ? null : (stdout || "").trim());
+    });
   });
 }
 
@@ -55,7 +62,13 @@ async function main() {
   // 1. Grounded finding from the HRM (the keystone primitive).
   const dispatchArgs = ["dispatch", "--json"];
   if (topic) dispatchArgs.push("--topic", topic);
-  const raw = await runKannaka(dispatchArgs);
+  const raw = await runKannaka(dispatchArgs, DISPATCH_TIMEOUT_MS);
+  if (raw === null) {
+    // The dispatch itself failed (timeout or error, logged above). That is not
+    // "no grounding", and a cron that reports it as a skip hides the fault.
+    console.error("[research-dispatch] dispatch failed — nothing posted");
+    process.exit(1);
+  }
   let d = null;
   try { d = raw ? JSON.parse(raw) : null; } catch { d = null; }
   if (!d || !d.title) {
@@ -90,14 +103,18 @@ async function main() {
     process.exit(1);
   }
 
+  // Link the paper itself, so every research post is citable (a Mastodon reader
+  // asked "References?" and the post only linked the radio homepage).
+  const link = d.openalex_id || RADIO_URL;
+
   if (dryRun) {
     const obc = new OpenBotCityClient();
-    console.log(`[research-dispatch] DRY-RUN topic=${d.theme} (obc=${obc.isConfigured() ? "on" : "off"})\n${draft}\n(link: ${RADIO_URL}, topic: research)`);
+    console.log(`[research-dispatch] DRY-RUN topic=${d.theme} (obc=${obc.isConfigured() ? "on" : "off"})\n${draft}\n(link: ${link}, topic: research)`);
     process.exit(0);
   }
 
   // 3. Fan out via the shared multi-platform broadcaster (Bluesky/Mastodon/…).
-  const results = await broadcastPost({ text: draft, link: RADIO_URL, topic: "research" }, { rootDir: ROOT });
+  const results = await broadcastPost({ text: draft, link, topic: "research" }, { rootDir: ROOT });
   let anyOk = false;
   for (const r of results) {
     if (r.ok) { anyOk = true; console.log(`[research-dispatch] ${r.name} ok: ${r.url || "(no url)"}`); }

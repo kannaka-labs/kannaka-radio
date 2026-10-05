@@ -30,7 +30,12 @@ function runKannaka(cliArgs, timeout = 90000) {
     execFile(KANNAKA_BIN, cliArgs, {
       timeout, maxBuffer: 2 * 1024 * 1024,
       env: { ...process.env, KANNAKA_QUIET: "1" },
-    }, (err, stdout) => resolve(err ? null : (stdout || "").trim()));
+    }, (err, stdout) => {
+      // Say WHY there is no output. A killed run used to read as "no grounding",
+      // which hid a 144 s dispatch behind a 60 s timeout for days (2026-10-04).
+      if (err) console.error(`[synthesis] kannaka ${cliArgs[0]} failed: ${err.killed ? `timed out after ${timeout / 1000} s` : (err.message || err.code)}`);
+      resolve(err ? null : (stdout || "").trim());
+    });
   });
 }
 
@@ -73,7 +78,7 @@ async function main() {
     console.error(`[synthesis] only ${findings.length} grounded finding(s) for "${topic}" — need ≥2; skipping`);
     process.exit(0);
   }
-  const state = await runKannaka(["dispatch", "--topic", topic, "--json"]);
+  const state = await runKannaka(["dispatch", "--topic", topic, "--json"], 300000); // ~2.5 min on O1
   let st = {}; try { st = state ? JSON.parse(state) : {}; } catch { st = {}; }
 
   const corpus = findings.map((f, i) =>

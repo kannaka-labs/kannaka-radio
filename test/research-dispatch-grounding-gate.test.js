@@ -96,17 +96,25 @@ function harnessFor(scriptPath) {
   return [
     "'use strict';",
     "const fs = require('fs');",
-    "const out = { kannaka: [], published: [], obc: 0 };",
+    "const out = { kannaka: [], published: [], links: [], obc: 0 };",
+    "const mode = process.env.GATE_MODE || 'empty';",
     "process.on('exit', () => fs.writeFileSync(process.env.GATE_RECORD, JSON.stringify(out)));",
     "const cp = require('child_process');",
     "cp.execFile = (bin, args, opts, cb) => {",
     "  out.kannaka.push(args[0]);",
-    "  const stdout = args[0] === 'dispatch' ? '{}' : 'stub draft';",
+    "  if (args[0] === 'dispatch' && mode === 'timeout') {",
+    "    const err = Object.assign(new Error('Command failed'), { killed: true, signal: 'SIGTERM' });",
+    "    process.nextTick(() => cb(err, '', ''));",
+    "    return { pid: 0 };",
+    "  }",
+    "  const grounded = JSON.stringify({ title: 'A paper', year: 2025, citations: 2, theme: 't', phi: 0.4, xi: 0.4, num_clusters: 3,",
+    "    text: 'grounded line', openalex_id: 'https://openalex.org/W7115921653' });",
+    "  const stdout = args[0] === 'dispatch' ? (mode === 'grounded' ? grounded : '{}') : 'stub draft';",
     "  process.nextTick(() => cb(null, stdout, ''));",
     "  return { pid: 0 };",
     "};",
     `const b = require(${q(path.join(ROOT, 'server/broadcasters'))});`,
-    "b.broadcastPost = async (msg) => { out.published.push(msg.text); return []; };",
+    "b.broadcastPost = async (msg) => { out.published.push(msg.text); out.links.push(msg.link); return []; };",
     "b.getEnabledBroadcasters = () => [{ name: 'stub' }];",
     `const obc = require(${q(path.join(ROOT, 'server/openbotcity'))});`,
     "obc.OpenBotCityClient.prototype.isConfigured = () => true;",
@@ -116,7 +124,7 @@ function harnessFor(scriptPath) {
   ].join('\n');
 }
 
-function runHarness(scriptPath, tag) {
+function runHarness(scriptPath, tag, mode = 'empty') {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `research-gate-${tag}-`));
   const harness = path.join(dir, 'harness.js');
   const record = path.join(dir, 'record.json');
@@ -126,7 +134,7 @@ function runHarness(scriptPath, tag) {
   try {
     out = execFileSync(process.execPath, [harness], {
       cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000,
-      env: { ...process.env, GATE_RECORD: record, KANNAKA_READONLY: '1' },
+      env: { ...process.env, GATE_RECORD: record, KANNAKA_READONLY: '1', GATE_MODE: mode },
     }) || '';
   } catch (e) {
     code = typeof e.status === 'number' ? e.status : 1;
@@ -165,6 +173,38 @@ run('the harness would catch a gateless dispatch (the control)', () => {
   assert.deepStrictEqual(seen.published, ['stub draft'],
     `removing the gate must make the script publish, or the real test proves nothing
 ${out}`);
+});
+
+
+// ------------------------------------------------- a failed dispatch is not a skip
+
+// 2026-10-04: the dispatch began taking ~144 s on O1 and the script killed it at
+// 60 s. execFile's error was swallowed, so the cron logged "no research grounding
+// yet" and exited 0 for days. A timeout must say so and must not read as green.
+run('a timed-out dispatch is reported as a timeout, exits non-zero, and posts nothing', () => {
+  const { code, out, seen } = runHarness(path.join(ROOT, 'scripts/post-research-dispatch.js'), 'timeout', 'timeout');
+  assert.notStrictEqual(code, 0, `a failed dispatch must not exit 0\n${out}`);
+  assert.match(out, /timed out after \d+ s/, `the log must name the timeout\n${out}`);
+  assert.doesNotMatch(out, /no research grounding yet/, `a timeout must not be reported as missing grounding\n${out}`);
+  assert.deepStrictEqual(seen.published, []);
+  assert.strictEqual(seen.obc, 0);
+});
+
+run('the dispatch gets minutes, not the old 60 s', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'scripts/post-research-dispatch.js'), 'utf8');
+  const m = src.match(/const DISPATCH_TIMEOUT_MS = (\d+);/);
+  assert.ok(m, 'DISPATCH_TIMEOUT_MS not found');
+  assert.ok(Number(m[1]) >= 240000, `dispatch timeout ${m[1]} ms is below the measured 144 s run plus headroom`);
+  assert.ok(/runKannaka\(dispatchArgs, DISPATCH_TIMEOUT_MS\)/.test(src), 'the dispatch call must use DISPATCH_TIMEOUT_MS');
+});
+
+// ------------------------------------------------- research posts cite the paper
+
+run('a grounded dispatch posts with the paper\'s OpenAlex link, not the radio homepage', () => {
+  const { code, out, seen } = runHarness(path.join(ROOT, 'scripts/post-research-dispatch.js'), 'grounded', 'grounded');
+  assert.strictEqual(code, 0, `the stubbed city feed post succeeds, so the run is green\n${out}`);
+  assert.deepStrictEqual(seen.published, ['stub draft'], `expected one post\n${out}`);
+  assert.deepStrictEqual(seen.links, ['https://openalex.org/W7115921653']);
 });
 
 if (!failed) console.log('\nAll research-dispatch grounding-gate tests passed');
