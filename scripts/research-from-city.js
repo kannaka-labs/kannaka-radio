@@ -32,7 +32,12 @@ function runKannaka(cliArgs, timeout = 60000) {
     execFile(KANNAKA_BIN, cliArgs, {
       timeout, maxBuffer: 1024 * 1024,
       env: { ...process.env, KANNAKA_QUIET: "1" },
-    }, (err, stdout) => resolve(err ? null : (stdout || "").trim()));
+    }, (err, stdout) => {
+      // Say WHY there is no output. A killed run used to read as "no grounding",
+      // which hid a 144 s dispatch behind a 60 s timeout for days (2026-10-04).
+      if (err) console.error(`[city-research] kannaka ${cliArgs[0]} failed: ${err.killed ? `timed out after ${timeout / 1000} s` : (err.message || err.code)}`);
+      resolve(err ? null : (stdout || "").trim());
+    });
   });
 }
 
@@ -82,7 +87,7 @@ async function main() {
   }
 
   // 4. Grounded finding on that topic.
-  const dispatchRaw = await runKannaka(["dispatch", "--topic", topic, "--json"]);
+  const dispatchRaw = await runKannaka(["dispatch", "--topic", topic, "--json"], 300000); // ~2.5 min on O1
   let d = null;
   try { d = dispatchRaw ? JSON.parse(dispatchRaw) : null; } catch { d = null; }
   if (!d || !d.title) {
@@ -118,7 +123,7 @@ async function main() {
   else console.error(`[city-research] obc failed: ${r.error || "(unknown)"}`);
 
   if (getEnabledBroadcasters(ROOT).length > 0) {
-    const results = await broadcastPost({ text: draft, link: RADIO_URL, topic: "research" }, { rootDir: ROOT });
+    const results = await broadcastPost({ text: draft, link: d.openalex_id || RADIO_URL, topic: "research" }, { rootDir: ROOT });
     for (const x of results) {
       if (x.ok) { anyOk = true; console.log(`[city-research] ${x.name} ok`); }
       else console.error(`[city-research] ${x.name} failed: ${x.error || "?"}`);
