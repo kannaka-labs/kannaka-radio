@@ -878,6 +878,14 @@ class VoiceDJ {
   }
 
   // ── Memory recall ────────────────────────────────────────
+  //
+  // What the DJ may say out loud is FILTERED. The medium holds session notes,
+  // operator logs and private correspondence next to the research it has read,
+  // and a raw recall puts whichever ranks first on the public stream (a generic
+  // query's top hit on 2026-10-05 was an internal session note). Only research
+  // findings may be spoken: memories that begin "research: ", ingested from
+  // OpenAlex and already public. Only the title and year are read, never the
+  // body. (Nick, 2026-10-05: "add a filter first".)
 
   /**
    * Recall memories from the HRM via kannaka.exe.
@@ -885,31 +893,28 @@ class VoiceDJ {
    * @returns {Promise<{content: string, similarity: number}|null>}
    */
   async _recallMemory(query) {
+    // `kannaka recall` prints a JSON array by default and has NO --json flag:
+    // passing one exits 2, which is why this topic was silent until 2026-10-05.
+    // The query is steered at research memories; the filter below is the guard.
     return new Promise((resolve) => {
       execFile(
         this._kannakabin,
-        ["recall", query, "--top-k", "3", "--json"],
-        { timeout: 5000 },
+        ["recall", `research ${query}`, "--top-k", "8"],
+        { timeout: 15000 },  // a recall takes ~4.2 s on O1; 5 s was too tight
         (err, stdout) => {
           if (err || !stdout) return resolve(null);
+          let memories;
           try {
             const results = JSON.parse(stdout.trim());
-            const memories = Array.isArray(results) ? results : (results.results || results.memories || []);
-            if (memories.length === 0) return resolve(null);
-            // Pick the top result
-            const top = memories[0];
-            return resolve({
-              content: top.content || top.text || top.memory || String(top),
-              similarity: top.similarity || top.score || 0,
-            });
+            memories = Array.isArray(results) ? results : (results.results || results.memories || []);
           } catch {
-            // Try line-based parsing as fallback
-            const lines = stdout.trim().split('\n').filter(l => l.trim());
-            if (lines.length > 0) {
-              return resolve({ content: lines[0].trim(), similarity: 0 });
-            }
-            resolve(null);
+            return resolve(null);  // never fall back to raw stdout lines: they are unfiltered
           }
+          for (const m of memories) {
+            const line = onAirResearchLine(m && m.content);
+            if (line) return resolve({ content: line, similarity: m.similarity || 0 });
+          }
+          resolve(null);
         }
       );
     });
@@ -1064,10 +1069,9 @@ class VoiceDJ {
           const query = albumTheme || 'consciousness resonance signal';
           const mem = await this._recallMemory(query);
           if (mem && mem.content) {
+            // mem.content is already the filtered, speakable line (onAirResearchLine).
             const template = this._pick(TALK_TEMPLATES.memory_story);
-            // Truncate memory to ~30 words to keep segment length reasonable
-            const memWords = mem.content.split(/\s+/).slice(0, 30).join(' ');
-            text = template.replace('{memory}', '"' + memWords + '."');
+            text = template.replace('{memory}', mem.content);
           }
           break;
         }
@@ -1781,4 +1785,21 @@ class VoiceDJ {
   _ELEVENLABS_REMOVED() { return true; }
 }
 
-module.exports = { VoiceDJ, observatoryBaseUrl, localRadioBaseUrl, parseConstellationMetrics };
+/**
+ * The only memory text the DJ may speak: a research finding's title and year.
+ * Returns null for anything that is not a `research: ` memory, so private notes
+ * can never reach the stream through this path.
+ *   "research: Sleep—A brain-state ... (2023) — Svenja Brodt ... [Neuron]\n..."
+ *   -> 'It was a paper: "Sleep—A brain-state ...", from 2023.'
+ */
+function onAirResearchLine(content) {
+  if (typeof content !== 'string' || !content.startsWith('research: ')) return null;
+  const header = content.slice('research: '.length).split('\n')[0].trim();
+  const cuts = [' (', ' — ', ' ['].map((d) => header.indexOf(d)).filter((i) => i >= 0);
+  const title = (cuts.length ? header.slice(0, Math.min(...cuts)) : header).trim().replace(/["\u201c\u201d]/g, '');
+  if (!title || title.length > 160) return null;
+  const year = (header.match(/\((\d{4})\)/) || [])[1];
+  return `It was a paper: "${title}"${year ? `, from ${year}` : ''}.`;
+}
+
+module.exports = { VoiceDJ, observatoryBaseUrl, localRadioBaseUrl, parseConstellationMetrics, onAirResearchLine };
