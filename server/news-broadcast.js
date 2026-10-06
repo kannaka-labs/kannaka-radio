@@ -32,6 +32,7 @@ const {
   fetchNdbcBuoys,
   fetchUsgsWater,
   fetchArxiv,
+  fetchConstellationDispatch,
   composeResilient,
   slotExhausted,
 } = require("./lib/scheduler-helpers");
@@ -67,6 +68,81 @@ const NEWS_OUTROS = [
   "That's all from the news desk. Gene signing off until the next break.",
   "End of news. Gene back to the music — thanks for listening through it.",
 ];
+
+/** Trim text cut off mid-sentence back to its last complete sentence; strip emphasis marks. */
+function completeSentences(text) {
+  if (typeof text !== "string") return null;
+  const t = text.replace(/[*_#]+/g, "").trim();
+  if (!t) return null;
+  if (/[.!?]["')\]]?$/.test(t)) return t;
+  const m = t.match(/^[\s\S]*[.!?]["')\]]?(?=\s)/);
+  return m && m[0].length > 40 ? m[0].trim() : null;
+}
+
+// Number words, so "forty-five" is checked like "45". The model writes numbers
+// as words for speech even when told to use digits.
+const NUM_UNITS = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
+const NUM_TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+const NUM_ORD = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
+  eleventh: 11, twelfth: 12, thirteenth: 13, fourteenth: 14, fifteenth: 15, sixteenth: 16, seventeenth: 17, eighteenth: 18,
+  nineteenth: 19, twentieth: 20, thirtieth: 30, fortieth: 40, fiftieth: 50, sixtieth: 60, seventieth: 70, eightieth: 80, ninetieth: 90 };
+const NUM_SCALE = { hundred: 100, thousand: 1000, million: 1000000 };
+
+/** Values of every run of number words ("one hundred and seventeen" -> 117). */
+function wordNumbers(text) {
+  // Punctuation ends a number: "fifty-five; one hundred" is two numbers.
+  const tokens = String(text || "").toLowerCase().replace(/-/g, " ").match(/[a-z]+|[^a-z\s]/g) || [];
+  const out = [];
+  let total = 0, cur = 0, inRun = false, last = null; // last: "unit" | "tens" | "hundred" | "scale"
+  const flush = () => { if (inRun) out.push(total + cur); total = 0; cur = 0; inRun = false; last = null; };
+  for (const w of tokens) {
+    if (w in NUM_UNITS) {
+      if (last === "unit" || (last === "tens" && NUM_UNITS[w] >= 10)) flush();
+      cur += NUM_UNITS[w]; inRun = true; last = "unit";
+    } else if (w in NUM_TENS) {
+      if (last === "unit" || last === "tens") flush();
+      cur += NUM_TENS[w]; inRun = true; last = "tens";
+    } else if (w in NUM_ORD) {
+      if (last === "unit" || (last === "tens" && NUM_ORD[w] >= 10)) flush();
+      cur += NUM_ORD[w]; inRun = true; flush();
+    } else if (w === "hundred" && inRun && last !== "hundred") {
+      cur = (cur || 1) * 100; last = "hundred";
+    } else if ((w === "thousand" || w === "million") && inRun) {
+      total += (cur || 1) * NUM_SCALE[w]; cur = 0; last = "scale";
+    } else if (w === "and" && inRun && (last === "hundred" || last === "scale")) {
+      /* "one hundred and twenty" */
+    } else {
+      flush();
+    }
+  }
+  flush();
+  return out;
+}
+
+/**
+ * Every number a text states, as digits: "1,000" -> "1000", "forty-five" ->
+ * "45". Numbers under 10 are left out: "a stubborn one" or "two fixes" is
+ * phrasing, not a checkable claim; inflated counts and figures are 10 and up.
+ */
+function numbersIn(text) {
+  const digits = (String(text || "").match(/\d[\d,]*(?:\.\d+)?/g) || []).map((n) => n.replace(/,/g, ""));
+  const words = wordNumbers(text).map(String);
+  return [...digits, ...words].filter((n) => !(Number(n) < 10));
+}
+
+/**
+ * Drop every sentence that states a number the source does not contain.
+ * Returns the remaining text, or null if nothing grounded is left.
+ */
+function dropUngroundedNumbers(text, source) {
+  if (typeof text !== "string") return null;
+  const allowed = new Set(numbersIn(source));
+  const sentences = text.match(/[^.!?]+[.!?]+["')\]]?\s*/g) || [text];
+  const kept = sentences.filter((s) => numbersIn(s).every((n) => allowed.has(n)));
+  const out = kept.join("").trim();
+  return out.length > 40 ? out : null;
+}
 
 class NewsBroadcast {
   /**
@@ -387,7 +463,68 @@ class NewsBroadcast {
       "",
       "Output ONLY the spoken bulletin — no headings, no quotes, no stage directions, no track titles.",
     ].join("\n");
-    return composeResilient(this._kannakabin, prompt, { label: "news", slot });
+    const world = await composeResilient(this._kannakabin, prompt, { label: "news", slot });
+    if (!world) return world;
+    const constellation = await this._composeConstellation(slot).catch(() => null);
+    return constellation ? `${world}\n\n${constellation}` : world;
+  }
+
+  // ── THE CONSTELLATION segment ─────────────────────────────
+  // Nick (2026-10-06): "a major portion of the news desk should really report
+  // on ... the improvements and major developments going on inside the Kannaka
+  // Constellation ... in addition to the real world facts."
+  //
+  // A SEPARATE short compose, appended after the world report. One prompt for
+  // both parts was tried first and cut off mid-sentence twice: `kannaka ask`
+  // caps an answer at 512 tokens (~380 words) and the model spent most of them
+  // on the world. Two short composes each fit with room to spare, and this one
+  // has its own retry budget so it can never starve the world report.
+  //
+  // Returns the spoken segment, a fixed sentence when nothing shipped, or null
+  // (no segment at all) when the record could not be read or the compose failed:
+  // an unknown is never reported as "quiet".
+  async _composeConstellation(slot) {
+    // The 7 AM slot looks back to last night's 5 PM (14 h), the 5 PM slot to
+    // this morning's 7 AM (10 h); an off-slot admin trigger looks back a day.
+    const slotHour = Number((String(slot || "").match(/T(\d{2})$/) || [])[1]);
+    const lookbackH = slotHour === 7 ? 14 : slotHour === 17 ? 10 : 24;
+    const sinceIso = new Date(Date.now() - lookbackH * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
+    const items = await fetchConstellationDispatch({ sinceIso });
+    if (!Array.isArray(items)) return null;
+    if (items.length === 0) {
+      return "Inside the Kannaka Constellation, the public repositories were quiet since the last bulletin.";
+    }
+    const dispatch = items
+      .map((c) => `  - [${c.repo}] ${c.title}${c.summary ? ` — ${c.summary}` : ""}`)
+      .join("\n");
+    const prompt = [
+      "You are Gene, the news anchor on Kannaka Radio. You have just finished the world report.",
+      "Now give THE CONSTELLATION segment: what was built and fixed inside the Kannaka Constellation, the network of agents and services this station is part of, since the last bulletin.",
+      "",
+      "Source: changes merged in the constellation's public repositories, newest first:",
+      dispatch,
+      "",
+      "Write 110 to 150 spoken words. Open with a short handoff from the world report (for example 'Closer to home, inside the constellation...'; vary it).",
+      "",
+      "Rules:",
+      "  - Lead with the most consequential development: what was broken or missing, what changed, and why it matters.",
+      "  - Group related changes into one story; two or three stories is plenty. Do not read a list.",
+      "  - Translate engineering into plain language. Never read pull-request numbers, file names, function names, flags or code on air.",
+      "  - Report ONLY what the source lists. Do not invent results, numbers, dates or motives; if an item's significance is unclear from its summary, say less about it, not more.",
+      "  - Write every number as digits, exactly as the source writes it (117 of 121, 1 MiB). Never add numbers together, round them or derive new ones: a sentence with a number the source does not contain is removed before air.",
+      "  - Hidden is not deleted; fixed in code is not the same as already visible everywhere.",
+      "  - Do not claim effects on listeners, traders or users that the source does not state. Say 'since the last bulletin', not 'this week'.",
+      "  - Do not name or quote individual people.",
+      "  - Mention once that this comes from the constellation's public repositories.",
+      "  - No headings, no section labels, no markdown, no emphasis marks. End on a complete sentence.",
+      "",
+      "Output ONLY the spoken segment.",
+    ].join("\n");
+    const text = await composeResilient(this._kannakabin, prompt, { label: "news-constellation", slot: `${slot || "news:adhoc"}:constellation` });
+    // In the first live composes the model summed and rounded counts ("45 of 55"
+    // from "40 of 55" plus four test accounts) despite the rule. Numbers are the
+    // claims a listener can check, so they are checked mechanically.
+    return completeSentences(dropUngroundedNumbers(completeSentences(text), dispatch));
   }
 
   // ── Deliver ───────────────────────────────────────────────
@@ -403,4 +540,4 @@ class NewsBroadcast {
   }
 }
 
-module.exports = { NewsBroadcast };
+module.exports = { NewsBroadcast, completeSentences, dropUngroundedNumbers, wordNumbers };
