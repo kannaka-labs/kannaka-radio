@@ -1149,6 +1149,7 @@ nats.connect();
 
 // ── Podcast scheduler — weekly episodes on DJ channel ─────
 const { PodcastScheduler } = require("./podcast-scheduler");
+const onairState = require("./lib/onair-state");
 // Show intros go onto /stream (icecastSource is assigned further down; the
 // lambda resolves it at airtime). Without a stream, schedulers keep the
 // website-only intro and its hold.
@@ -1328,9 +1329,11 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
   icecastSource = new IcecastSource({
     djEngine,
     getMusicDir: () => MUSIC_DIR,
-    onTrackEnd: (_track) => {
+    onTrackEnd: (track) => {
       // The metadata is already pushed via onTrackChange when the next
-      // track loads; this hook exists for future use (analytics, etc.)
+      // track loads. A scheduled show that finished is no longer on air,
+      // so a restart from here on must not resume it.
+      if (track && track.isPodcastScheduled) onairState.clear(track.file);
     },
     // Album-showcase narration hook. Bypasses executeOration's talk
     // lock (which collides with regular DJ track-intros). Calls
@@ -1340,6 +1343,9 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
     // intro and the showcase narration can coexist in the queue;
     // listeners hear them in order with no contention.
     onTrackStart: (track) => {
+      // Remember the scheduled show on air, so a restart resumes it
+      // instead of dropping the listener into a song (lib/onair-state).
+      if (track && track.isPodcastScheduled) onairState.record(track);
       try {
         const album = djEngine.state.currentAlbum;
         if (!album) return;

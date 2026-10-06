@@ -52,6 +52,16 @@ const DEFAULT_DRAIN_MAX_MS = (() => {
 // none. Parses just the 10-byte header — synchsafe-encoded size in the
 // last 4 bytes. Used by _streamFileToFfmpeg to start the read past the
 // tag so the concatenated stdin pipe stays as clean mp3 frames.
+/**
+ * Where to start reading an mp3 to resume it offsetMs into its duration:
+ * the same fraction of the audio bytes after any ID3 tag. Returns `skip`
+ * (play from the top) when the offset is meaningless or past the end.
+ */
+function resumeByteOffset(size, skip, offsetMs, durationMs) {
+  if (!(offsetMs > 0) || !(durationMs > 0) || offsetMs >= durationMs || !(size > skip)) return skip;
+  return skip + Math.floor((size - skip) * (offsetMs / durationMs));
+}
+
 function id3v2Length(absPath) {
   let fd = -1;
   try {
@@ -345,7 +355,8 @@ class IcecastSource {
       // track ends (in the gap before the next track starts).
       try { this._onTrackStart(track); } catch (_) {}
       try {
-        await this._streamFileToFfmpeg(playable);
+        // A show resumed after a restart carries how far in to start.
+        await this._streamFileToFfmpeg(playable, track.resumeAtMs || 0);
       } catch (e) {
         console.warn(`[icecast-source] stream error on ${track.file}: ${e.message}`);
       }
@@ -503,7 +514,7 @@ class IcecastSource {
     });
   }
 
-  async _streamFileToFfmpeg(absPath) {
+  async _streamFileToFfmpeg(absPath, startAtMs = 0) {
     if (!this._ffmpeg || !this._ffmpeg.stdin || this._ffmpeg.killed) return;
     // Probe duration BEFORE we start streaming so we can pace the resolve.
     // Without this, short files (~100KB commercials, ~50KB voice intros)
@@ -550,7 +561,20 @@ class IcecastSource {
       // before piping yields a pure stream of mp3 frames so boundaries
       // are just a new sync word.
       const skip = id3v2Length(absPath);
-      const r = fs.createReadStream(absPath, skip > 0 ? { start: skip } : undefined);
+      // A resumed show starts part-way in: the proportional byte position
+      // (exact for CBR, close for VBR); ffmpeg resyncs on the next frame.
+      let start = skip;
+      if (startAtMs > 0) {
+        try {
+          const size = fs.statSync(absPath).size;
+          start = resumeByteOffset(size, skip, startAtMs, expectedMs);
+          if (start > skip) {
+            expectedMs = Math.max(1000, expectedMs - startAtMs);
+            console.log(`[icecast-source] resuming ${path.basename(absPath)} at ${Math.round(startAtMs / 1000)}s (byte ${start})`);
+          }
+        } catch (_) { start = skip; }
+      }
+      const r = fs.createReadStream(absPath, start > 0 ? { start } : undefined);
       r.pipe(ff.stdin, { end: false });
       let settled = false;
       // Hard watchdog: if neither finishGraceful nor finishImmediate has
@@ -628,4 +652,4 @@ class IcecastSource {
   _sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 }
 
-module.exports = { IcecastSource };
+module.exports = { IcecastSource, resumeByteOffset };
