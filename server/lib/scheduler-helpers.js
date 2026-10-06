@@ -842,6 +842,75 @@ function composeShort(alias, systemPrompt, userPrompt, opts = {}) {
   });
 }
 
+// ── Constellation dispatch: what shipped inside the Kannaka Constellation ──
+// Nick (2026-10-06): "a major portion of the news desk should really report on
+// ... the improvements and major developments going on inside the Kannaka
+// Constellation ... in addition to the real world facts." The record of what
+// shipped is the merged pull requests. Only PUBLIC repositories are searched
+// (`is:public`), so private work never reaches the air. Returns an array
+// (possibly empty) on success and null when GitHub could not be read, so the
+// caller can tell "quiet" from "unknown".
+const NEWS_GITHUB_ORG = process.env.NEWS_GITHUB_ORG || "kannaka-labs";
+
+function getJsonWithHeaders(url, headers, timeoutMs = 10000) {
+  return new Promise((resolve) => {
+    const req = https.get(url, { headers, timeout: timeoutMs }, (res) => {
+      if (res.statusCode !== 200) { res.resume(); return resolve(null); }
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => {
+        try { resolve(JSON.parse(Buffer.concat(chunks).toString("utf8"))); }
+        catch (_) { resolve(null); }
+      });
+    });
+    req.on("error", () => resolve(null));
+    req.on("timeout", () => { req.destroy(); resolve(null); });
+  });
+}
+
+/** First sentence-ish of a PR body as plain text: no markdown, no attribution lines. */
+function summarizePrBody(body, max = 240) {
+  if (typeof body !== "string" || !body.trim()) return "";
+  const lines = body.split(/\r?\n/)
+    .filter((l) => !/Generated with \[Claude Code\]|Co-Authored-By:|^\s*```/i.test(l));
+  const firstPara = lines.join("\n").split(/\n\s*\n/).map((p) => p.trim()).find((p) => p.length > 0) || "";
+  const plain = firstPara
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/\*\*([^*]*)\*\*/g, "$1")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^[#>*\-\s\d.]+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (plain.length <= max) return plain;
+  const cut = plain.slice(0, max);
+  const stop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("; "));
+  return (stop > max * 0.5 ? cut.slice(0, stop + 1) : cut.replace(/\s+\S*$/, "") + " ...").trim();
+}
+
+/**
+ * Merged pull requests in the org's PUBLIC repositories since `sinceIso`,
+ * newest first: [{ repo, title, summary, mergedAt }]. null if GitHub could not
+ * be read. `getJson` is injectable for tests.
+ */
+async function fetchConstellationDispatch({ sinceIso, max = 8, getJson = getJsonWithHeaders } = {}) {
+  if (!sinceIso) return null;
+  const q = `org:${NEWS_GITHUB_ORG} is:pr is:merged is:public merged:>=${sinceIso}`;
+  const url = `https://api.github.com/search/issues?q=${encodeURIComponent(q)}&sort=updated&order=desc&per_page=30`;
+  const d = await getJson(url, { "User-Agent": "kannaka-radio-news", Accept: "application/vnd.github+json" });
+  if (!d || !Array.isArray(d.items)) return null;
+  return d.items
+    .map((i) => ({
+      repo: String(i.repository_url || "").split("/").pop(),
+      title: String(i.title || "").trim(),
+      summary: summarizePrBody(i.body),
+      mergedAt: (i.pull_request && i.pull_request.merged_at) || null,
+    }))
+    .filter((x) => x.repo && x.title)
+    .sort((a, b) => String(b.mergedAt).localeCompare(String(a.mergedAt)))
+    .slice(0, max);
+}
+
+
 module.exports = {
   pick,
   chicagoNow,
@@ -866,6 +935,8 @@ module.exports = {
   fetchNdbcBuoys,
   fetchUsgsWater,
   fetchArxiv,
+  fetchConstellationDispatch,
+  summarizePrBody,
   composeViaKannakaAsk,
   // Constants other callers may want
   FLUX_ENTITIES_URL,
