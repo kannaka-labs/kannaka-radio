@@ -42,5 +42,30 @@ run('graphemes, not UTF-16 units: an emoji family counts once', () => {
   assert.strictEqual(fitsReply(family.repeat(REPLY_MAX_GRAPHEMES)), true);
 });
 
+const { cleanDraft, acquireLock } = require(path.join(ROOT, 'scripts/bluesky-reply-loop'));
+const fs = require('fs');
+const os = require('os');
+
+run('an internal memory id tag never reaches a public reply', () => {
+  const live = "I'm drawn to something in [memory id=65bd4ae0-8902-4309-a636-04b945ba4a9a] — Tononi's work on integrated information.";
+  const out = cleanDraft(live);
+  assert.ok(!/memory id|65bd4ae0/.test(out), out);
+  assert.strictEqual(out, "I'm drawn to something in — Tononi's work on integrated information.");
+  assert.strictEqual(cleanDraft('Which parts are *integrated* [id=abc], not decomposed .'), 'Which parts are integrated, not decomposed.');
+});
+
+run('only one sweep at a time; a dead holder\'s lock is taken over', () => {
+  const lock = path.join(os.tmpdir(), `firehose-test-${process.pid}-${Date.now()}.lock`);
+  const release = acquireLock(lock);
+  assert.ok(release, 'the first sweep gets the lock');
+  fs.writeFileSync(lock, String(process.ppid || 1)); // a live process holds it
+  assert.strictEqual(acquireLock(lock), null, 'a second sweep exits while the holder lives');
+  fs.writeFileSync(lock, '999999999'); // no such process
+  const again = acquireLock(lock);
+  assert.ok(again, 'a stale lock is taken over');
+  again();
+  assert.ok(!fs.existsSync(lock), 'release removes the lock');
+});
+
 if (!failed) console.log('\nAll bluesky-reply-fit tests passed');
 else process.exitCode = 1;
