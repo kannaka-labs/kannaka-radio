@@ -1149,12 +1149,22 @@ nats.connect();
 
 // ── Podcast scheduler — weekly episodes on DJ channel ─────
 const { PodcastScheduler } = require("./podcast-scheduler");
+// Show intros go onto /stream (icecastSource is assigned further down; the
+// lambda resolves it at airtime). Without a stream, schedulers keep the
+// website-only intro and its hold.
+const showIntroInject = process.env.KANNAKA_ICECAST_SOURCE === "1"
+  ? (audioPath, meta) => {
+      if (!icecastSource) throw new Error("icecast-source not started");
+      icecastSource.injectAudio(audioPath, meta);
+    }
+  : undefined;
 const podcastScheduler = new PodcastScheduler({
   djEngine,
   voiceDJ,
   broadcast,
   broadcastState,
   getMusicDir: () => MUSIC_DIR,
+  injectVoice: showIntroInject,
 });
 podcastScheduler.start();
 // Exposed alongside tsofScheduler so /api/on-air can answer "would a
@@ -1170,6 +1180,7 @@ const tsofScheduler = new PodcastScheduler({
   broadcast,
   broadcastState,
   getMusicDir: () => MUSIC_DIR,
+  injectVoice: showIntroInject,
   show: {
     label: "The Story of Flaukowski",
     folder: "The Story of Flaukowski",
@@ -1200,6 +1211,7 @@ const featuredScheduler = new PodcastScheduler({
   broadcast,
   broadcastState,
   getMusicDir: () => MUSIC_DIR,
+  injectVoice: showIntroInject,
   show: {
     label: "Featured Artist",
     folder: FEATURED_FOLDER,

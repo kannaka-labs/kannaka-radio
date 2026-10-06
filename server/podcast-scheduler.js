@@ -93,6 +93,11 @@ class PodcastScheduler {
     this._broadcast = opts.broadcast;
     this._broadcastState = opts.broadcastState;
     this._getMusicDir = opts.getMusicDir;
+    // Puts the spoken intro on /stream itself. Without it the intro only
+    // reached the website as a talk event, which the player deliberately
+    // doesn't play in DJ mode (talk normally arrives inside the stream), so
+    // no listener ever heard a show intro.
+    this._injectVoice = typeof opts.injectVoice === "function" ? opts.injectVoice : null;
     this._show = Object.assign({}, DEFAULT_SHOW, opts.show || {});
 
     this._podcastPlaying = false;
@@ -372,7 +377,23 @@ class PodcastScheduler {
         console.log(`[podcast-scheduler] DJ intro broadcast`);
       }
 
-      // After the intro plays out, load just today's one episode.
+      // In-stream: queue the intro and load the show together. The stream
+      // plays queued voice when the current song ends, then advances into
+      // the freshly loaded show, so the intro lands directly before it. A
+      // hold here would let the song end first, airing the intro and then
+      // one more song before the show.
+      if (this._injectVoice && !err && audioPath) {
+        try {
+          this._injectVoice(audioPath, { label: `${this._show.label} intro` });
+        } catch (e) {
+          console.warn(`[podcast-scheduler] ${this._show.label}: intro inject failed (${e && e.message}) — airing without it`);
+        }
+        this._playAllPodcastEpisodes([todayEpisode]);
+        return;
+      }
+
+      // No stream to inject into: after the intro plays out, load just
+      // today's one episode.
       setTimeout(() => {
         this._playAllPodcastEpisodes([todayEpisode]);
       }, err ? 1000 : holdMs);
