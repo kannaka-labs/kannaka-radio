@@ -16,6 +16,16 @@ function check(name, fn) {
   catch (e) { failures++; console.error(`  FAIL ${name}\n       ${e && e.message}`); }
 }
 
+// Async checks are queued and awaited in order at the end; a sync helper
+// would print "ok" before their assertions ran.
+const asyncQueue = [];
+function checkAsync(name, fn) {
+  asyncQueue.push(async () => {
+    try { await fn(); console.log(`  ok  ${name}`); }
+    catch (e) { failures++; console.error(`  FAIL ${name}\n       ${e && e.message}`); }
+  });
+}
+
 function makeScheduler(show, files) {
   const musicDir = fs.mkdtempSync(path.join(os.tmpdir(), 'featured-'));
   const folder = (show && show.folder) || 'Ghost Signals Podcast';
@@ -77,6 +87,40 @@ check('intro hold: a long guest intro waits for the voice', () => {
   assert.strictEqual(introHoldMs(sixty), 25000);
 });
 
+function airNow(injectVoice) {
+  const { s, engine } = makeScheduler(FEATURED, ['Solace Road - Escape to Dream.mp3']);
+  const loads = [];
+  s._voiceDJ = { generateTTS: (text, cb) => cb(null, '/tmp/intro.mp3', text) };
+  s._injectVoice = injectVoice || null;
+  const real = s._playAllPodcastEpisodes.bind(s);
+  s._playAllPodcastEpisodes = (files) => { loads.push(files[0]); real(files); };
+  return { s, engine, loads };
+}
+
+checkAsync('the show intro is queued on /stream and the show loads with it', async () => {
+  const injected = [];
+  const { s, loads } = airNow((p, meta) => injected.push([p, meta.label]));
+  await s._startScheduledPodcast();
+  assert.deepStrictEqual(injected, [['/tmp/intro.mp3', 'Featured Artist intro']]);
+  // Same tick: no hold, so the song can't end between intro and show.
+  assert.deepStrictEqual(loads, ['Solace Road - Escape to Dream.mp3']);
+});
+
+checkAsync('a failed inject still airs the show, exactly once', async () => {
+  const { s, loads } = airNow(() => { throw new Error('boom'); });
+  await s._startScheduledPodcast();
+  assert.deepStrictEqual(loads, ['Solace Road - Escape to Dream.mp3']);
+  await new Promise((r) => setTimeout(r, 1200));
+  assert.strictEqual(loads.length, 1, 'fallback timer must not load it again');
+});
+
+checkAsync('without a stream the website-only hold is kept', async () => {
+  const { s, loads } = airNow(null);
+  s._startScheduledPodcast();
+  await new Promise((r) => setTimeout(r, 50));
+  assert.strictEqual(loads.length, 0, 'loads only after the intro hold');
+});
+
 check('every non-podcast show in index.js sets its own promo line', () => {
   // A show without promoLine inherits voice-dj's "this week's podcast
   // episode" copy — which TSOF announced before every airing until 10-06.
@@ -90,5 +134,9 @@ check('every non-podcast show in index.js sets its own promo line', () => {
   }
 });
 
-if (failures) { console.error(`\n${failures} failing`); process.exit(1); }
-console.log('\nfeatured-artist-slot: all passed');
+(async () => {
+  for (const run of asyncQueue) await run();
+  if (failures) { console.error(`\n${failures} failing`); process.exit(1); }
+  console.log('\nfeatured-artist-slot: all passed');
+  process.exit(0); // don't wait out the no-stream test's intro-hold timer
+})();
