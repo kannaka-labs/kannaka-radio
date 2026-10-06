@@ -307,8 +307,8 @@ class Mailer {
         `  Run:        once a day for ${runDays} days\n\n` +
         `What happens next: a human listens to it before it airs, usually within\n` +
         `a day. You'll get another note the moment it's approved and scheduled.\n\n` +
-        `If it isn't approved you're refunded in full, and you keep the free\n` +
-        `month of Ghost Signals Analytics either way:\n` +
+        `If it isn't approved you're refunded in full. Once it's approved, your\n` +
+        `free month of Ghost Signals Analytics unlocks:\n` +
         `  ${this.siteOrigin}/analytics\n\n` +
         `Listen live: ${this.siteOrigin}\n`,
     });
@@ -318,7 +318,7 @@ class Mailer {
   async adApproved(to, { adId, band, runDays, startDate }) {
     return this.send({
       to,
-      subject: "Your spot is on the air",
+      subject: "Your spot is approved and scheduled",
       text:
         `Your spot has been approved and is scheduled.\n\n` +
         `  Reference:  ${adId}\n` +
@@ -349,8 +349,6 @@ class Mailer {
         (reason ? `  Reason:     ${reason}\n` : '') +
         `\nThe refund goes back to the card you paid with; banks usually post it\n` +
         `within a few days.\n\n` +
-        `You keep the free month of Ghost Signals Analytics regardless:\n` +
-        `  ${this.siteOrigin}/analytics\n\n` +
         `If you'd like to try a different spot, just write another one — happy to\n` +
         `look at it.\n`,
     });

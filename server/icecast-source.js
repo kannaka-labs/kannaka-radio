@@ -132,6 +132,15 @@ class IcecastSource {
    * @param {string} audioPath — absolute path to MP3/WAV/etc.
    * @param {object} [meta] — optional metadata for logging/listener UX.
    */
+  /** The track /stream is playing right now (null before the first one). */
+  onAirTrack() {
+    return this._running && this._currentTrack ? this._currentTrack : null;
+  }
+
+  onAirStartedAt() {
+    return this._currentTrackStartedAt || null;
+  }
+
   injectAudio(audioPath, meta = {}, onDone) {
     if (!audioPath || typeof audioPath !== "string") return;
     if (!this._running) {
@@ -343,21 +352,27 @@ class IcecastSource {
           console.warn(`[icecast-source] ${this._consecutiveSkips} skips in a row — backing off 2s`);
           await this._sleep(2000);
         }
-        try { this._djEngine.advanceTrack(track.file); } catch (_) {}
+        // aired:false — a skipped sponsor/guest spot must not be confirmed
+        // (and charged as aired) when nobody heard it.
+        try { this._djEngine.advanceTrack(track.file, { aired: false }); } catch (_) {}
         continue;
       }
 
       this._consecutiveSkips = 0;
       this._currentTrackFile = track.file;
+      this._currentTrack = track;
+      this._currentTrackStartedAt = Date.now();
       console.log(`   \u{1F4FB} /stream NOW: ${track.title || track.file}`);
       // Hook fires when a track starts streaming — gives album showcase
       // narration time to compose+TTS+queue voice that drains AFTER this
       // track ends (in the gap before the next track starts).
       try { this._onTrackStart(track); } catch (_) {}
+      let aired = true;
       try {
         // A show resumed after a restart carries how far in to start.
         await this._streamFileToFfmpeg(playable, track.resumeAtMs || 0);
       } catch (e) {
+        aired = false;
         console.warn(`[icecast-source] stream error on ${track.file}: ${e.message}`);
       }
       if (cleanupTmp) {
@@ -419,7 +434,7 @@ class IcecastSource {
 
       // Track drained — signal end and let dj-engine pick the next one.
       try { this._onTrackEnd(track); } catch (_) {}
-      try { this._djEngine.advanceTrack(track.file); } catch (e) {
+      try { this._djEngine.advanceTrack(track.file, { aired }); } catch (e) {
         console.warn(`[icecast-source] advanceTrack: ${e.message}`);
       }
     }

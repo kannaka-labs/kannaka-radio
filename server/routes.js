@@ -9,6 +9,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { execFile } = require("child_process");
 const { ALBUMS } = require("./dj-engine");
+const { onAirView } = require("./lib/on-air-view");
 const { MIME, readBody, readBodyLimited, getSPA, findAudioFile } = require("./utils");
 const { handleAgentRequest, attachNatsClient } = require("./agent-endpoint");
 const { verifyKaxToken, traderIdFromClaims, bearerToken } = require("./kax-identity");
@@ -600,7 +601,12 @@ module.exports = function setupRoutes(deps) {
     // /api/now-playing — minimal "what's on" payload for the Door's
     // top panel. Polled every 15s. Cheap; no NATS round-trip.
     if (parsed.pathname === "/api/now-playing") {
-      const t = djEngine.getCurrentTrack() || {};
+      // What /stream is playing, not what the engine queued next
+      // (lib/on-air-view): a show loaded mid-song is "up next" until it airs.
+      const src = deps.icecastSource;
+      const onAir = src && typeof src.onAirTrack === "function" && djEngine.state.channel === "dj" ? src.onAirTrack() : null;
+      const view = onAirView(djEngine.getCurrentTrack(), onAir);
+      const t = view.current || {};
       res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
       res.end(JSON.stringify({
         title: t.title || null,
@@ -609,7 +615,8 @@ module.exports = function setupRoutes(deps) {
         // Engine writes `trackStartedAt` (see dj-engine.js advanceTrack);
         // route previously read `trackStartTime` (never written) and
         // always returned null. (#31)
-        startedAt: djEngine.state.trackStartedAt || null,
+        startedAt: (view.swapPending && src.onAirStartedAt()) || djEngine.state.trackStartedAt || null,
+        upNext: view.upNext ? view.upNext.title || null : null,
       }));
       return;
     }
@@ -987,6 +994,8 @@ module.exports = function setupRoutes(deps) {
           res.writeHead(out.status, { "Content-Type": "application/json" });
           res.end(JSON.stringify(out.body || {}));
         } catch (e) {
+          // A failed decision can strand a customer's money; say so.
+          console.error(`[ads] enact failed: ${e && e.message}`);
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: "enact error" }));
         }

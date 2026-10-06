@@ -46,6 +46,7 @@ const { FloorManager } = require("./floor");
 // Forward-declared so VoiceDJ's getIcecastSource closure can capture it.
 // Actually instantiated near the bottom of init.
 let icecastSource = null;
+const { onAirView } = require("./lib/on-air-view");
 const { SyncManager } = require("./sync-manager");
 const { VoteManager } = require("./vote-manager");
 const WebRTCSignaling = require("./webrtc-signaling");
@@ -652,10 +653,16 @@ const musicGen = new MusicGenerator({
 
 function broadcastState() {
   const state = djEngine.getState();
+  // Tell listeners what /stream is actually playing, not what the engine
+  // has queued to air next (lib/on-air-view).
+  const onAir = icecastSource && typeof icecastSource.onAirTrack === "function" ? icecastSource.onAirTrack() : null;
+  const view = onAirView(state.current, state.channel === "dj" ? onAir : null);
   broadcast({
     type: "state",
     data: {
       ...state,
+      current: view.current,
+      upNext: view.upNext,
       musicDir: MUSIC_DIR,
     }
   });

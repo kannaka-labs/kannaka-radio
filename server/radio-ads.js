@@ -530,6 +530,17 @@ class RadioAdStore {
     return { reserved: !!(upd && upd.changes) };
   }
 
+  /** Live holds in a band whose ad was never paid, with what a reclaim needs
+   *  to decide whether the checkout behind it is abandoned. */
+  unpaidHoldsInBand(band) {
+    return this._all(
+      `SELECT h.ad_id, h.created_at, a.content_hash, a.stripe_session_id
+         FROM radio_ad_band_holds h JOIN radio_ads a ON a.id = h.ad_id
+        WHERE h.band = ? AND h.released_at IS NULL AND a.paid_at IS NULL`,
+      [band],
+    );
+  }
+
   async releaseBandHold(adId) {
     await this._run(`UPDATE radio_ad_band_holds SET released_at = datetime('now') WHERE ad_id = ? AND released_at IS NULL`, [adId]);
   }
