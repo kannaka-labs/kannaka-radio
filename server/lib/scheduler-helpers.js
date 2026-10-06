@@ -911,6 +911,86 @@ async function fetchConstellationDispatch({ sinceIso, max = 8, getJson = getJson
 }
 
 
+// ── More constellation sources: episodes, prediction markets, service health ──
+// Nick (2026-10-06): "yes, all of those other developments sound great": the
+// constellation segment also reports what aired, what the prediction markets
+// settled, and whether the services are answering. Each source returns null
+// when it cannot be read, so the segment never reports an unknown as quiet.
+
+/** GET a URL: { status, body } (body as text), or null on network failure. */
+function httpGetText(url, timeoutMs = 10000) {
+  return new Promise((resolve) => {
+    const mod = url.startsWith("http://") ? http : https;
+    const req = mod.get(url, { headers: { "User-Agent": "kannaka-radio-news" }, timeout: timeoutMs }, (res) => {
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString("utf8") }));
+    });
+    req.on("error", () => resolve(null));
+    req.on("timeout", () => { req.destroy(); resolve(null); });
+  });
+}
+
+const NEWS_YT_CHANNEL_ID = process.env.NEWS_YT_CHANNEL_ID || "UCMdYBo8A6zXw46A-1E4NbGg"; // Ghost Signals with Kannaka
+const NEWS_PREDICTIONS_URL = process.env.NEWS_PREDICTIONS_URL || "https://observatory.ninja-portal.com/api/predictions";
+
+function decodeXml(s) {
+  return String(s || "")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'");
+}
+
+/** Videos published on the station's YouTube channel since `sinceIso` (public RSS, no key): [{ title, published }] or null. */
+async function fetchChannelUploads({ sinceIso, getText = httpGetText } = {}) {
+  if (!sinceIso) return null;
+  const r = await getText(`https://www.youtube.com/feeds/videos.xml?channel_id=${NEWS_YT_CHANNEL_ID}`);
+  if (!r || r.status !== 200 || !/<feed/.test(r.body)) return null;
+  const entries = r.body.split("<entry>").slice(1);
+  return entries
+    .map((e) => ({
+      title: decodeXml((e.match(/<title>([^<]*)<\/title>/) || [])[1]).trim(),
+      published: ((e.match(/<published>([^<]*)<\/published>/) || [])[1] || "").trim(),
+    }))
+    .filter((v) => v.title && v.published && v.published >= sinceIso)
+    .sort((a, b) => b.published.localeCompare(a.published));
+}
+
+/** Prediction-registry activity since `sinceIso`: { settled: [...], opened: [...] } or null. */
+async function fetchPredictionActivity({ sinceIso, getText = httpGetText } = {}) {
+  if (!sinceIso) return null;
+  const r = await getText(NEWS_PREDICTIONS_URL, 15000);
+  if (!r || r.status !== 200) return null;
+  let list;
+  try { list = JSON.parse(r.body).predictions; } catch (_) { return null; }
+  if (!Array.isArray(list)) return null;
+  const since = (t) => typeof t === "string" && t >= sinceIso;
+  return {
+    settled: list.filter((p) => p.status === "settled" && since(p.settledAt))
+      .map((p) => ({ number: p.number, statement: String(p.statement || "").slice(0, 160), outcome: p.outcome === true ? "TRUE" : p.outcome === false ? "FALSE" : "unknown" })),
+    opened: list.filter((p) => p.status === "open" && since(p.openedAt))
+      .map((p) => ({ number: p.number, statement: String(p.statement || "").slice(0, 160), settlesBy: p.settlesBy || null })),
+  };
+}
+
+// Public endpoints for the constellation's user-facing services. The radio is
+// not on the list: if the news desk is speaking, the radio is up.
+const NEWS_HEALTH_CHECKS = [
+  { name: "Kannaka TV", url: "https://tv.ninja-portal.com/api/health", ok: (r) => r.status === 200 && /"onAir"\s*:\s*true/.test(r.body) },
+  { name: "the observatory", url: "https://observatory.ninja-portal.com/api/hrm/status", ok: (r) => r.status === 200 && /"total_memories"/.test(r.body) },
+  { name: "the Kannaka Exchange", url: "https://kax.ninja-portal.com/api/healthz", ok: (r) => r.status === 200 && /"ok"/.test(r.body) },
+  { name: "ninja-portal.com", url: "https://ninja-portal.com/", ok: (r) => r.status === 200 },
+  { name: "the research ledger", url: "https://research.spacechild.love/api/health", ok: (r) => r.status === 200 && /"ok"/.test(r.body) },
+];
+
+/** Probe each service once: [{ name, ok }]. */
+async function probeConstellationHealth({ getText = httpGetText, checks = NEWS_HEALTH_CHECKS } = {}) {
+  return Promise.all(checks.map(async (c) => {
+    const r = await getText(c.url, 8000).catch(() => null);
+    return { name: c.name, ok: !!(r && c.ok(r)) };
+  }));
+}
+
+
 module.exports = {
   pick,
   chicagoNow,
@@ -936,6 +1016,9 @@ module.exports = {
   fetchUsgsWater,
   fetchArxiv,
   fetchConstellationDispatch,
+  fetchChannelUploads,
+  fetchPredictionActivity,
+  probeConstellationHealth,
   summarizePrBody,
   composeViaKannakaAsk,
   // Constants other callers may want
