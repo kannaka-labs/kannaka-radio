@@ -51,6 +51,43 @@ function graphemeCount(text) {
   }
   return [...text].length;
 }
+// `kannaka ask` cites memories inline as "[memory id=<uuid>]". That is an
+// internal handle, not something to publish: a live reply on 2026-10-06 read
+// "I'm drawn to something in [memory id=65bd4ae0-...] — Tononi's work". Strip
+// any bracketed id tag and markdown emphasis before the length check.
+function cleanDraft(text) {
+  return String(text || "")
+    .replace(/\s*\[(?:memory\s+)?id[=:][^\]]*\]\s*/gi, " ")
+    .replace(/[*_`]+/g, "")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+// One sweep at a time. A draft can take minutes (`kannaka ask`, 600 s timeout)
+// and cron fires every 15 min, so sweeps overlapped; each held its own copy of
+// the seen-set until it finished, and two of them replied to the same post four
+// minutes apart (2026-10-06, 3mx6ql4qyin2u / 3mx6qremsnc2i). A lock held by a
+// dead process is taken over.
+const LOCK_PATH = process.env.FIREHOSE_LOCK || path.join(os.homedir(), ".kannaka", "firehose.lock");
+function acquireLock(lockPath = LOCK_PATH) {
+  const claim = () => fs.writeFileSync(lockPath, String(process.pid), { flag: "wx" });
+  try {
+    claim();
+  } catch (e) {
+    if (e.code !== "EEXIST") throw e;
+    const holder = Number(fs.readFileSync(lockPath, "utf8").trim());
+    let alive = false;
+    if (holder && holder !== process.pid) {
+      try { process.kill(holder, 0); alive = true; } catch (err) { alive = err.code === "EPERM"; }
+    }
+    if (alive) return null;
+    fs.unlinkSync(lockPath);
+    try { claim(); } catch (_) { return null; }
+  }
+  return () => { try { if (fs.readFileSync(lockPath, "utf8").trim() === String(process.pid)) fs.unlinkSync(lockPath); } catch (_) {} };
+}
+
 function fitsReply(text) {
   return graphemeCount(text) <= REPLY_MAX_GRAPHEMES;
 }
@@ -181,7 +218,7 @@ function draftReply(parentText, authorHandle) {
           return resolve(null);
         }
         if (!stdout) return resolve(null);
-        const txt = stdout.trim().replace(/^["'](.*)["']$/s, "$1").trim();
+        const txt = cleanDraft(stdout.trim().replace(/^["'](.*)["']$/s, "$1").trim());
         if (txt === "SKIP" || txt.toLowerCase().startsWith("skip")) return resolve(null);
         if (txt.length < 20) return resolve(null);
         if (!fitsReply(txt)) {
@@ -196,6 +233,19 @@ function draftReply(parentText, authorHandle) {
 }
 
 async function main() {
+  const release = acquireLock();
+  if (!release) {
+    console.log("[firehose] another sweep is still running — exiting");
+    return;
+  }
+  try {
+    await sweep();
+  } finally {
+    release();
+  }
+}
+
+async function sweep() {
   const live = process.argv.includes("--live");
   const verbose = process.argv.includes("-v") || process.argv.includes("--verbose");
   const cfg = loadConfig();
@@ -251,6 +301,9 @@ async function main() {
     }
   }
   scored.sort((a, b) => b.score - a.score);
+  // Persist "seen" before the slow drafting starts, so a crash or a killed run
+  // cannot send the same posts to the model again.
+  saveState(state);
 
   // Reply to the strongest matches above threshold, respecting caps.
   for (const c of scored) {
@@ -286,6 +339,7 @@ async function main() {
       console.log(`           ✓ posted: ${r.uri}`);
       state.days[today] = (state.days[today] || 0) + 1;
       state.threads[today][threadKey] = repliesInThread + 1;
+      saveState(state); // a reply is on the public record the moment it posts
     } else {
       console.error(`           ✗ failed: ${r.error}`);
     }
@@ -299,4 +353,4 @@ if (require.main === module) {
   main().catch((e) => { console.error("fatal:", e.message); process.exit(2); });
 }
 
-module.exports = { fitsReply, graphemeCount, REPLY_MAX_GRAPHEMES };
+module.exports = { fitsReply, graphemeCount, REPLY_MAX_GRAPHEMES, cleanDraft, acquireLock };
