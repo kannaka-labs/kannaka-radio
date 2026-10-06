@@ -31,6 +31,13 @@ const DEFAULT_SHOW = {
   folder: "Ghost Signals Podcast",
   airHours: [10, 22],           // Chicago local hours, minute :00
   promoMinutesBefore: 30,
+  // What the DJ says in the talk segment promoMinutesBefore the airing.
+  // null keeps voice-dj's built-in podcast line.
+  promoLine: null,
+  // Marker stamped on the track title while the show airs. deploy-oracle.sh
+  // falls back to "[PODCAST]" on builds without /api/on-air, so other shows
+  // may pick their own word but should keep the bracket form.
+  trackPrefix: "[PODCAST]",
   intro: (epTitle) =>
     `It's podcast time. Today's episode: ${epTitle}. Settle in, turn it up, let the ghost signals speak.`,
 };
@@ -57,6 +64,17 @@ function prettyEpisodeTitle(stem) {
   const m = s.match(/^[A-Za-z]+-(E\d+)-(.+)$/);
   if (m) return `${m[1].toUpperCase()} · ${m[2].replace(/[-_]+/g, " ").trim()}`;
   return s.replace(/[-_]+/g, " ").trim();
+}
+
+/**
+ * How long to let the spoken intro play before the show starts. The old
+ * fixed 9 s fits the one-sentence show intros (~20 words) and is kept as
+ * the floor; a longer intro (a guest artist's) gets ~0.4 s a word so the
+ * music doesn't start over the voice.
+ */
+function introHoldMs(text) {
+  const words = String(text || "").split(/\s+/).filter(Boolean).length;
+  return Math.max(9000, words * 400 + 1000);
 }
 
 class PodcastScheduler {
@@ -270,9 +288,10 @@ class PodcastScheduler {
     const isPromo = this._show.airHours.some(
       (h) => nowMinutes === h * 60 - this._show.promoMinutesBefore);
 
-    if (isPromo && this._lastPromoMinute !== minuteKey) {
+    // An empty folder airs nothing, so it promises nothing either.
+    if (isPromo && this._lastPromoMinute !== minuteKey && this._getEpisodes().length > 0) {
       this._lastPromoMinute = minuteKey;
-      this._voiceDJ._podcastPromo = true;
+      this._voiceDJ._podcastPromo = this._show.promoLine || true;
       console.log(`[podcast-scheduler] Promo flag set — ${this._show.label} in ${this._show.promoMinutesBefore} minutes`);
     }
 
@@ -338,6 +357,7 @@ class PodcastScheduler {
     // The DJ engine's voice-dj already exists for richer intros; this is
     // the explicit "we're switching channels for the next half hour" cue.
     const introText = this._show.intro(epTitle);
+    const holdMs = introHoldMs(introText);
 
     this._voiceDJ.generateTTS(introText, (err, audioPath, text) => {
       if (!err && audioPath) {
@@ -345,7 +365,7 @@ class PodcastScheduler {
           type: "dj_talk_segment",
           text: text,
           audioUrl: "/audio-voice/" + path.basename(audioPath),
-          duration: 8000,
+          duration: holdMs - 1000,
           mood: "excited",
           timestamp: new Date().toISOString(),
         });
@@ -355,7 +375,7 @@ class PodcastScheduler {
       // After the intro plays out, load just today's one episode.
       setTimeout(() => {
         this._playAllPodcastEpisodes([todayEpisode]);
-      }, err ? 1000 : 9000);
+      }, err ? 1000 : holdMs);
     });
   }
 
@@ -368,7 +388,7 @@ class PodcastScheduler {
       const relPath = path.join(this._show.folder, f);
       const title = f.replace(/\.[^.]+$/, "");
       return {
-        title: `[PODCAST] ${title}`,
+        title: `${this._show.trackPrefix} ${title}`,
         album: this._show.folder,
         trackNum: i + 1,
         totalTracks: episodeFiles.length,
@@ -501,4 +521,4 @@ class PodcastScheduler {
   }
 }
 
-module.exports = { PodcastScheduler, prettyEpisodeTitle, episodeNumber };
+module.exports = { PodcastScheduler, prettyEpisodeTitle, episodeNumber, introHoldMs };
