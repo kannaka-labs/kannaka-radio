@@ -272,7 +272,9 @@ function fakeStripe() { const calls = { refund: [] }; return { calls, async crea
 
     assert.strictEqual((await enactFor(bridge, d.adId, 'approve')).status, 200);
     assert.strictEqual(m.outbox.length, 1);
-    assert.ok(/on the air/i.test(m.outbox[0].subject));
+    // Approval is not airing: the subject must not claim the spot is on air yet.
+    assert.ok(/approved and scheduled/i.test(m.outbox[0].subject));
+    assert.ok(!/on the air/i.test(m.outbox[0].subject));
     assert.strictEqual(m.outbox[0].to, 'approved@example.com');
 
     assert.strictEqual((await enactFor(bridge, d.adId, 'approve')).status, 200, 're-drive is still OK');

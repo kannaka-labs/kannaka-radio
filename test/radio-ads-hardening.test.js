@@ -66,7 +66,7 @@ async function freshStore(tag) {
   await run('same buyer pressing Buy again gets the slot back (old checkout expired)', async () => {
     const store = await freshStore('rebuy');
     const api = fakeApi();
-    const pay = new RadioAdPayments({ store, api, webhookSecret: WHSEC, now: () => NOWMS, bandCapacity: 1 });
+    const pay = new RadioAdPayments({ store, api, webhookSecret: WHSEC, now: () => Date.now(), bandCapacity: 1 });
     await pay.createCheckout({ text: TEXT, band: 'evening' });
     const second = await pay.createCheckout({ text: TEXT, band: 'evening' });
     assert.ok(second.checkoutUrl, 'second checkout created');
@@ -76,16 +76,27 @@ async function freshStore(tag) {
   await run('a different buyer is still refused while the first checkout is fresh', async () => {
     const store = await freshStore('fresh');
     const api = fakeApi();
-    const pay = new RadioAdPayments({ store, api, webhookSecret: WHSEC, now: () => NOWMS, bandCapacity: 1 });
+    const pay = new RadioAdPayments({ store, api, webhookSecret: WHSEC, now: () => Date.now(), bandCapacity: 1 });
     await pay.createCheckout({ text: TEXT, band: 'evening' });
     await assert.rejects(pay.createCheckout({ text: 'A completely different spot about bicycles', band: 'evening' }), /slot is full/);
     assert.deepStrictEqual(api.calls.expire, []);
   });
 
+  await run('a different buyer gets a band whose checkout sat idle 20 minutes', async () => {
+    const store = await freshStore('idle');
+    const api = fakeApi();
+    const pay = new RadioAdPayments({ store, api, webhookSecret: WHSEC, now: () => Date.now(), bandCapacity: 1 });
+    await pay.createCheckout({ text: TEXT, band: 'evening' });
+    await store._run(`UPDATE radio_ad_band_holds SET created_at = datetime('now', '-20 minutes')`);
+    const second = await pay.createCheckout({ text: 'A completely different spot about bicycles', band: 'evening' });
+    assert.ok(second.checkoutUrl);
+    assert.deepStrictEqual(api.calls.expire, ['cs_1']);
+  });
+
   await run('a hold whose payment completed is never reclaimed', async () => {
     const store = await freshStore('complete');
     const api = fakeApi({ sessionStatus: 'complete' });
-    const pay = new RadioAdPayments({ store, api, webhookSecret: WHSEC, now: () => NOWMS, bandCapacity: 1 });
+    const pay = new RadioAdPayments({ store, api, webhookSecret: WHSEC, now: () => Date.now(), bandCapacity: 1 });
     await pay.createCheckout({ text: TEXT, band: 'evening' });
     await assert.rejects(pay.createCheckout({ text: TEXT, band: 'evening' }), /slot is full/);
     assert.deepStrictEqual(api.calls.expire, []);
