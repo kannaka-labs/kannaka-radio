@@ -33,6 +33,9 @@ const {
   fetchUsgsWater,
   fetchArxiv,
   fetchConstellationDispatch,
+  fetchChannelUploads,
+  fetchPredictionActivity,
+  probeConstellationHealth,
   composeResilient,
   slotExhausted,
 } = require("./lib/scheduler-helpers");
@@ -68,6 +71,47 @@ const NEWS_OUTROS = [
   "That's all from the news desk. Gene signing off until the next break.",
   "End of news. Gene back to the music — thanks for listening through it.",
 ];
+
+/**
+ * Assemble the constellation dispatch from its sources. Each source is null when
+ * it could not be read (left out), or a value. Returns null if NOTHING could be
+ * read; { quiet: true, quietLine } when everything readable was quiet (no merges,
+ * no uploads, no market activity, every service answered); else { text }.
+ */
+function buildConstellationDispatch({ items, uploads, markets, health }) {
+  const sections = [];
+  let happened = false;
+  if (Array.isArray(items)) {
+    if (items.length) happened = true;
+    sections.push("MERGED IN THE PUBLIC REPOSITORIES (newest first):\n" + (items.length
+      ? items.map((c) => `  - [${c.repo}] ${c.title}${c.summary ? ` — ${c.summary}` : ""}`).join("\n")
+      : "  - nothing merged"));
+  }
+  if (Array.isArray(uploads)) {
+    if (uploads.length) happened = true;
+    sections.push("NEW ON THE STATION'S CHANNEL:\n" + (uploads.length
+      ? uploads.map((v) => `  - ${v.title}`).join("\n")
+      : "  - nothing new"));
+  }
+  if (markets && Array.isArray(markets.settled) && Array.isArray(markets.opened)) {
+    if (markets.settled.length || markets.opened.length) happened = true;
+    const lines = [
+      ...markets.settled.map((p) => `  - settled ${p.outcome}: "${p.statement}"`),
+      ...markets.opened.map((p) => `  - opened: "${p.statement}"${p.settlesBy ? ` (settles ${p.settlesBy})` : ""}`),
+    ];
+    sections.push("PREDICTION MARKETS (Kannaka Labs registry):\n" + (lines.length ? lines.join("\n") : "  - nothing settled or opened"));
+  }
+  let quietLine = "Inside the Kannaka Constellation, it was a quiet stretch since the last bulletin.";
+  if (Array.isArray(health) && health.length) {
+    const down = health.filter((h) => !h.ok).map((h) => h.name);
+    if (down.length) happened = true;
+    sections.push("SERVICE HEALTH (checked just now):\n" + health.map((h) => `  - ${h.name}: ${h.ok ? "answered" : "did NOT answer"}`).join("\n"));
+    if (!down.length) quietLine = "Inside the Kannaka Constellation, it was a quiet stretch since the last bulletin, and every service we checked is answering.";
+  }
+  if (!sections.length) return null;
+  if (!happened) return { quiet: true, quietLine };
+  return { quiet: false, text: sections.join("\n\n") };
+}
 
 /** Trim text cut off mid-sentence back to its last complete sentence; strip emphasis marks. */
 function completeSentences(text) {
@@ -126,9 +170,16 @@ function wordNumbers(text) {
  * phrasing, not a checkable claim; inflated counts and figures are 10 and up.
  */
 function numbersIn(text) {
-  const digits = (String(text || "").match(/\d[\d,]*(?:\.\d+)?/g) || []).map((n) => n.replace(/,/g, ""));
-  const words = wordNumbers(text).map(String);
-  return [...digits, ...words].filter((n) => !(Number(n) < 10));
+  const t = String(text || "");
+  const digits = (t.match(/\d[\d,]*(?:\.\d+)?/g) || []).map((n) => n.replace(/,/g, ""));
+  const words = wordNumbers(t).map(String);
+  // A small number attached to a span of time IS a claim: "after six weeks of
+  // silence" was written from "since at least 09-23" in a live compose.
+  const durations = [];
+  const re = /\b(\d+|one|two|three|four|five|six|seven|eight|nine)\s+(?:straight\s+|full\s+)?(hours?|days?|nights?|weeks?|months?|years?|times|runs)\b/gi;
+  let m;
+  while ((m = re.exec(t))) durations.push(/^\d+$/.test(m[1]) ? m[1] : String(NUM_UNITS[m[1].toLowerCase()]));
+  return [...digits.filter((n) => !(Number(n) < 10)), ...words.filter((n) => !(Number(n) < 10)), ...durations];
 }
 
 /**
@@ -489,25 +540,30 @@ class NewsBroadcast {
     const slotHour = Number((String(slot || "").match(/T(\d{2})$/) || [])[1]);
     const lookbackH = slotHour === 7 ? 14 : slotHour === 17 ? 10 : 24;
     const sinceIso = new Date(Date.now() - lookbackH * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
-    const items = await fetchConstellationDispatch({ sinceIso });
-    if (!Array.isArray(items)) return null;
-    if (items.length === 0) {
-      return "Inside the Kannaka Constellation, the public repositories were quiet since the last bulletin.";
-    }
-    const dispatch = items
-      .map((c) => `  - [${c.repo}] ${c.title}${c.summary ? ` — ${c.summary}` : ""}`)
-      .join("\n");
+    const [items, uploads, markets, health] = await Promise.all([
+      fetchConstellationDispatch({ sinceIso }).catch(() => null),
+      fetchChannelUploads({ sinceIso }).catch(() => null),
+      fetchPredictionActivity({ sinceIso }).catch(() => null),
+      probeConstellationHealth().catch(() => null),
+    ]);
+    const dispatch = buildConstellationDispatch({ items, uploads, markets, health });
+    if (dispatch === null) return null;          // nothing could be read: no segment
+    if (dispatch.quiet) return dispatch.quietLine; // read, and nothing happened
+    const sourceText = dispatch.text;
     const prompt = [
       "You are Gene, the news anchor on Kannaka Radio. You have just finished the world report.",
       "Now give THE CONSTELLATION segment: what was built and fixed inside the Kannaka Constellation, the network of agents and services this station is part of, since the last bulletin.",
       "",
-      "Source: changes merged in the constellation's public repositories, newest first:",
-      dispatch,
+      "Source, by section (a section missing here could not be read; do not mention it):",
+      sourceText,
       "",
       "Write 110 to 150 spoken words. Open with a short handoff from the world report (for example 'Closer to home, inside the constellation...'; vary it).",
       "",
       "Rules:",
-      "  - Lead with the most consequential development: what was broken or missing, what changed, and why it matters.",
+      "  - Lead with the most consequential development across all sections: a new episode, a service that did not answer, or a fix that changed how something works. Say what was broken or missing, what changed, and why it matters.",
+      "  - New episodes: name the show and the episode title as listed, and say it is out now.",
+      "  - Prediction markets: say what was settled and how (true or false), in plain words; do not read prediction numbers.",
+      "  - Service health: one sentence. Either all the listed services answered, or name the ones that did not. Never guess why.",
       "  - Group related changes into one story; two or three stories is plenty. Do not read a list.",
       "  - Translate engineering into plain language. Never read pull-request numbers, file names, function names, flags or code on air.",
       "  - Report ONLY what the source lists. Do not invent results, numbers, dates or motives; if an item's significance is unclear from its summary, say less about it, not more.",
@@ -515,7 +571,7 @@ class NewsBroadcast {
       "  - Hidden is not deleted; fixed in code is not the same as already visible everywhere.",
       "  - Do not claim effects on listeners, traders or users that the source does not state. Say 'since the last bulletin', not 'this week'.",
       "  - Do not name or quote individual people.",
-      "  - Mention once that this comes from the constellation's public repositories.",
+      "  - If you report merged changes, mention once that they come from the constellation's public repositories.",
       "  - No headings, no section labels, no markdown, no emphasis marks. End on a complete sentence.",
       "",
       "Output ONLY the spoken segment.",
@@ -524,7 +580,7 @@ class NewsBroadcast {
     // In the first live composes the model summed and rounded counts ("45 of 55"
     // from "40 of 55" plus four test accounts) despite the rule. Numbers are the
     // claims a listener can check, so they are checked mechanically.
-    return completeSentences(dropUngroundedNumbers(completeSentences(text), dispatch));
+    return completeSentences(dropUngroundedNumbers(completeSentences(text), sourceText));
   }
 
   // ── Deliver ───────────────────────────────────────────────
@@ -540,4 +596,4 @@ class NewsBroadcast {
   }
 }
 
-module.exports = { NewsBroadcast, completeSentences, dropUngroundedNumbers, wordNumbers };
+module.exports = { NewsBroadcast, completeSentences, dropUngroundedNumbers, wordNumbers, buildConstellationDispatch };
