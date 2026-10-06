@@ -1027,8 +1027,11 @@ class VoiceDJ {
     parts.push(opener);
 
     // 1b. Podcast promo injection — if the scheduler flagged an upcoming podcast
+    // A scheduler may set its own line (a string); `true` is the podcast's.
     if (this._podcastPromo) {
-      parts.push("In about 30 minutes, I'll be playing this week's podcast episode. Stick around — it's worth the wait.");
+      parts.push(typeof this._podcastPromo === "string"
+        ? this._podcastPromo
+        : "In about 30 minutes, I'll be playing this week's podcast episode. Stick around — it's worth the wait.");
       this._podcastPromo = false;
     }
 

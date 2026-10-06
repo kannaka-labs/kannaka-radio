@@ -696,6 +696,13 @@ module.exports = function setupRoutes(deps) {
           { hour: 21, label: "📻 The Story of Flaukowski", kind: "drama", note: tsofNote },
           { hour: 22, label: "🎙 Ghost Signals Podcast", kind: "podcast", note: "evening airing" },
         ];
+        // The featured-artist hour is listed only on days it will air
+        // (the folder is empty between guests), named by the same picker.
+        const featuredPick = deps.featuredScheduler ? deps.featuredScheduler.pickTodayEpisode() : null;
+        if (featuredPick) {
+          events.push({ hour: 20, label: "🎧 Featured Artist", kind: "featured", note: prettyEpisodeTitle(featuredPick.title) });
+          events.sort((a, b) => a.hour - b.hour);
+        }
 
         res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "public, max-age=300" });
         res.end(JSON.stringify({
@@ -730,6 +737,7 @@ module.exports = function setupRoutes(deps) {
       const shows = [
         { label: "Ghost Signals Podcast", sched: deps.podcastScheduler },
         { label: "The Story of Flaukowski", sched: deps.tsofScheduler },
+        { label: "Featured Artist", sched: deps.featuredScheduler },
       ];
 
       let onAir = null;

@@ -1184,6 +1184,37 @@ tsofScheduler.start();
 // other than the one that plays.
 deps.tsofScheduler = tsofScheduler;
 
+// ── Featured Artist — a guest artist's set, nightly at 8 PM ─
+// Third instance, same guards. The folder drives it: drop "<Artist> -
+// <Album>.mp3" into music/Featured Artist/ and it airs at 20:00 (one file a
+// day if there are several); empty the folder and the slot goes quiet,
+// promo included. The spoken intro is the artist's, not ours: an optional
+// "<same stem>.intro.txt" beside the audio, written from their bio.
+const FEATURED_FOLDER = "Featured Artist";
+const featuredScheduler = new PodcastScheduler({
+  djEngine,
+  voiceDJ,
+  broadcast,
+  broadcastState,
+  getMusicDir: () => MUSIC_DIR,
+  show: {
+    label: "Featured Artist",
+    folder: FEATURED_FOLDER,
+    airHours: [20],
+    trackPrefix: "[FEATURED]",
+    promoLine: "At eight o'clock it's the featured artist hour: a full set from an independent artist we've invited onto the station. Stay with me for it.",
+    intro: (stem) => {
+      try {
+        const t = fs.readFileSync(path.join(MUSIC_DIR, FEATURED_FOLDER, `${stem}.intro.txt`), "utf8").trim();
+        if (t) return t;
+      } catch (_) { /* no sidecar — generic line below */ }
+      return `This is the featured artist hour on Kannaka Radio. ${stem.replace(/[-_]+/g, " ").trim()}.`;
+    },
+  },
+});
+featuredScheduler.start();
+deps.featuredScheduler = featuredScheduler;
+
 // ── Programming schedule — time-of-day album rotation ────
 const { ProgrammingSchedule } = require("./programming");
 const programming = new ProgrammingSchedule({
@@ -1193,7 +1224,8 @@ const programming = new ProgrammingSchedule({
   broadcastState,
   getPodcastStatus: () => ({
     podcastPlaying: podcastScheduler.getStatus().podcastPlaying ||
-                    tsofScheduler.getStatus().podcastPlaying,
+                    tsofScheduler.getStatus().podcastPlaying ||
+                    featuredScheduler.getStatus().podcastPlaying,
   }),
   // peaceOration is constructed below; pass a getter so the showcase
   // trigger resolves it lazily at tick time (60s+ later).
