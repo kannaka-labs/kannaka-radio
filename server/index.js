@@ -1174,6 +1174,9 @@ const tsofScheduler = new PodcastScheduler({
     label: "The Story of Flaukowski",
     folder: "The Story of Flaukowski",
     airHours: [9, 21],
+    // Without its own line the promo fell back to voice-dj's podcast copy
+    // ("this week's podcast episode") half an hour before the drama.
+    promoLine: "In about half an hour, it's The Story of Flaukowski, our audio drama. Stay with me for it.",
     intro: (epTitle) =>
       `The signal is coming in. The Story of Flaukowski — ${epTitle}. Lights low; listen close.`,
   },

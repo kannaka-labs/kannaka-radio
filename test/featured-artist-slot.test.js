@@ -77,5 +77,18 @@ check('intro hold: a long guest intro waits for the voice', () => {
   assert.strictEqual(introHoldMs(sixty), 25000);
 });
 
+check('every non-podcast show in index.js sets its own promo line', () => {
+  // A show without promoLine inherits voice-dj's "this week's podcast
+  // episode" copy — which TSOF announced before every airing until 10-06.
+  const src = fs.readFileSync(path.join(__dirname, '..', 'server', 'index.js'), 'utf8');
+  const blocks = src.split('new PodcastScheduler({').slice(1).map((b) => b.split('\n});')[0]);
+  const shows = blocks.filter((b) => /\bshow:\s*\{/.test(b));
+  assert.ok(shows.length >= 2, `expected the TSOF and Featured shows, found ${shows.length}`);
+  for (const b of shows) {
+    const label = (b.match(/label:\s*"([^"]+)"/) || [])[1] || '?';
+    assert.ok(/promoLine:\s*"/.test(b), `${label} has no promoLine`);
+  }
+});
+
 if (failures) { console.error(`\n${failures} failing`); process.exit(1); }
 console.log('\nfeatured-artist-slot: all passed');
