@@ -21,7 +21,23 @@
 
 const path = require("path");
 const fs = require("fs");
+const { execFileSync } = require("child_process");
 const { dailyRotationIndex } = require("./lib/scheduler-helpers");
+const onairState = require("./lib/onair-state");
+
+// A restart in the first minutes of an air hour used to lose the show for
+// the day (the trigger fired only at minute :00). Within this many minutes
+// a show that hasn't aired this hour still starts.
+const LATE_START_GRACE_MIN = 5;
+
+function probeDurationMs(absPath) {
+  try {
+    const out = execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration",
+      "-of", "default=nw=1:nk=1", absPath], { encoding: "utf8", timeout: 10000 });
+    const sec = parseFloat(out);
+    return Number.isFinite(sec) ? Math.round(sec * 1000) : 0;
+  } catch (_) { return 0; }
+}
 
 // Default show config = the original hardcoded Ghost Signals behavior.
 // A second PodcastScheduler instance with a different `show` airs another
@@ -99,10 +115,13 @@ class PodcastScheduler {
     // no listener ever heard a show intro.
     this._injectVoice = typeof opts.injectVoice === "function" ? opts.injectVoice : null;
     this._show = Object.assign({}, DEFAULT_SHOW, opts.show || {});
+    // Seams for tests; production reads the real file and ffprobe.
+    this._onairFile = opts.onairFile || onairState.stateFile();
+    this._probeDurationMs = opts.probeDurationMs || probeDurationMs;
 
     this._podcastPlaying = false;
     this._savedDJState = null;
-    this._lastTriggeredMinute = null; // "YYYY-MM-DD HH:mm" to prevent re-trigger
+    this._lastTriggeredMinute = null; // "YYYY-MM-DD HH" of the last airing triggered
     this._lastPromoMinute = null;
     this._timer = null;
   }
@@ -113,8 +132,35 @@ class PodcastScheduler {
   start() {
     console.log(`[podcast-scheduler] Started — ${this._show.label}, daily at ${this._show.airHours.join(" + ")}h Chicago, day-of-week rotation`);
     this._timer = setInterval(() => this._tick(), 60000);
+    // A restart mid-show: put the show back where it was cut, before the
+    // tick can decide anything else.
+    this._resumeIfInterrupted();
     // Run once immediately to catch restart-during-window
     this._tick();
+  }
+
+  /**
+   * If the stream's on-air record says this show was airing when the
+   * process went down, reload it at the listener's position. Returns true
+   * when it resumed.
+   */
+  _resumeIfInterrupted(nowMs = Date.now()) {
+    const state = onairState.read(this._onairFile);
+    if (!state || state.folder !== this._show.folder) return false;
+    const abs = path.join(this._getMusicDir(), state.file);
+    if (!fs.existsSync(abs)) return false;
+    const plan = onairState.resumePlan(state, this._show.folder, nowMs, this._probeDurationMs(abs));
+    if (!plan) return false;
+    console.log(`[podcast-scheduler] ${this._show.label}: resuming ${path.basename(state.file)} at ${Math.round(plan.offsetMs / 1000)}s after a restart`);
+    this._savedDJState = {
+      currentAlbum: this._djEngine.state.currentAlbum,
+      currentTrackIdx: this._djEngine.state.currentTrackIdx,
+    };
+    this._podcastPlaying = true;
+    // This hour's airing has happened; the grace window must not start it again.
+    this._lastTriggeredMinute = this._hourKey(this._chicagoNow());
+    this._playAllPodcastEpisodes([path.basename(state.file)], { resumeAtMs: plan.offsetMs });
+    return true;
   }
 
   /**
@@ -300,13 +346,21 @@ class PodcastScheduler {
       console.log(`[podcast-scheduler] Promo flag set — ${this._show.label} in ${this._show.promoMinutesBefore} minutes`);
     }
 
-    // ── Airing trigger — this show's configured hours, :00 ──
-    const isAirtime = min === 0 && this._show.airHours.includes(hour);
+    // ── Airing trigger — this show's hours, :00 plus a short grace ──
+    // Keyed by hour, so the grace minutes can't start a second airing and
+    // a restart at :02 still gets the show on.
+    const isAirtime = min < LATE_START_GRACE_MIN && this._show.airHours.includes(hour);
+    const hourKey = this._hourKey(chicago);
 
-    if (isAirtime && !this._podcastPlaying && this._lastTriggeredMinute !== minuteKey) {
-      this._lastTriggeredMinute = minuteKey;
+    if (isAirtime && !this._podcastPlaying && this._lastTriggeredMinute !== hourKey) {
+      this._lastTriggeredMinute = hourKey;
+      if (min > 0) console.log(`[podcast-scheduler] ${this._show.label}: starting ${min} min late (restart inside the grace window)`);
       this._startScheduledPodcast();
     }
+  }
+
+  _hourKey(d) {
+    return this._minuteKey(d).slice(0, 13);
   }
 
   /**
@@ -404,11 +458,11 @@ class PodcastScheduler {
    * Replace the DJ playlist with ALL podcast episodes and start playback.
    * @param {string[]} episodeFiles — sorted filenames from _getEpisodes()
    */
-  _playAllPodcastEpisodes(episodeFiles) {
+  _playAllPodcastEpisodes(episodeFiles, opts = {}) {
     const podcastTracks = episodeFiles.map((f, i) => {
       const relPath = path.join(this._show.folder, f);
       const title = f.replace(/\.[^.]+$/, "");
-      return {
+      const t = {
         title: `${this._show.trackPrefix} ${title}`,
         album: this._show.folder,
         trackNum: i + 1,
@@ -417,6 +471,9 @@ class PodcastScheduler {
         theme: `Kannaka Radio — ${this._show.label}`,
         isPodcastScheduled: true,
       };
+      // A show resumed after a restart starts where the listener left it.
+      if (i === 0 && opts.resumeAtMs > 0) t.resumeAtMs = opts.resumeAtMs;
+      return t;
     });
 
     // Replace the entire playlist with the podcast episodes
