@@ -1752,7 +1752,7 @@ class DJEngine {
    * (2026-06-11: the Open Mic premiere skipped its opening bit because
    * the override landed mid-song and the boundary advance jumped 0→1.)
    */
-  advanceTrack(justFinishedFile) {
+  advanceTrack(justFinishedFile, { aired = true } = {}) {
     const prev = this.getCurrentTrack();
     // CONFIRM-on-finish: if the slot that just ended was a sponsor overlay AND
     // it actually finished (not interrupted by a swap), count it as aired. The
@@ -1762,7 +1762,9 @@ class DJEngine {
     // Requires the finished FILE to match the overlay: a caller that advances
     // with no file (a hypothetical future non-icecast caller) must not confirm
     // a spot it can't prove aired.
-    if (prev && prev.sponsor && prev.sponsorAdId && justFinishedFile && prev.file === justFinishedFile) {
+    // `aired` is false when the stream skipped the file (missing, or a stream
+    // error): advancing past an unplayed spot is not airing it.
+    if (aired && prev && prev.sponsor && prev.sponsorAdId && justFinishedFile && prev.file === justFinishedFile) {
       const adId = prev.sponsorAdId;
       const airDate = prev.sponsorAirDate;
       if (this._confirmSponsor) { try { this._confirmSponsor(adId, airDate); } catch (_) { /* never wedge the stream */ } }
@@ -1771,7 +1773,7 @@ class DJEngine {
     // by the file the caller just streamed. A spot cut short by a deploy or a
     // swap stays unconfirmed and comes back around — the offer is one airing,
     // and an airing nobody heard is not one.
-    if (prev && prev.guestSpot && prev.guestOrderId && justFinishedFile && prev.file === justFinishedFile) {
+    if (aired && prev && prev.guestSpot && prev.guestOrderId && justFinishedFile && prev.file === justFinishedFile) {
       const orderId = prev.guestOrderId;
       const staged = prev.file;
       if (this._confirmGuest) { try { this._confirmGuest(orderId, staged); } catch (_) { /* never wedge the stream */ } }

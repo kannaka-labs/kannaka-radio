@@ -1669,7 +1669,7 @@ body.konami-mode .surface-header h1 {
     </div>
     <audio id="adPreviewAudio" controls style="display:none;width:100%;margin-top:12px"></audio>
     <div id="adStatus" class="ad-status"></div>
-    <p class="ad-buy-note">Every spot is reviewed before it airs — if it's not approved, you're refunded in full. Approved advertisers also get a free month of <a href="/analytics">Ghost Signals Analytics</a>. Prefer to talk first? <a href="mailto:nflach78@gmail.com?subject=Kannaka%20Radio%20%E2%80%94%20Air%20Time">Email us</a>.</p>
+    <p class="ad-buy-note">Every spot is reviewed before it airs — if it's not approved, you're refunded in full. Approved advertisers also get a free month of <a href="/analytics">Ghost Signals Analytics</a>. Prefer to talk first? <a href="mailto:kannaka@spacechild.love?subject=Kannaka%20Radio%20%E2%80%94%20Air%20Time">Email us</a>.</p>
   </div>
 </section>
 
@@ -2268,7 +2268,7 @@ function showAdReturnNotice() {
     body.style.marginTop = '6px';
     body.textContent = "It goes to a human for review before it airs, usually within a day. "
       + "You'll hear it in your chosen slot once a day for a week. If it isn't approved you're "
-      + "refunded in full — you keep the free month of Ghost Signals Analytics either way.";
+      + "refunded in full. Once it's approved, your free month of Ghost Signals Analytics unlocks.";
     status.appendChild(head);
     status.appendChild(body);
 
@@ -2291,7 +2291,7 @@ function showAdReturnNotice() {
       unlock.style.marginTop = '8px';
       var a = document.createElement('a');
       a.href = '/analytics?ad=' + encodeURIComponent(ref);
-      a.textContent = 'Open your free month of Ghost Signals Analytics →';
+      a.textContent = 'Your free month of Ghost Signals Analytics (opens once approved) →';
       unlock.appendChild(a);
       status.appendChild(unlock);
     }
@@ -4871,6 +4871,7 @@ function connectWS() {
 //  Init
 // ══════════════════════════════════════════════════════
 
+var _streamRetryMs = 0; // live-stream reconnect backoff; reset once audio plays
 document.addEventListener('DOMContentLoaded', function() {
   // Audio events — only auto-advance in DJ/Music modes (not podcast).
   // ADR-0004 Phase 4: in DJ mode the audio src is /stream (Icecast),
@@ -4893,8 +4894,24 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/next', {method:'POST'});
   });
   document.getElementById('audio').addEventListener('play', function() { initAudioAnalyser(); });
+  document.getElementById('audio').addEventListener('playing', function() { _streamRetryMs = 0; });
   document.getElementById('audio').addEventListener('error', function(e) {
     if (currentMode === 'podcast') return;
+    if (currentMode === 'dj') {
+      // A live stream error is a dropped connection (a phone on cellular in
+      // a car hits this constantly). The server ignores skip requests here,
+      // so this used to leave the player silent until someone tapped Play.
+      // Reconnect to live instead, backing off 2 s → 30 s.
+      var a = document.getElementById('audio');
+      _streamRetryMs = Math.min(30000, (_streamRetryMs || 1000) * 2);
+      setTimeout(function() {
+        if (currentMode !== 'dj') return;
+        a.src = '/stream?reconnect=' + Date.now();
+        a.load();
+        a.play().catch(function(){});
+      }, _streamRetryMs);
+      return;
+    }
     var track = document.getElementById('track');
     if (track) track.textContent = 'Playback error \u2014 skipping...';
     setTimeout(function() {

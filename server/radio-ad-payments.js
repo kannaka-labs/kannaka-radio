@@ -22,17 +22,20 @@ const {
 /** A minimal Stripe REST client over https. Injectable (see RadioAdPayments
  *  opts.api) so tests never touch the network. */
 function makeStripeApi(secretKey) {
-  function post(apiPath, params, idempotencyKey) {
-    const body = stripeFormEncode(params);
+  function post(apiPath, params, idempotencyKey) { return request('POST', apiPath, params, idempotencyKey); }
+  function request(method, apiPath, params, idempotencyKey) {
+    const body = method === 'GET' ? '' : stripeFormEncode(params || {});
     return new Promise((resolve, reject) => {
       const req = https.request({
-        method: 'POST',
+        method,
         hostname: 'api.stripe.com',
         path: apiPath,
         headers: {
           'Authorization': `Bearer ${secretKey}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(body),
+          ...(method === 'GET' ? {} : {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(body),
+          }),
           ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
         },
       }, (res) => {
@@ -51,12 +54,14 @@ function makeStripeApi(secretKey) {
       });
       req.on('error', reject);
       req.setTimeout(20000, () => req.destroy(new Error('stripe request timed out')));
-      req.write(body);
+      if (body) req.write(body);
       req.end();
     });
   }
   return {
     createCheckoutSession(params, idempotencyKey) { return post('/v1/checkout/sessions', params, idempotencyKey); },
+    retrieveCheckoutSession(id) { return request('GET', `/v1/checkout/sessions/${encodeURIComponent(id)}`); },
+    expireCheckoutSession(id) { return post(`/v1/checkout/sessions/${encodeURIComponent(id)}/expire`, {}); },
     createRefund(params, idempotencyKey) { return post('/v1/refunds', params, idempotencyKey); },
     // Setting receipt_email on a succeeded PaymentIntent makes Stripe send the
     // buyer its own receipt. No idempotency key: this is a last-write-wins
@@ -64,6 +69,10 @@ function makeStripeApi(secretKey) {
     updatePaymentIntent(id, params) { return post(`/v1/payment_intents/${encodeURIComponent(id)}`, params); },
   };
 }
+
+// A checkout untouched this long is treated as abandoned when another buyer
+// wants its band (Stripe's own session expiry is 60 min).
+const ABANDONED_AFTER_MS = 15 * 60 * 1000;
 
 class RadioAdPayments {
   constructor(opts = {}) {
@@ -111,7 +120,13 @@ class RadioAdPayments {
     // Capacity gate (review M6): atomically reserve a band slot or refuse —
     // never sell a spot the band can't deliver. Released on kill/reject/dispute/
     // completion, or swept if never paid.
-    const cap = await this.store.reserveBandHold(draft.id, draft.band, this.bandCapacity);
+    let cap = await this.store.reserveBandHold(draft.id, draft.band, this.bandCapacity);
+    // An abandoned checkout used to hold the band for up to 90 minutes, so a
+    // buyer who backed out of Stripe and pressed Buy again was told their own
+    // slot was full. Reclaim holds whose checkout is provably dead, then try once more.
+    if (!cap.reserved && await this._reclaimAbandonedHolds(draft)) {
+      cap = await this.store.reserveBandHold(draft.id, draft.band, this.bandCapacity);
+    }
     if (!cap.reserved) { const e = new Error(`the ${draft.band} slot is full right now — please pick another time slot`); e.code = 'band_full'; throw e; }
     try {
       // 60-min session expiry: bounds how long an abandoned checkout holds the
@@ -135,6 +150,44 @@ class RadioAdPayments {
   }
 
   /**
+   * Free unpaid holds in this draft's band whose checkout can no longer pay:
+   * the same spot text (the same buyer pressing Buy again), or a checkout idle
+   * past ABANDONED_AFTER_MS. Each is released only once Stripe shows its
+   * session can't complete: already expired, or open and expired by us now.
+   * A 'complete' session means a payment is landing, so that hold stays.
+   * Returns true if anything was freed.
+   */
+  async _reclaimAbandonedHolds(draft) {
+    const api = this._stripe();
+    if (!api || !api.retrieveCheckoutSession || !this.store.unpaidHoldsInBand) return false;
+    let freed = false;
+    const rows = await this.store.unpaidHoldsInBand(draft.band).catch(() => []);
+    for (const h of rows) {
+      if (h.ad_id === draft.id) continue;
+      const createdMs = Date.parse(String(h.created_at).replace(' ', 'T') + 'Z');
+      const idle = Number.isFinite(createdMs) && this._now() - createdMs > ABANDONED_AFTER_MS;
+      if (h.content_hash !== draft.contentHash && !idle) continue;
+      try {
+        if (h.stripe_session_id) {
+          const s = await api.retrieveCheckoutSession(h.stripe_session_id);
+          if (s.status === 'complete') continue;
+          if (s.status === 'open') await api.expireCheckoutSession(h.stripe_session_id);
+        } else if (!idle) {
+          // No session yet: a concurrent click still creating one. Freeing it
+          // now could leave two payable checkouts for one slot.
+          continue;
+        }
+        await this.store.releaseBandHold(h.ad_id);
+        console.log(`[ads] reclaimed abandoned ${draft.band} hold ${h.ad_id} for ${draft.id}`);
+        freed = true;
+      } catch (e) {
+        console.warn(`[ads] could not reclaim hold ${h.ad_id}: ${e.message}`);
+      }
+    }
+    return freed;
+  }
+
+  /**
    * Handle a raw Stripe webhook. Verifies the signature over the RAW body (never
    * the parsed JSON), then marks the ad paid — idempotently, so a duplicate
    * delivery or the 2nd settlement path (both event types) can't double-apply.
@@ -155,8 +208,14 @@ class RadioAdPayments {
       // A mismatch is definitive (retrying won't change it): acknowledge (200)
       // so Stripe stops redelivering, but do NOT mark paid.
       if (c.amountCents !== PRICE_CENTS || c.currency !== CURRENCY) {
+        // A real customer may have been charged for nothing: never quietly.
+        console.error(`[ads] PAID EVENT IGNORED for ${c.adId}: ${c.amountCents} ${c.currency} != ${PRICE_CENTS} ${CURRENCY} — charged but not booked; refund or book by hand`);
         return { status: 200, body: { received: true, ignored: 'amount_or_currency_mismatch' } };
       }
+      // Whether this event brings the buyer's address for the first time
+      // (payment_intent.succeeded carries none and may land first).
+      const before = await this.store.getAd(c.adId).catch(() => null);
+      const emailIsNew = !!(c.customerEmail && before && !before.customer_email);
       let r;
       try {
         r = await this.store.markPaid(c.adId, { sessionId: c.sessionId, paymentIntent: c.paymentIntent, amountCents: c.amountCents, customerEmail: c.customerEmail });
@@ -193,6 +252,14 @@ class RadioAdPayments {
             await this.mailer.adPurchased(ad.customer_email, { adId: ad.id, band: ad.band, runDays: ad.run_days });
           }
           await this.mailer.operatorReviewNeeded({ adId: ad.id, band: ad.band, amountCents: ad.amount_cents, runDays: ad.run_days, text: ad.text });
+        }
+      } else if (this.mailer && r && r.ok && r.already && emailIsNew) {
+        // The payment was first recorded from an event with no address, so
+        // the buyer's booking mail was skipped then. This event brings the
+        // address: send it now (once — the address is write-once).
+        const ad = await this.store.getAd(c.adId).catch(() => null);
+        if (ad && ad.customer_email) {
+          await this.mailer.adPurchased(ad.customer_email, { adId: ad.id, band: ad.band, runDays: ad.run_days });
         }
       }
     }
@@ -236,7 +303,15 @@ class RadioAdPayments {
       // idempotent replay. Status stays 'killed' (it aired part of the run).
       const amount = ad.refund_amount_cents == null ? 0 : ad.refund_amount_cents;
       if (amount > 0) {
-        const refund = await api.createRefund({ payment_intent: ad.stripe_payment_intent, amount }, refundIdempotencyKey(adId));
+        let refund;
+        try {
+          refund = await api.createRefund({ payment_intent: ad.stripe_payment_intent, amount }, refundIdempotencyKey(adId));
+        } catch (e) {
+          // Returned, not thrown: the bridge answers 409 so KAX retries. A
+          // throw became a silent 500 with the customer's refund unissued.
+          console.error(`[ads] partial refund FAILED for ${adId} (${amount}c): ${e.message} — will retry on re-drive`);
+          return { ok: false, error: 'refund_failed' };
+        }
         await this.store.markKillRefunded(adId, refund && refund.id);
         return { ok: true, refundId: refund && refund.id, amountCents: amount, partial: true };
       }
@@ -246,7 +321,13 @@ class RadioAdPayments {
       return { ok: true, refundId: null, amountCents: 0, partial: true };
     }
     // paid / rejected → FULL refund (the ad never aired).
-    const refund = await api.createRefund({ payment_intent: ad.stripe_payment_intent }, refundIdempotencyKey(adId));
+    let refund;
+    try {
+      refund = await api.createRefund({ payment_intent: ad.stripe_payment_intent }, refundIdempotencyKey(adId));
+    } catch (e) {
+      console.error(`[ads] refund FAILED for ${adId}: ${e.message} — will retry on re-drive`);
+      return { ok: false, error: 'refund_failed' };
+    }
     await this.store.markRefunded(adId, refund && refund.id);
     return { ok: true, refundId: refund && refund.id };
   }
