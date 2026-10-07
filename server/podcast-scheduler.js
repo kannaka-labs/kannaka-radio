@@ -54,9 +54,40 @@ const DEFAULT_SHOW = {
   // falls back to "[PODCAST]" on builds without /api/on-air, so other shows
   // may pick their own word but should keep the bracket form.
   trackPrefix: "[PODCAST]",
+  // How many airings a day step the rotation. 1 = one pick per day (both
+  // airings replay it, the podcast's second-chance rule). 2 = the midnight
+  // and noon airings take consecutive picks, so two files alternate within
+  // the day instead of repeating.
+  slotsPerDay: 1,
+  // A freshly landed file preempts the rotation for 48 h (a new episode
+  // airs first). A segment whose files alternate, like the artist story's
+  // two songs, turns this off — otherwise the newer song would take both
+  // airings for two days.
+  newReleasePriority: true,
   intro: (epTitle) =>
     `It's podcast time. Today's episode: ${epTitle}. Settle in, turn it up, let the ghost signals speak.`,
 };
+
+/**
+ * The spoken text that sits beside an audio file: "<stem>.intro.txt", or one
+ * of several variants "<stem>.intro.N.txt" so a segment that airs twice a day
+ * for weeks does not say the same words every time. `variant` indexes the
+ * sorted variants, wrapping; null when there is no sidecar at all.
+ */
+function sidecarIntro(dir, stem, variant = 0) {
+  let names;
+  try { names = fs.readdirSync(dir); } catch (_) { return null; }
+  const plain = `${stem}.intro.txt`;
+  const files = names
+    .filter((f) => f === plain || (f.startsWith(`${stem}.intro.`) && /\.intro\.\d+\.txt$/.test(f)))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  if (files.length === 0) return null;
+  const pick = files[((variant % files.length) + files.length) % files.length];
+  try {
+    const t = fs.readFileSync(path.join(dir, pick), "utf8").trim();
+    return t || null;
+  } catch (_) { return null; }
+}
 
 /**
  * The episode number a release filename carries: "GSP-041-…" → 41,
@@ -129,8 +160,28 @@ class PodcastScheduler {
   /**
    * Start the scheduler. Checks every 60 seconds.
    */
+  /**
+   * Air the show now, outside its clock hours: the artist story runs when
+   * the peace oration tells it to, not at :00. Marks this hour so a clock
+   * tick in the same hour cannot start it a second time.
+   * @param {string} [reason] — for the log
+   * @returns {Promise<void>}
+   */
+  airNow(reason) {
+    this._lastTriggeredMinute = this._hourKey(this._chicagoNow());
+    if (this._podcastPlaying) {
+      console.log(`[podcast-scheduler] ${this._show.label}: already airing, airNow ignored${reason ? ` (${reason})` : ""}`);
+      return Promise.resolve();
+    }
+    console.log(`[podcast-scheduler] ${this._show.label}: airing now${reason ? ` (${reason})` : ""}`);
+    return this._startScheduledPodcast();
+  }
+
   start() {
-    console.log(`[podcast-scheduler] Started — ${this._show.label}, daily at ${this._show.airHours.join(" + ")}h Chicago, day-of-week rotation`);
+    const when = this._show.airHours.length > 0
+      ? `daily at ${this._show.airHours.join(" + ")}h Chicago`
+      : "on demand (airNow)";
+    console.log(`[podcast-scheduler] Started — ${this._show.label}, ${when}, day-of-week rotation`);
     this._timer = setInterval(() => this._tick(), 60000);
     // A restart mid-show: put the show back where it was cut, before the
     // tick can decide anything else.
@@ -175,6 +226,21 @@ class PodcastScheduler {
    */
   _episodeIndexFor(chicago, episodeCount) {
     if (episodeCount <= 0) return 0;
+    const slots = Math.max(1, Math.floor(this._show.slotsPerDay || 1));
+    if (slots > 1) {
+      // Consecutive picks across the day's airings: slot s of day d is pick
+      // d*slots + s, so two files alternate midnight/noon and flip the next
+      // day rather than repeating.
+      const slot = Math.min(slots - 1, Math.floor(chicago.getHours() * slots / 24));
+      // Calendar days, not elapsed milliseconds: the shared dayOfYear() divides
+      // a local-time span by 86,400,000, so in a DST zone the first hour after
+      // midnight still counts as yesterday for half the year, and the two
+      // slots of one day would straddle a day boundary and collide.
+      const day = Math.round((Date.UTC(chicago.getFullYear(), chicago.getMonth(), chicago.getDate())
+        - Date.UTC(chicago.getFullYear(), 0, 0)) / 86400000);
+      const n = day * slots + slot;
+      return ((n % episodeCount) + episodeCount) % episodeCount;
+    }
     if (episodeCount === 7) {
       const jsDay = chicago.getDay();           // 0=Sun..6=Sat
       const monAligned = (jsDay + 6) % 7;        // 0=Mon..6=Sun
@@ -251,7 +317,7 @@ class PodcastScheduler {
       landed: new Date(release.landedMs).toISOString(),
       fresh: release.fresh,
     } : null;
-    if (release && release.fresh) {
+    if (release && release.fresh && this._show.newReleasePriority !== false) {
       return {
         file: release.file,
         title: release.file.replace(/\.[^.]+$/, ""),
@@ -599,4 +665,4 @@ class PodcastScheduler {
   }
 }
 
-module.exports = { PodcastScheduler, prettyEpisodeTitle, episodeNumber, introHoldMs };
+module.exports = { PodcastScheduler, prettyEpisodeTitle, episodeNumber, introHoldMs, sidecarIntro };

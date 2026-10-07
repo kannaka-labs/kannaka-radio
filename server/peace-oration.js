@@ -112,6 +112,10 @@ class PeaceOration {
     // Optional FloorManager accessor so _compose can fold today's top
     // reaction tracks into the oration prompt (ADR-0008 deferred layer).
     this._getFloor = opts.getFloor || (() => null);
+    // Called with the slot key the moment a scheduled oration's audio is in
+    // the /stream queue (not when it finishes). The artist-story segment
+    // uses it to queue its own voice and song directly behind the oration.
+    this._afterOration = typeof opts.afterOration === "function" ? opts.afterOration : null;
 
     // Voice for the peace oration. News uses Adam (American male anchor);
     // peace oration runs in a sophisticated British female register so
@@ -741,7 +745,16 @@ class PeaceOration {
         console.log("🕔 Peace oration complete");
         if (slotKey && this._inFlightKey === slotKey) this._inFlightKey = null;
       }
-    }, { persona: "oration" });
+    }, {
+      persona: "oration",
+      // Only a scheduled slot carries a companion segment; deliverNow and
+      // showcaseAlbum are manual and own no slot.
+      onInjected: () => {
+        if (!slotKey || !this._afterOration) return;
+        try { this._afterOration(slotKey); }
+        catch (e) { console.warn(`   [oration] afterOration hook failed: ${e && e.message}`); }
+      },
+    });
     // Rejected outright (voiceDJ busy): _tick never marks the slot, so there
     // is nothing in flight to track.
     if (!accepted && slotKey && this._inFlightKey === slotKey) this._inFlightKey = null;
