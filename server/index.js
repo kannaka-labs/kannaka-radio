@@ -1155,7 +1155,7 @@ syncManager.start(broadcast, 10000);
 nats.connect();
 
 // ── Podcast scheduler — weekly episodes on DJ channel ─────
-const { PodcastScheduler } = require("./podcast-scheduler");
+const { PodcastScheduler, sidecarIntro } = require("./podcast-scheduler");
 const onairState = require("./lib/onair-state");
 // Show intros go onto /stream (icecastSource is assigned further down; the
 // lambda resolves it at airtime). Without a stream, schedulers keep the
@@ -1238,6 +1238,44 @@ const featuredScheduler = new PodcastScheduler({
 featuredScheduler.start();
 deps.featuredScheduler = featuredScheduler;
 
+// ── Artist Story — Kannaka tells a guest artist's story, then plays their song ─
+// Fourth instance, with no clock hours of its own: it airs when the peace
+// oration hands over (afterOration, below). The story's voice is queued on
+// /stream behind the oration and the song is loaded as the next track, so
+// the order on air is oration → story → song, twice a day. The folder
+// drives it like Featured Artist: drop "<Artist> - <Song>.mp3" into
+// music/Artist Story/ with the story Kannaka tells beside it as
+// "<same stem>.intro.txt", or several variants "<stem>.intro.1.txt",
+// ".intro.2.txt" … rotated per airing so a story told twice a day for weeks
+// is not one text on repeat. Two songs alternate midnight/noon
+// (slotsPerDay 2). An empty folder is silent.
+const STORY_FOLDER = "Artist Story";
+const storyScheduler = new PodcastScheduler({
+  djEngine,
+  voiceDJ,
+  broadcast,
+  broadcastState,
+  getMusicDir: () => MUSIC_DIR,
+  injectVoice: showIntroInject,
+  show: {
+    label: "Artist Story",
+    folder: STORY_FOLDER,
+    airHours: [],            // on demand only: peaceOration → airNow()
+    slotsPerDay: 2,
+    newReleasePriority: false, // the two songs alternate from the day they land
+    trackPrefix: "[STORY]",
+    intro: (stem) => {
+      const chi = storyScheduler._chicagoNow();
+      const day = Math.round((Date.UTC(chi.getFullYear(), chi.getMonth(), chi.getDate()) - Date.UTC(chi.getFullYear(), 0, 0)) / 86400000);
+      const variant = day * 2 + (chi.getHours() >= 12 ? 1 : 0);
+      return sidecarIntro(path.join(MUSIC_DIR, STORY_FOLDER), stem, variant)
+        || `Before the music comes back, a song from a guest of this station: ${stem.replace(/[-_]+/g, " ").trim()}.`;
+    },
+  },
+});
+storyScheduler.start();
+deps.storyScheduler = storyScheduler;
+
 // ── Programming schedule — time-of-day album rotation ────
 const { ProgrammingSchedule } = require("./programming");
 const programming = new ProgrammingSchedule({
@@ -1248,7 +1286,8 @@ const programming = new ProgrammingSchedule({
   getPodcastStatus: () => ({
     podcastPlaying: podcastScheduler.getStatus().podcastPlaying ||
                     tsofScheduler.getStatus().podcastPlaying ||
-                    featuredScheduler.getStatus().podcastPlaying,
+                    featuredScheduler.getStatus().podcastPlaying ||
+                    storyScheduler.getStatus().podcastPlaying,
   }),
   // peaceOration is constructed below; pass a getter so the showcase
   // trigger resolves it lazily at tick time (60s+ later).
@@ -1278,6 +1317,11 @@ const peaceOration = new PeaceOration({
   broadcast,
   getChannel: () => djEngine.state.channel,
   getFloor: () => floor, // ADR-0008 deferred layer: orations reference today's resonance
+  // The artist story follows every scheduled oration (see Artist Story above).
+  afterOration: (slotKey) => {
+    Promise.resolve(storyScheduler.airNow(`after the ${slotKey} peace oration`))
+      .catch((e) => console.warn(`[artist-story] could not air after the oration: ${e && e.message}`));
+  },
   dataDir: path.join(BASE_DIR, "workspace"),
   rootDir: BASE_DIR,
   radioUrl: process.env.RADIO_PUBLIC_URL || "https://radio.ninja-portal.com",

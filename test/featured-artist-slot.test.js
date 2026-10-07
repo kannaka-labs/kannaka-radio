@@ -130,6 +130,9 @@ check('every non-podcast show in index.js sets its own promo line', () => {
   assert.ok(shows.length >= 2, `expected the TSOF and Featured shows, found ${shows.length}`);
   for (const b of shows) {
     const label = (b.match(/label:\s*"([^"]+)"/) || [])[1] || '?';
+    // A show with no clock hours (the artist story airs on demand after the
+    // oration) never reaches the promo minute, so it has nothing to say there.
+    if (/airHours:\s*\[\s*\]/.test(b)) continue;
     assert.ok(/promoLine:\s*"/.test(b), `${label} has no promoLine`);
   }
 });

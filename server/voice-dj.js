@@ -717,6 +717,14 @@ class VoiceDJ {
           injected = true;
         }
       } catch (_) {}
+      // The oration is now in the /stream voice queue, ahead of anything
+      // queued after this point. A caller that wants a segment to air right
+      // behind it (the artist story after the peace oration) hooks here,
+      // not on onDone: onDone fires when the oration has finished playing,
+      // by which time the next music track has already started.
+      if (injected && opts && typeof opts.onInjected === 'function') {
+        try { opts.onInjected(); } catch (e) { console.warn(`   [oration] onInjected hook failed: ${e && e.message}`); }
+      }
 
       if (injected) {
         // 720s safety ceiling — far past any real oration. If the

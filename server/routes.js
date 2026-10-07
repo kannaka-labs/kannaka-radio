@@ -708,8 +708,16 @@ module.exports = function setupRoutes(deps) {
         const featuredPick = deps.featuredScheduler ? deps.featuredScheduler.pickTodayEpisode() : null;
         if (featuredPick) {
           events.push({ hour: 20, label: "🎧 Featured Artist", kind: "featured", note: prettyEpisodeTitle(featuredPick.title) });
-          events.sort((a, b) => a.hour - b.hour);
         }
+        // The artist story follows each oration while its folder holds a
+        // song; the picker names the song for the slot being displayed.
+        const storyPick = deps.storyScheduler ? deps.storyScheduler.pickTodayEpisode() : null;
+        if (storyPick) {
+          const note = `after the oration · ${prettyEpisodeTitle(storyPick.title)}`;
+          events.push({ hour: 0, label: "📖 Artist Story", kind: "story", note });
+          events.push({ hour: 12, label: "📖 Artist Story", kind: "story", note });
+        }
+        if (featuredPick || storyPick) events.sort((a, b) => a.hour - b.hour);
 
         res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "public, max-age=300" });
         res.end(JSON.stringify({
@@ -745,6 +753,7 @@ module.exports = function setupRoutes(deps) {
         { label: "Ghost Signals Podcast", sched: deps.podcastScheduler },
         { label: "The Story of Flaukowski", sched: deps.tsofScheduler },
         { label: "Featured Artist", sched: deps.featuredScheduler },
+        { label: "Artist Story", sched: deps.storyScheduler },
       ];
 
       let onAir = null;
