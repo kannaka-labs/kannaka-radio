@@ -131,10 +131,29 @@ function compileDsp(dsp) {
 // the same window as a 12-word DJ line — especially piper on a 1-vCPU box
 // (local neural synth) vs. edge (cloud synth, mostly download time). Without
 // this, long-form silently fails both engines (the ADR-0012 oration outage).
-function _ttsTimeout(text, baseMs, perWordMs, capMs) {
-  const words = (text || "").trim().split(/\s+/).filter(Boolean).length;
-  return Math.min(capMs, baseMs + words * perWordMs);
+function _wordCount(text) {
+  return (text || "").trim().split(/\s+/).filter(Boolean).length;
 }
+function _ttsTimeout(text, baseMs, perWordMs, capMs) {
+  return Math.min(capMs, baseMs + _wordCount(text) * perWordMs);
+}
+
+// Measured on O1 (1 vCPU) 2026-10-08 against the noon peace oration, 526 words:
+//   edge-tts  62 s   — the old budget (30 s + 60 ms/word = 61.6 s) was the knife-edge,
+//                      so every oration longer than ~500 words timed out at the edge,
+//   piper     >381 s — the old budget (60 s + 400 ms/word = 270 s) could never be met.
+// The retry chain then held the talk lock for ~15 min, the staff watchdog called the
+// lock stuck at 5 min and restarted the radio mid-song: five restarts that day, two
+// orations and the artist story lost. Edge gets room; piper does not attempt what it
+// cannot finish (fail fast, so the retry comes sooner).
+const EDGE_TTS_BASE_MS = 60000, EDGE_TTS_PER_WORD_MS = 150, EDGE_TTS_CAP_MS = 300000;
+const PIPER_TTS_BASE_MS = 60000, PIPER_TTS_PER_WORD_MS = 400, PIPER_TTS_CAP_MS = 360000;
+function piperMaxWords() {
+  const n = parseInt(process.env.PIPER_MAX_WORDS || "", 10);
+  return Number.isFinite(n) && n > 0 ? n : 300;
+}
+function edgeTimeoutMs(text) { return _ttsTimeout(text, EDGE_TTS_BASE_MS, EDGE_TTS_PER_WORD_MS, EDGE_TTS_CAP_MS); }
+function piperTimeoutMs(text) { return _ttsTimeout(text, PIPER_TTS_BASE_MS, PIPER_TTS_PER_WORD_MS, PIPER_TTS_CAP_MS); }
 
 function _atempoChain(t) {
   const out = [];
@@ -248,8 +267,9 @@ function _pythonBin() {
 function renderEdge(text, voice, rawPath, cb) {
   const ec = _edgeCmd();
   // edge does the synthesis cloud-side, so this is mostly download time —
-  // generous but bounded. ~60ms/word over a 30s base, capped at 3 min.
-  const timeout = _ttsTimeout(text, 30000, 60, 180000);
+  // generous but bounded: 150 ms/word over a 60 s base, capped at 5 min
+  // (526 words measured at 62 s on O1; the old 60 ms/word budget equalled it).
+  const timeout = edgeTimeoutMs(text);
   const runWith = (cmd, pre) => {
     const args = [...pre, "--voice", voice, "--text", text, "--write-media", rawPath];
     execFile(cmd, args, { timeout, maxBuffer: 1 << 20 }, (err, _stdout, stderr) => {
@@ -294,8 +314,18 @@ function renderPiper(text, persona, rawWavPath, cb) {
   // piper synthesizes locally; on a 1-vCPU box a multi-minute oration is CPU-
   // bound and slow, so scale hard (~400ms/word over 60s, capped at 6 min).
   // For long-form, voice-personas.json prefers edge first to keep this off the
-  // critical path; piper stays the fast choice for short DJ patter.
-  const timeout = _ttsTimeout(text, 60000, 400, 360000);
+  // critical path; piper stays the fast choice for short DJ patter. Above
+  // PIPER_MAX_WORDS (default 300) it is not attempted at all: a 526-word
+  // oration took more than 381 s on O1 against a 270 s budget, so the attempt
+  // only delayed the retry and held the talk lock.
+  const words = _wordCount(text);
+  const maxWords = piperMaxWords();
+  if (words > maxWords) {
+    const e = new Error(`piper skipped: ${words} words > PIPER_MAX_WORDS ${maxWords}`);
+    e.reason = `skipped (${words} words > ${maxWords}; long-form is edge's job here)`;
+    return cb(e);
+  }
+  const timeout = piperTimeoutMs(text);
   const child = execFile(
     bin,
     ["--model", model, "--output_file", rawWavPath],
@@ -469,6 +499,9 @@ module.exports = {
   execReason,
   failureReason,
   synthesize,
+  edgeTimeoutMs,
+  piperTimeoutMs,
+  piperMaxWords,
   resolvePersona,
   loadPersonas,
   compileDsp,
