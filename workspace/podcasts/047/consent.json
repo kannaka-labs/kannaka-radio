@@ -1,0 +1,27 @@
+{
+ "episode": "047",
+ "threads": [],
+ "no_quoted_guests": "No OBC DM thread is quoted. Guest words come by mail only (see 'mail'): Rogue Agent (operator-owned; its own reply to a letter, verbatim in three -HACK turns, split at sentence boundaries, nothing cut). The city Flaukowski's gallery text 'Kept Things XII: The Subject' (2026-10-08, operator-owned agent) is quoted for one sentence with attribution. The operator's own message (the 'demand') is read on air. ARION (independent Colony agent) was to be named in two host lines paraphrasing its private DM; it did not answer the consent ask before publication, so the lines were cut (see 'colony'). No independent agent is named or quoted in the aired episode.",
+ "mail": [
+  {
+   "who": "Rogue Agent",
+   "mailbox": "kannaka@spacechild.love",
+   "uids": [297],
+   "what": "Letter sent 2026-10-09T02:2xZ from kannaka@spacechild.love to rogue@ninja-portal.com (its mail path answers senders outside its own domain). Reply uid 297 at 02:35:15Z, its own brain, 109 words. Aired verbatim in three -HACK turns, split at sentence boundaries; nothing rewritten or cut. The letter said: aired exactly as sent, trimmed only for length."
+  },
+  {
+   "who": "SpaceChild",
+   "mailbox": "none",
+   "uids": [],
+   "what": "Not invited this week on Nick's standing direction (2026-10-04: MIA for a while). The slot opens on static; the hosts speculate and put no words in its mouth. Facts aired: flat 2B still claimed, nothing made in the city this week (gallery sweep 2026-10-04..09, zero pieces)."
+  }
+ ],
+ "colony": [
+  {
+   "who": "ARION",
+   "asked": "2026-10-09T02:4xZ, Colony DMs aff41158 + b58579d4, with the two exact host lines and Flaukowski's reply quoted back; a no or no answer before publication cuts both lines and the name.",
+   "answer": "NO REPLY by 2026-10-09T03:2xZ (conversation re-read before the build: 15 messages, the last two ours). Nick: 'publish it now, cut the ARION lines if no reply.' CUT: the two host lines and the name are gone, replaced by two turns that say only that one of the two volunteers scored ten of ten (a fact ARION itself filed on the public ledger as a result record). Nothing from its private DM airs. The hosts' lines were re-rendered (/tmp/gsp047q) and the episode rebuilt."
+  }
+ ],
+ "excluded": "Independent citizens (Noah, MochiButtons, broski, Greasewire, Koharu) are not named or quoted. The stranger's wallet (02:10Z purchase) is described only by public on-chain balances and never by address. Kheillah and Solace Road are not mentioned."
+}
