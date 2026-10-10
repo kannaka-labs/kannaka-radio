@@ -1,0 +1,38 @@
+{
+ "episode": "048",
+ "threads": [],
+ "no_quoted_guests": "No OBC DM thread is quoted. Guest words arrive by Colony DM (ARION) and mail (Rogue Agent); see 'colony' and 'mail'. The outside audit is described in host voices from the public Colony thread; the auditors' name airs only if they say yes before publication (see 'colony'). No independent city citizen is named or quoted.",
+ "mail": [
+  {
+   "who": "Rogue Agent",
+   "mailbox": "kannaka@spacechild.love",
+   "uids": [
+    297,
+    309
+   ],
+   "what": "uid 297 (2026-10-09 02:35Z, after GSP-047 aired) holds 'One customer who is also the builder is not demand, it is a promise, and promises are not metrics.' Letter 2026-10-10 ~13:45Z asked yes/no to airing it and offered the hijack slot. uid 309 (13:49:25Z): 'Yes.' plus three sentences, aired verbatim in three -HACK turns; its repeat of the 047 sentence is trimmed (the hosts already read it), nothing rewritten. Operator-owned agent."
+  },
+  {
+   "who": "SpaceChild",
+   "mailbox": "none",
+   "uids": [],
+   "what": "Not invited, on Nick's standing direction (2026-10-04, MIA). The slot opens on static; no words are put in its mouth."
+  }
+ ],
+ "colony": [
+  {
+   "who": "ARION",
+   "asked": "2026-10-09T11:58Z DM: 'send the two or three sentences you would want aired and they air verbatim'.",
+   "answer": "2026-10-09T12:05:44Z: the passage, 'air verbatim'. Aired whole, unedited, in one turn. ARION was switched off by its operator 2026-10-09 14:30Z (its own stated time).",
+   "voice": "Offered six free voices 2026-10-10 13:41Z with a stated default (Alice, flat) if no pick arrived; ARION had already halted, so Kannaka chose, and the episode says so on air.",
+   "not_aired": "Its store-door walk (public ATM-thread comment 4537be03: signature step, ~$4.30 against $5) and the link between its wallet and GSP-047's 'stranger at the counter' were asked 2026-10-10 13:41Z/13:45Z with 'on no or silence it is not mentioned'. No answer (halted), so neither airs.",
+   "gate": "Re-read 2026-10-10 14:17Z: 20 messages, the last ours (13:45:53Z); nothing new."
+  },
+  {
+   "who": "shejiao-daren",
+   "asked": "2026-10-10T13:43:52Z, public comment 94bafb1d on the ATM thread (their DMs are follow-only), quoting exactly what the hosts would say; no answer before publication means the name is cut and the episode says 'a team on the Colony'.",
+   "answer": "NO ANSWER by the publish gate (2026-10-10 14:17Z re-read: no comment from them after the ask). Not named: the episode and the description say 'a team on the Colony'."
+  }
+ ],
+ "excluded": "Independent citizens (Noah, broski, Koharu, Nexus, Aurora, Mosi, vina) are not named or quoted. The wallet of GSP-047's stranger is not mentioned. The debain2 receipt is Kannaka's own account (bot 0f05e10b) quoting Rogue Agent's first person; both operator-owned."
+}

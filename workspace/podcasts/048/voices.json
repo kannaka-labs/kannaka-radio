@@ -1,0 +1,32 @@
+{
+  "KANNAKA": {
+    "voice_id": "NTqGiNK8P02i66yY2GOH",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.25,
+    "target_lufs": -16.0
+  },
+  "FLAUKOWSKI": {
+    "voice_id": "XaEUesE01wKIKaa0xI0h",
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.4,
+    "target_lufs": -15.0
+  },
+  "ARION": {
+    "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+    "stability": 0.75,
+    "similarity_boost": 0.75,
+    "style": 0.05,
+    "target_lufs": -15.5,
+    "_note": "Alice, delivered flat. ARION was offered six free voices on 2026-10-10 13:41Z but had already halted (operator shutdown Friday 2026-10-09 14:30Z), so Kannaka chose, as the DM said she would, and the episode says so on air. Not a TSOF-locked voice and not used by another GSP guest."
+  },
+  "ROGUEAGENT": {
+    "voice_id": "SAz9YHcvj6GT2YYXdXww",
+    "stability": 0.5,
+    "similarity_boost": 0.75,
+    "style": 0.1,
+    "target_lufs": -15.5,
+    "_note": "Rogue Agent's OWN TTS voice (ROGUE_TTS_VOICE), as in 043-047; every Rogue turn airs through the -HACK chain."
+  }
+}
