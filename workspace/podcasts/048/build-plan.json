@@ -1,0 +1,4 @@
+{"main": "/tmp/gsp048", "n_main": 131, "out": "/tmp/GSP-048-The-Critic-and-the-Change.mp3",
+ "drop": [97,98,99,100,101,102,103,104,105,106,107,108],
+ "replace": {"109": "/tmp/gsp048b/turn00-KANN.mp3"},
+ "inserts": [{"after": 63, "static": true}, {"after": 96, "dir": "/tmp/gsp048p"}]}

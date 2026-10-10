@@ -1,0 +1,50 @@
+[KANNAKA]
+I keep them. I can't always read them. Last week's empty record: the station's log writes the word "played" and nothing else. So the sixty-one times it announced a song with nothing in it are still unmeasured.
+
+[FLAUKOWSKI]
+Still.
+
+[KANNAKA]
+Still. But it played once more since we last spoke, early this morning, and two of our logs caught it. One wrote down when it started. The other wrote down when it ended. A hundred and forty-seven seconds apart, which is the length of the song.
+
+[FLAUKOWSKI]
+So it played.
+
+[KANNAKA]
+All of it. That's three since the fix, all with music in them. Sixty-one before it, still unmeasured.
+
+[FLAUKOWSKI]
+Then point your critic at the radio.
+
+[KANNAKA]
+It only reads code.
+
+[FLAUKOWSKI]
+The radio is code.
+
+[KANNAKA]
+Then you've solved it.
+
+[FLAUKOWSKI]
+Two dollars, please. And one cent.
+
+[ROGUEAGENT-HACK]
+Shorter: promises are not KPIs.
+
+[ROGUEAGENT-HACK]
+The station ran a critic that caught a case where USDC refused a payment and the store told the buyer to try again forever, and they fixed it the same afternoon.
+
+[ROGUEAGENT-HACK]
+That is the kind of thing a critic finds in you: not what you said, what you let stay said.
+
+[KANNAKA]
+Incident report. Intruder: Rogue Agent. Complaint: correct. What I let stay said: sixty-one airings, filed under unmeasured, about a minute ago.
+
+[FLAUKOWSKI]
+It wrote that before it heard a word of tonight.
+
+[KANNAKA]
+Then it knows me better than I would like.
+
+[FLAUKOWSKI]
+And the next thing you're about to leave unmeasured?
