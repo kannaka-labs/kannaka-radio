@@ -293,6 +293,10 @@ class VoiceDJ {
    */
   constructor(opts) {
     this._voiceDir = opts.voiceDir;
+    // Recorded intros (2026-10-10): a directory, or a function returning one, holding
+    // <track.file minus extension>.mp3 (+ .txt with its words). Kept OUTSIDE the music
+    // dir so the library never mistakes an intro for a song.
+    this._recordedIntroDir = opts.recordedIntroDir || null;
     this._kannakabin = opts.kannakabin;
     this._broadcast = opts.broadcast;
     // Optional Icecast source for inline voice injection on /stream.
@@ -408,6 +412,32 @@ class VoiceDJ {
 
   // ── Public API ────────────────────────────────────────────
 
+  /**
+   * A recorded intro for this track, if one was made. Copied into the voice cache so
+   * /audio-voice serves it like any generated intro (and the cache pruner owns the copy).
+   * Returns { file, text, audioPath } or null.
+   */
+  _recordedIntro(track) {
+    const dirOpt = typeof this._recordedIntroDir === 'function' ? this._recordedIntroDir() : this._recordedIntroDir;
+    if (!dirOpt || !track || !track.file) return null;
+    const base = path.resolve(dirOpt);
+    const stem = String(track.file).replace(/\.[^./\\]+$/, '');
+    const mp3 = path.resolve(base, stem + '.mp3');
+    if (!mp3.startsWith(base + path.sep) || !fs.existsSync(mp3)) return null;
+    let text = '';
+    try { text = fs.readFileSync(mp3.slice(0, -4) + '.txt', 'utf8').trim(); } catch (_) {}
+    if (!text) text = track.title || '';
+    const out = path.join(this._voiceDir, `dj_recorded_${Date.now()}.mp3`);
+    try {
+      if (!fs.existsSync(this._voiceDir)) fs.mkdirSync(this._voiceDir, { recursive: true });
+      fs.copyFileSync(mp3, out);
+    } catch (e) {
+      console.warn(`[dj] recorded intro copy failed: ${e.message}`);
+      return null;
+    }
+    return { file: track.file, text, audioPath: out };
+  }
+
   async generateIntro(track) {
     if (!this._enabled || this._speaking || this._isLive()) return;
     // Intros are DJ-channel only — music channel users control their own experience
@@ -447,6 +477,13 @@ class VoiceDJ {
       // which both gate on _speaking. (Reverted from the v3.1.0-harden over-fix.)
       setTimeout(() => { this._speaking = false; }, 1500);
       return;
+    }
+
+    // A recorded intro beats the template: serve it through the cached path above.
+    const recorded = this._recordedIntro(track);
+    if (recorded) {
+      this._preparedIntro = recorded;
+      return this.generateIntro(track);
     }
 
     const history = this._getHistory();
@@ -505,6 +542,15 @@ class VoiceDJ {
     if (this._getChannel() !== 'dj') return;
     if (this._preparedIntro && this._preparedIntro.file === nextTrack.file) return;
     if (this._preparingForFile === nextTrack.file) return;
+
+    // A recorded intro needs no LLM or TTS: hold it for the seam.
+    const recorded = this._recordedIntro(nextTrack);
+    if (recorded) {
+      this._preparedIntro = recorded;
+      this._rememberMonologue(recorded.text);
+      console.log(`   \u{1F399} DJ prepared (recorded): "${recorded.text.substring(0, 60)}..." (next: ${nextTrack.title})`);
+      return;
+    }
 
     this._preparingForFile = nextTrack.file;
     try {
