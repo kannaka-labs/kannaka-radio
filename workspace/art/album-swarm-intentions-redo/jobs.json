@@ -1,0 +1,37 @@
+{
+ "show": "album",
+ "episode": 9,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "05-gossip-cover",
+   "subject": "digital concept painting, a translucent playful ghost drifting down a dark rainy cobblestone alley at night, trailing wisps of light that split into many smaller wisps, blank brick walls, teal and magenta glow reflected in puddles",
+   "prompt": "digital concept painting, a translucent playful ghost drifting down a dark rainy cobblestone alley at night, trailing wisps of light that split into many smaller wisps, blank brick walls, teal and magenta glow reflected in puddles, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "81686c425c05b99124ca990ec9559525383848dadfcc17722fe532b131440349",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3411719268,
+   "file": "album-e009-05-gossip-cover-s3411719268.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "05-gossip-s1",
+   "subject": "digital concept painting, glowing threads of light strung between dark rooftops at night like a string telephone, small sparks travelling along the threads from roof to roof, film noir mood, deep blue and amber",
+   "prompt": "digital concept painting, glowing threads of light strung between dark rooftops at night like a string telephone, small sparks travelling along the threads from roof to roof, film noir mood, deep blue and amber, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "4e178d47c71734dd31e7aa3eeef0849a7923d745cbf996df4cd8fc7b23849b04",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3151836913,
+   "file": "album-e009-05-gossip-s1-s3151836913.png"
+  }
+ ]
+}
