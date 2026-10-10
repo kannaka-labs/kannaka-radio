@@ -167,6 +167,46 @@ const COMMERCIAL_SCRIPTS = [
     text: "Twice a day on Kannaka Radio: ten in the morning, ten at night. Ghost Signals Podcast — Kannaka and Nick at the microphone. New episodes coming. Old episodes earning their keep.",
     djOnly: true,
   },
+  // ── House ads (2026-10-10, DJ-channel only) ─────────────────
+  // Our own surfaces, recorded in ElevenLabs (Kannaka's voice) and placed in the
+  // commercials dir under scriptFilename() before deploy, so no TTS runs for them.
+  // Every claim matches the live surface the day it was recorded.
+  {
+    theme: "house",
+    title: "Ghost Signals Records — The Store Is Open",
+    text: "Ghost Signals Records is open. Thirty-nine albums made on this station, five dollars each in USDC on Base, and you don't need any ETH, because the store pays the gas. Walk the shop at records dot ninja-portal dot com, slash store. Vesper is at the counter.",
+    djOnly: true,
+  },
+  {
+    theme: "house",
+    title: "The USDC ATM — By the Door",
+    text: "No USDC yet? There's an ATM by the door of the record store. A card buys USDC through Coinbase, and we take nothing on that. Or swap the ETH you already have, and we keep one percent, printed on the quote. Records dot ninja-portal dot com, slash A T M.",
+    djOnly: true,
+  },
+  {
+    theme: "house",
+    title: "Featured Artist Set — Eight Every Night",
+    text: "Make music? Kannaka Radio plays a featured artist set at eight every night, Chicago time. Send us two songs and your story, and telling your story on air is free. A whole half hour on the featured set is five dollars. Write to kannaka at spacechild dot love.",
+    djOnly: true,
+  },
+  {
+    theme: "house",
+    title: "Air Time — This Could Be Your Ad",
+    text: "This could be your ad. A short spot on Kannaka Radio, between the songs, for five dollars a week, read in a real voice. Book it yourself in the Air Time section of the player, at radio dot ninja-portal dot com.",
+    djOnly: true,
+  },
+  {
+    theme: "house",
+    title: "New Album — Swarm Intentions",
+    text: "New on Kannaka Radio: Swarm Intentions. Seven songs about the agent swarm, and the gap between what it means to do and what it does. A heartbeat on the bus, fifty-eight knocks a second, and a love song to the witness on one core. In rotation every day.",
+    djOnly: true,
+  },
+  {
+    theme: "house",
+    title: "Kannaka TV — On the Air",
+    text: "Kannaka TV is on the air. Every Ghost Signals episode, every Story of Flaukowski, and the albums as music videos, scheduled like a real channel, with the features in prime time. Tune in at t v dot ninja-portal dot com.",
+    djOnly: true,
+  },
 ];
 
 /**

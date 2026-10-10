@@ -598,6 +598,9 @@ const live = new LiveBroadcast({
 
 const voiceDJ = new VoiceDJ({
   voiceDir: VOICE_DIR,
+  // Recorded intros live beside the music dir, never in it (the library would list them
+  // as songs). Lazy, because MUSIC_DIR can change at runtime.
+  recordedIntroDir: () => process.env.KANNAKA_RECORDED_INTRO_DIR || path.join(path.dirname(MUSIC_DIR), "recorded-intros"),
   kannakabin: KANNAKA_BIN,
   broadcast,
   getPerception: () => perception_.getCurrentPerception(),
