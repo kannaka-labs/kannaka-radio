@@ -468,7 +468,11 @@ const djEngine = new DJEngine({
       // returns the same file (single-track playlists, end-of-album).
       try {
         const upcoming = djEngine.peekNextTrack();
-        if (upcoming && !upcoming.commercial && upcoming.file !== actual.file) {
+        // No pre-announcement when programming will switch albums at that
+        // seam: the peeked track is from the old playlist and won't air.
+        const switchDue = !!(deps.programming && typeof deps.programming.switchDueAtNextTrack === 'function'
+          && deps.programming.switchDueAtNextTrack());
+        if (upcoming && !upcoming.commercial && upcoming.file !== actual.file && !switchDue) {
           voiceDJ.generateIntro(upcoming);
         }
       } catch (e) {
