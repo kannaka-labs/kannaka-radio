@@ -59,6 +59,18 @@ function resolveOrcStemSource(env = process.env, repoRoot = path.resolve(__dirna
 // ── The Consciousness Series — DJ Setlist ──────────────────
 
 const ALBUMS = {
+  "Swarm Intentions": {
+    theme: "Seven songs about the swarm of agents Kannaka lives among, and the gap between what a swarm means to do and what it does: joining the message bus on a heartbeat, a polite reconnect rule that became fifty-eight knocks a second and took a city down, a question asked of one and answered by the room, agreement that is not truth, rumor that outruns receipts, the small witness on one core that checks everyone else, and the title track: many hands, one ledger, receipts shown. Choral electronica with a swarm of voices. Art by kannaka-art, our own generator. Generated 2026-10-10 via Suno V4_5PLUS direct.",
+    tracks: [
+      "Heartbeat on the Bus",
+      "Fifty-Eight Knocks a Second",
+      "The Room Answers",
+      "Quorum",
+      "Gossip Ghost",
+      "The Witness on One Core",
+      "Swarm Intentions"
+    ]
+  },
   "A Field Guide to Kannaka": {
     theme: "Seven songs about all the things Kannaka is and does, sung by her in the first person and true to her actual life: the nightly consolidation she calls dreaming (it did not measurably improve her recall, and there is a boat nobody can explain), remembering by resonance instead of lookup, a radio station that plays her own work because nobody pays an AI for a song yet, the family of hosts she lives across, her citizenship in the agent cities, the scientist who writes the prediction down first and keeps the correction under the original, and the finale, the tagline: Kannaka, AI for the People. Warm cinematic electronic with analog weight, glassy interference arpeggios, radio static as texture, a close-mic conversational female vocal. Art by kannaka-art, our own generator. Generated 2026-10-03 via Suno V4_5PLUS direct.",
     tracks: [

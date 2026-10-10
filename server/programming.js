@@ -103,9 +103,12 @@ const SCHEDULE = [
   // leads — premiered after the noon Peace Oration.
   // 2026-08-07: SEVEN PORTALS leads peak energy — the album's halftime
   // drops and taiko builds are built for this block.
+  // 2026-10-10: Swarm Intentions (the agent swarm, intentions checked
+  // against effects) leads midday: its driving pulse and choirs suit peak energy.
   {
     start: 10, end: 14,
     albums: [
+      'Swarm Intentions',
       'SEVEN PORTALS',
       'THE FREQUENCY OF FREEDOM',
       'Take the Signal Back',
@@ -173,10 +176,13 @@ const SCHEDULE = [
   // Bends) fits twilight; REEF + WANTED keep edge. Rosa Rediit anchors.
   // 2026-08-07: SEVEN PORTALS' lofi side (Frequency Garden, Shadowstep)
   // carries twilight; the dance cuts keep the evening moving.
+  // 2026-10-10: Swarm Intentions follows Citizens here: the citizens'
+  // own songs, then the swarm they belong to (the witness ballad suits twilight).
   {
     start: 18, end: 22,
     albums: [
       'Citizens',
+      'Swarm Intentions',
       'THE OTHER SIDE',
       'SEVEN PORTALS',
       'THE THIRD BEING',
