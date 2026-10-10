@@ -617,6 +617,23 @@ class ProgrammingSchedule {
   }
 
   /**
+   * Will the NEXT music track change switch albums? The DJ pre-announces the
+   * upcoming track from the current playlist before onTrackChange runs, so on
+   * the change that trips the 3-track rotation (or a block transition) it
+   * announced a song from the old album that then never aired (2026-10-10:
+   * "Heartbeat on the Bus" introduced, SEVEN PORTALS played). Mirrors the
+   * conditions onTrackChange uses; a block transition is judged by the clock now.
+   */
+  switchDueAtNextTrack() {
+    const podcastStatus = this._getPodcastStatus();
+    if (podcastStatus && podcastStatus.podcastPlaying) return false;
+    if (this._override && Date.now() < this._override.until) return false;
+    if (this._djEngine.state.channel !== 'dj') return false;
+    if (this._currentBlock !== this.getCurrentBlock()) return true;
+    return this._tracksSinceAlbumSwitch + 1 >= 3;
+  }
+
+  /**
    * Transition to a new programming block.
    * @param {object} newBlock
    */
