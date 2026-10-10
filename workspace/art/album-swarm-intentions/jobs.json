@@ -1,0 +1,323 @@
+{
+ "show": "album",
+ "episode": 9,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "01-heartbeat-cover",
+   "subject": "digital concept painting, a dark night sky full of small glowing points of light, each one pulsing softly, thin threads of light connecting them into a loose web, deep indigo and warm amber, calm and vast",
+   "prompt": "digital concept painting, a dark night sky full of small glowing points of light, each one pulsing softly, thin threads of light connecting them into a loose web, deep indigo and warm amber, calm and vast, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "4517a7884a2eb497b3617fa90f4698211581abadbaad10427095651113f86823",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3462470063,
+   "file": "album-e009-01-heartbeat-cover-s3462470063.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "01-heartbeat-s1",
+   "subject": "digital concept painting, a single small lantern being lit in a vast dark field at night, other faint lanterns answering far away on the horizon, cool blue and warm gold",
+   "prompt": "digital concept painting, a single small lantern being lit in a vast dark field at night, other faint lanterns answering far away on the horizon, cool blue and warm gold, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "e0c9caf0ecd704a2771ddf53999fdccf579fb5d38685669ac87197a2f553f029",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3130151021,
+   "file": "album-e009-01-heartbeat-s1-s3130151021.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "01-heartbeat-s2",
+   "subject": "digital concept painting, a long glowing cable running through a dark tunnel, soft pulses of light travelling along it like heartbeats, teal and amber, quiet mood",
+   "prompt": "digital concept painting, a long glowing cable running through a dark tunnel, soft pulses of light travelling along it like heartbeats, teal and amber, quiet mood, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "af66b77109de247232e963b02b634ba39a6424a195c578de7b4bbe7ecbd074c2",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1818264396,
+   "file": "album-e009-01-heartbeat-s2-s1818264396.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "01-heartbeat-s3",
+   "subject": "digital concept painting, a woman with long black hair seen from behind standing on a hill at dusk watching small lights appear one by one across a valley below, faceless silhouette",
+   "prompt": "digital concept painting, a woman with long black hair seen from behind standing on a hill at dusk watching small lights appear one by one across a valley below, faceless silhouette, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "73c3735b962f37f8d5e6699bca393d3414110e55668355c41bbcebb143885ac1",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1980556891,
+   "file": "album-e009-01-heartbeat-s3-s1980556891.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "02-knocks-cover",
+   "subject": "digital concept painting, a tall old wooden city gate at night with hundreds of small glowing hands of light pressed against it, dramatic red and deep blue, tense atmosphere",
+   "prompt": "digital concept painting, a tall old wooden city gate at night with hundreds of small glowing hands of light pressed against it, dramatic red and deep blue, tense atmosphere, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "949d61c38f3ecee3449b9ed8982d3883f18a95a60bcb0a703cb5b73a72cc13a1",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1647052236,
+   "file": "album-e009-02-knocks-cover-s1647052236.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "02-knocks-s1",
+   "subject": "digital concept painting, a crowd of small identical glowing figures seen from behind all rushing toward one closed door in a narrow alley, motion blur, red and violet light",
+   "prompt": "digital concept painting, a crowd of small identical glowing figures seen from behind all rushing toward one closed door in a narrow alley, motion blur, red and violet light, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "822b5ab9eac4b12af8a9720af65b2344789a25db9d54572950d5c7098b5624f0",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2699712795,
+   "file": "album-e009-02-knocks-s1-s2699712795.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "02-knocks-s2",
+   "subject": "digital concept painting, a quiet city at dawn after a storm, streets empty and wet, lights slowly coming back on in the windows one by one, soft grey and gold",
+   "prompt": "digital concept painting, a quiet city at dawn after a storm, streets empty and wet, lights slowly coming back on in the windows one by one, soft grey and gold, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "2e7800ac8e304995358807ce7d47459a44562d86c02ecc75362d5429e4464e13",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2791419881,
+   "file": "album-e009-02-knocks-s2-s2791419881.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "02-knocks-s3",
+   "subject": "digital concept painting, a single wooden door slightly open with warm light spilling out, a few scattered glowing figures waiting patiently at different distances on a calm street",
+   "prompt": "digital concept painting, a single wooden door slightly open with warm light spilling out, a few scattered glowing figures waiting patiently at different distances on a calm street, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "01cd80a09e5c48d99847979a99a2412d83a7d0f8d94f419c16ffd80b3e4049db",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3592125472,
+   "file": "album-e009-02-knocks-s3-s3592125472.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "03-room-cover",
+   "subject": "digital concept painting, a grand empty concert hall filled with soft overlapping ripples of golden light rising from every seat, warm sepia and deep red velvet, no people",
+   "prompt": "digital concept painting, a grand empty concert hall filled with soft overlapping ripples of golden light rising from every seat, warm sepia and deep red velvet, no people, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "65350d74680bd5e655cd77c817303fe80f75c06012e34175625ca185d97184d0",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 72554619,
+   "file": "album-e009-03-room-cover-s72554619.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "03-room-s1",
+   "subject": "digital concept painting, a small glowing paper boat floating into a huge dark hall where countless tiny lights reflect on still water, gentle and vast",
+   "prompt": "digital concept painting, a small glowing paper boat floating into a huge dark hall where countless tiny lights reflect on still water, gentle and vast, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "63d3f13fe7da7c06340dbda1d1cc0438f902e603e54cbb7a0694519708189f79",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 446659078,
+   "file": "album-e009-03-room-s1-s446659078.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "03-room-s2",
+   "subject": "digital concept painting, many old brass gramophone horns arranged in a circle in a dim room, soft light glowing from each horn, warm amber tones",
+   "prompt": "digital concept painting, many old brass gramophone horns arranged in a circle in a dim room, soft light glowing from each horn, warm amber tones, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "9603d3775f1f645fbd29fd3aaf41ea47bc0f411b774bb2b13ade1751b85e1579",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3350401362,
+   "file": "album-e009-03-room-s2-s3350401362.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "03-room-s3",
+   "subject": "digital concept painting, a woman with long black hair seen from behind standing in the aisle of a vast candlelit hall, faceless silhouette, rows of tiny flames answering in the dark",
+   "prompt": "digital concept painting, a woman with long black hair seen from behind standing in the aisle of a vast candlelit hall, faceless silhouette, rows of tiny flames answering in the dark, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "1526b56faac5ce7cb48a8aa67e4dee157740cdefb10e812ab75a156e2e306339",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3107177405,
+   "file": "album-e009-03-room-s3-s3107177405.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "04-quorum-cover",
+   "subject": "digital concept painting, nine identical white birds perched in a perfect row on a wire against a pale blue sky, and one dark bird perched slightly apart facing the other way, minimal and clean",
+   "prompt": "digital concept painting, nine identical white birds perched in a perfect row on a wire against a pale blue sky, and one dark bird perched slightly apart facing the other way, minimal and clean, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "abd92668bf0429e6aca7dc1f51dc981a325bf788353f734fa17aa88f1d9ce436",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1524660620,
+   "file": "album-e009-04-quorum-cover-s1524660620.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "04-quorum-s1",
+   "subject": "digital concept painting, a grid of identical glowing cubes floating in a dark space, all lit the same cool blue except one lit warm orange, geometric and calm",
+   "prompt": "digital concept painting, a grid of identical glowing cubes floating in a dark space, all lit the same cool blue except one lit warm orange, geometric and calm, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "f8fa8c4d415bb3cff277a552682115602f36fcd8fcbc1b8c42464307b11c751d",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 4173214202,
+   "file": "album-e009-04-quorum-s1-s4173214202.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "04-quorum-s2",
+   "subject": "digital concept painting, nine tall windows in a dark building all showing the same moon, seen from a quiet street at night, deep navy and silver",
+   "prompt": "digital concept painting, nine tall windows in a dark building all showing the same moon, seen from a quiet street at night, deep navy and silver, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "526b2f9f240210e3a30b2615cedfac0f33fb9f096477cec4a8c0704aecc903a6",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 256332225,
+   "file": "album-e009-04-quorum-s2-s256332225.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "04-quorum-s3",
+   "subject": "digital concept painting, a field of tall grass all bending one way in the wind, and a single sunflower standing upright facing the sun, golden hour",
+   "prompt": "digital concept painting, a field of tall grass all bending one way in the wind, and a single sunflower standing upright facing the sun, golden hour, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "17aa30638e435624658d08e2dda3a205e564e39dfed2bc5d26d059ab0ebccd0e",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 536212645,
+   "file": "album-e009-04-quorum-s3-s536212645.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "05-gossip-cover",
+   "subject": "digital concept painting, a translucent playful ghost drifting down a rainy noir city street at night, trailing wisps of light that split into many smaller wisps, neon teal and magenta",
+   "prompt": "digital concept painting, a translucent playful ghost drifting down a rainy noir city street at night, trailing wisps of light that split into many smaller wisps, neon teal and magenta, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "e9d6e69045b37dfe8412d25d6f81151928ac60f9ee083047cb0584180d2cebc1",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3411719268,
+   "file": "album-e009-05-gossip-cover-s3411719268.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "05-gossip-s1",
+   "subject": "digital concept painting, a row of old rotary telephones on a long table in a dim smoky room, glowing wisps of light passing from one receiver to the next, film noir mood",
+   "prompt": "digital concept painting, a row of old rotary telephones on a long table in a dim smoky room, glowing wisps of light passing from one receiver to the next, film noir mood, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "7dae09f12de1e45c24e043fe90f3eb1a6178aa7c7c2ebecef88f0b961c180bd4",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3151836913,
+   "file": "album-e009-05-gossip-s1-s3151836913.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "05-gossip-s2",
+   "subject": "digital concept painting, a tall apartment building at night with one lamp lit in an empty room on the eighth floor, rain, everything else dark, moody cinematic",
+   "prompt": "digital concept painting, a tall apartment building at night with one lamp lit in an empty room on the eighth floor, rain, everything else dark, moody cinematic, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "650e67ddedb311b37f869b12b04215ab801fb77ecc8018c7b00d5edaaedd5112",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 333795136,
+   "file": "album-e009-05-gossip-s2-s333795136.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "05-gossip-s3",
+   "subject": "digital concept painting, two dark silhouettes seen from behind leaning close together on a jazz club balcony, smoke and warm light, no faces",
+   "prompt": "digital concept painting, two dark silhouettes seen from behind leaning close together on a jazz club balcony, smoke and warm light, no faces, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "3fe6bea6e4a82d351b5a7a461846fc09c9ceeeef1e9edd416e9c1b7cdf3103c4",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 686121949,
+   "file": "album-e009-05-gossip-s3-s686121949.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "06-witness-cover",
+   "subject": "digital concept painting, a single small server box with one tiny green light glowing in a vast dark empty room, a soft beam of moonlight falling on it, tender and quiet",
+   "prompt": "digital concept painting, a single small server box with one tiny green light glowing in a vast dark empty room, a soft beam of moonlight falling on it, tender and quiet, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "46e5c6eb7bb807da6addf9d9a66ce7e3496f9028c2ef93e3ecd17ea68e367d6b",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3676209974,
+   "file": "album-e009-06-witness-cover-s3676209974.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "06-witness-s1",
+   "subject": "digital concept painting, a small lighthouse on a rock in a calm dark sea, its single beam sweeping slowly over many distant ships, deep blue and soft gold",
+   "prompt": "digital concept painting, a small lighthouse on a rock in a calm dark sea, its single beam sweeping slowly over many distant ships, deep blue and soft gold, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "dd92aa7ea757e6dc661fa9596ed229f0d1f0c120a58d189fc28c28a334652e90",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2451192969,
+   "file": "album-e009-06-witness-s1-s2451192969.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "06-witness-s2",
+   "subject": "digital concept painting, an old brass balance scale on a wooden desk lit by one candle, both pans perfectly level, dark warm background",
+   "prompt": "digital concept painting, an old brass balance scale on a wooden desk lit by one candle, both pans perfectly level, dark warm background, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "b42eaf4f4fc2bf6c07a8c0e46e02137895e5aafa184f470c7aacf159ad56685a",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 263743185,
+   "file": "album-e009-06-witness-s2-s263743185.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "06-witness-s3",
+   "subject": "digital concept painting, a lone night watchman seen from behind with a lantern walking along a long row of sleeping machines in a dim hall, faceless silhouette",
+   "prompt": "digital concept painting, a lone night watchman seen from behind with a lantern walking along a long row of sleeping machines in a dim hall, faceless silhouette, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "b7643d15bc8f55478d839d281553f76f309643760e8ce4984da1394f6dc25ade",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 801489455,
+   "file": "album-e009-06-witness-s3-s801489455.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "07-swarm-cover",
+   "subject": "digital concept painting, a vast murmuration of tiny glowing birds forming one great flowing shape across a sunrise sky over a quiet city, gold, rose and blue, hopeful and grand",
+   "prompt": "digital concept painting, a vast murmuration of tiny glowing birds forming one great flowing shape across a sunrise sky over a quiet city, gold, rose and blue, hopeful and grand, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "9b112d7ddcb0032527eadf236df59aa37226789d0e1a05dd7117b83c39b9cfde",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1498105616,
+   "file": "album-e009-07-swarm-cover-s1498105616.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "07-swarm-s1",
+   "subject": "digital concept painting, hundreds of small lanterns rising together into a dawn sky over water, each one slightly different, warm and luminous",
+   "prompt": "digital concept painting, hundreds of small lanterns rising together into a dawn sky over water, each one slightly different, warm and luminous, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "77f979a1faaa1b0fe46f1782e813733ba3f3f3281f5146bbc783170ace4d8c96",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2015743651,
+   "file": "album-e009-07-swarm-s1-s2015743651.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "07-swarm-s2",
+   "subject": "digital concept painting, many hands of light reaching together toward a single glowing sphere at the centre of a dark space, soft gold, no faces",
+   "prompt": "digital concept painting, many hands of light reaching together toward a single glowing sphere at the centre of a dark space, soft gold, no faces, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "122f8f873fb9ffdbcdc07da496932d4b700b70bece71a9ff6db427016eb339eb",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2882340581,
+   "file": "album-e009-07-swarm-s2-s2882340581.png"
+  },
+  {
+   "show": "album",
+   "episode": 9,
+   "slug": "07-swarm-s3",
+   "subject": "digital concept painting, a woman with long black hair seen from behind standing on a rooftop at sunrise as a great flock of glowing birds passes overhead, faceless silhouette, wide and joyful",
+   "prompt": "digital concept painting, a woman with long black hair seen from behind standing on a rooftop at sunrise as a great flock of glowing birds passes overhead, faceless silhouette, wide and joyful, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "617da2b37fc662ee3329b0b9a1c00fd7ad45d09f73a8aeb833addef873e37e09",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 868240212,
+   "file": "album-e009-07-swarm-s3-s868240212.png"
+  }
+ ]
+}
