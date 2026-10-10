@@ -173,7 +173,7 @@ Open `http://localhost:8888` in your browser.
 | Endpoint | Method | Description |
 |---|---|---|
 | `GET /api/library` | GET | Library scan status (found/missing per album) |
-| `POST /api/set-music-dir` | POST | Change music directory `{"dir":"/path"}` |
+| `POST /api/set-music-dir` | POST | Change music directory `{"dir":"/path"}` — admin: `Authorization: Bearer $RADIO_ADMIN_TOKEN` |
 | `GET /api/queue` | GET | Get user queue |
 | `POST /api/queue` | POST | Add track to queue `{"filename":"..."}` |
 | `POST /api/queue/shuffle` | POST | Shuffle the queue |

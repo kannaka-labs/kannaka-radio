@@ -22,6 +22,12 @@ const path = require('path');
 // The real bridge resolves its binary at require time: point it somewhere
 // that cannot exist so nothing here can touch a real HRM.
 process.env.KANNAKA_BIN = path.join(os.tmpdir(), `no-such-kannaka-${process.pid}`);
+// Record every exec the real bridge attempts. Installed before anything can
+// require memory-bridge, which captures execFile when it loads.
+const childProcess = require('child_process');
+const execCalls = [];
+const realExecFile = childProcess.execFile;
+childProcess.execFile = function (...a) { execCalls.push(a[1]); return realExecFile.apply(this, a); };
 const setupRoutes = require('../server/routes');
 
 let passed = 0;
@@ -114,6 +120,30 @@ function get(handler, url) {
 
   r = await get(makeHandler({ recallSimilarTracks: async () => { throw new Error('boom'); } }), '/api/similar?track=X');
   test('#290 a throwing bridge is a 503, not a crash', r.status === 503 && r.json && r.json.degraded === true, `${r.status} ${r.body.slice(0, 160)}`);
+
+  // A track starting with `-` reaches `kannaka recall` as an argv element and
+  // is parsed as a flag there (the CLI has no `--` marker). Same guard as
+  // agent-endpoint.js: refuse it before anything runs.
+  for (const bad of ['--envelope', '-x', '--top-k', '  --at  ']) {
+    seen.length = 0;
+    r = await get(makeHandler(fake), `/api/similar?track=${encodeURIComponent(bad)}`);
+    test(`a track of ${JSON.stringify(bad)} is a 400 and never reaches recall`,
+      r.status === 400 && seen.length === 0, `${r.status} seen=${JSON.stringify(seen)} ${r.body.slice(0, 120)}`);
+  }
+  seen.length = 0;
+  r = await get(makeHandler(fake), `/api/similar?track=${encodeURIComponent('Wave - Hall')}`);
+  test('a dash inside the track is still fine', r.status === 200 && seen.length === 1 && seen[0][0] === 'Wave - Hall', `${r.status} ${JSON.stringify(seen)}`);
+  {
+    const realBridge = require('../memory-bridge');
+    execCalls.length = 0;
+    const out = await realBridge.recallSimilarTracks('--envelope', 5);
+    test('memory-bridge itself refuses a flag-shaped query without exec-ing kannaka',
+      out === null && execCalls.length === 0, `out=${JSON.stringify(out)} execs=${JSON.stringify(execCalls)}`);
+    execCalls.length = 0;
+    await realBridge.recallSimilarTracks('Wave Hall', 5);
+    test('(control) an ordinary query does reach exec', execCalls.length === 1 && execCalls[0][0] === 'recall' && execCalls[0][1] === 'Wave Hall',
+      JSON.stringify(execCalls));
+  }
 
   // Default wiring: no injected bridge -> the real memory-bridge module.
   r = await get(makeHandler(null), '/api/similar?track=X');
