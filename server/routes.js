@@ -65,7 +65,7 @@ function adminTriggerOk(req, res) {
   if (!token) {
     if (!_warnedNoAdminToken) {
       _warnedNoAdminToken = true;
-      console.warn("[routes] RADIO_ADMIN_TOKEN unset — oration/showcase/dream triggers DISABLED (set the token to enable)");
+      console.warn("[routes] RADIO_ADMIN_TOKEN unset — admin routes (oration/showcase/dream triggers, music dir, channel, programming override) DISABLED (set the token to enable)");
     }
     res.writeHead(503, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: false, error: "disabled: RADIO_ADMIN_TOKEN unset" }));
@@ -84,6 +84,20 @@ function adminTriggerOk(req, res) {
     return false;
   }
   return true;
+}
+
+/**
+ * Is `candidate` inside the directory `root`? Both are resolved first. A bare
+ * `startsWith(root)` lets a SIBLING folder through whenever it shares the
+ * root's name as a prefix — `/srv/music-private/x` starts with `/srv/music` —
+ * so the root is compared with a trailing separator. The root itself is not
+ * "inside" (it is a directory, never a file to serve).
+ */
+function isInsideDir(root, candidate) {
+  const base = path.resolve(root);
+  const target = path.resolve(candidate);
+  const prefix = base.endsWith(path.sep) ? base : base + path.sep;
+  return target.startsWith(prefix);
 }
 
 /**
@@ -284,7 +298,7 @@ module.exports = function setupRoutes(deps) {
       const modelsDir = path.join(config.baseDir, 'workspace', 'models');
       const filePath = path.join(modelsDir, filename);
       const resolved = path.resolve(filePath);
-      if (!resolved.startsWith(path.resolve(modelsDir))) { res.writeHead(403); res.end(); return; }
+      if (!isInsideDir(modelsDir, resolved)) { res.writeHead(403); res.end(); return; }
       if (!fs.existsSync(resolved)) { res.writeHead(404); res.end('Not found'); return; }
       const stat = fs.statSync(resolved);
       const ext = path.extname(filename).toLowerCase();
@@ -1177,6 +1191,9 @@ module.exports = function setupRoutes(deps) {
 
     // API: set music directory
     if (parsed.pathname === "/api/set-music-dir" && req.method === "POST") {
+      // Admin: repoints the whole library (and what /audio/ serves) at any
+      // directory on the box. Same gate as the other admin routes.
+      if (!adminTriggerOk(req, res)) return;
       readBody(req, res, (body) => {
         try {
           const { dir } = JSON.parse(body);
@@ -1316,6 +1333,10 @@ module.exports = function setupRoutes(deps) {
 
     // API: switch channel — dj | music | podcast | kax
     if (parsed.pathname === "/api/channel" && req.method === "POST") {
+      // Admin: this switches the SERVER's channel for every listener (ADR-0010
+      // moved listener channel choice client-side), so it is gated like the
+      // other admin routes.
+      if (!adminTriggerOk(req, res)) return;
       const type = parsed.searchParams.get("type") || "dj";
       // 2026-05-08 — channel switching is now a *client-side* concern in the
       // SPA (commit 8a22d55). New SPAs never call this endpoint. Old cached
@@ -1585,7 +1606,10 @@ module.exports = function setupRoutes(deps) {
           req.resume();
           return reject(Object.assign(new Error(`body too large (max ${GSHUB_MAX_BODY} bytes)`), { status: 413 }));
         }
-        let body = "";
+        // Chunks are kept as Buffers and decoded ONCE at the end: `body += c`
+        // decoded each chunk separately, so a multibyte character split across
+        // two chunks became two U+FFFD (same bug readBody had, review B1).
+        const chunks = [];
         let size = 0;
         let done = false;
         req.on("data", c => {
@@ -1596,12 +1620,13 @@ module.exports = function setupRoutes(deps) {
             req.destroy();
             return reject(Object.assign(new Error(`body too large (max ${GSHUB_MAX_BODY} bytes)`), { status: 413 }));
           }
-          body += c;
+          chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(String(c), "utf8"));
         });
         req.on("end", () => {
           if (done) return;
           done = true;
           try {
+            const body = Buffer.concat(chunks).toString("utf8");
             const parsed = body ? JSON.parse(body) : {};
             if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
               return reject(Object.assign(new Error("body must be a JSON object"), { status: 400 }));
@@ -2258,6 +2283,17 @@ module.exports = function setupRoutes(deps) {
         res.end(JSON.stringify({ error: "track parameter required" }));
         return;
       }
+      // The track is handed to `kannaka recall` as an argv element, and that
+      // parser treats anything starting with `--` as a flag (`--envelope`
+      // changes the output shape, `--top-k`/`--at` consume the next argument,
+      // an unknown one exits 2). The CLI has no `--`
+      // end-of-options marker — `recall` rejects `--` as an unknown flag — so
+      // the guard is the same one agent-endpoint.js uses (#65): refuse it.
+      if (trackQuery.startsWith("-")) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "track must not start with '-'" }));
+        return;
+      }
       const rawLimit = parseInt(parsed.searchParams.get("limit"), 10);
       const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(25, rawLimit)) : 5;
       const unavailable = (why) => {
@@ -2752,6 +2788,9 @@ load();
 
     // POST /api/programming/override?album=NAME&duration=MINUTES
     if (parsed.pathname === "/api/programming/override" && req.method === "POST") {
+      // Admin: pins the rotation for up to a day — the same power as
+      // /api/album/showcase, which is already gated.
+      if (!adminTriggerOk(req, res)) return;
       if (!deps.programming) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "programming not initialized" }));
@@ -2803,6 +2842,7 @@ load();
 
     // DELETE /api/programming/override — clear manual override
     if (parsed.pathname === "/api/programming/override" && req.method === "DELETE") {
+      if (!adminTriggerOk(req, res)) return;
       if (!deps.programming) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "programming not initialized" }));
@@ -2857,7 +2897,7 @@ load();
       const genDir = musicGen.outputDir;
       const filePath = path.join(genDir, filename);
       const resolved = path.resolve(filePath);
-      if (!resolved.startsWith(path.resolve(genDir))) { res.writeHead(403); res.end(); return; }
+      if (!isInsideDir(genDir, resolved)) { res.writeHead(403); res.end(); return; }
       if (!fs.existsSync(resolved)) { res.writeHead(404); res.end("Not found"); return; }
       const ext = path.extname(filename).toLowerCase();
       const mime = MIME[ext] || "application/octet-stream";
@@ -2872,7 +2912,7 @@ load();
       const filename = decodeURIComponent(parsed.pathname.slice(13));
       const filePath = path.join(config.voiceDir, filename);
       const resolved = path.resolve(filePath);
-      if (!resolved.startsWith(path.resolve(config.voiceDir))) { res.writeHead(403); res.end(); return; }
+      if (!isInsideDir(config.voiceDir, resolved)) { res.writeHead(403); res.end(); return; }
       if (!fs.existsSync(resolved)) { res.writeHead(404); res.end("Not found"); return; }
       const ext = path.extname(filename).toLowerCase();
       const mime = MIME[ext] || "application/octet-stream";
@@ -2892,7 +2932,7 @@ load();
       if (!fs.existsSync(resolved)) {
         const genPath = path.join(musicDir, 'generated', filename);
         const genResolved = path.resolve(genPath);
-        if (fs.existsSync(genResolved) && genResolved.startsWith(path.resolve(musicDir))) {
+        if (fs.existsSync(genResolved) && isInsideDir(musicDir, genResolved)) {
           filePath = genPath;
           resolved = genResolved;
         }
@@ -2901,12 +2941,12 @@ load();
       if (!fs.existsSync(resolved)) {
         const livePath = path.join(musicDir, 'live', filename);
         const liveResolved = path.resolve(livePath);
-        if (fs.existsSync(liveResolved) && liveResolved.startsWith(path.resolve(musicDir))) {
+        if (fs.existsSync(liveResolved) && isInsideDir(musicDir, liveResolved)) {
           filePath = livePath;
           resolved = liveResolved;
         }
       }
-      if (!resolved.startsWith(path.resolve(musicDir))) { res.writeHead(403); res.end(); return; }
+      if (!isInsideDir(musicDir, resolved)) { res.writeHead(403); res.end(); return; }
       if (!fs.existsSync(resolved)) { res.writeHead(404); res.end("Not found: " + filename); return; }
 
       const ext = path.extname(filename).toLowerCase();

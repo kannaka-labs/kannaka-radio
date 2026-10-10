@@ -167,7 +167,10 @@ cmd_load_album() {
 cmd_set_dir() {
   local dir="${1:?set-dir requires a path}"
   local result
+  # Admin route: the server requires RADIO_ADMIN_TOKEN as a Bearer token.
+  [[ -n "${RADIO_ADMIN_TOKEN:-}" ]] || { echo "set-dir needs RADIO_ADMIN_TOKEN in the environment" >&2; return 1; }
   result=$(api POST /api/set-music-dir \
+    -H "Authorization: Bearer $RADIO_ADMIN_TOKEN" \
     -H 'Content-Type: application/json' \
     -d "{\"dir\":\"$dir\"}")
   echo "$result" | json_field '{ok, musicDir, fileCount}'

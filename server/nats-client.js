@@ -11,6 +11,7 @@
 
 const net = require("net");
 const { EventEmitter } = require("events");
+const { StringDecoder } = require("string_decoder");
 
 const DEFAULT_NATS_HOST = "127.0.0.1";
 const DEFAULT_NATS_PORT = 4222;
@@ -371,9 +372,15 @@ class NATSClient extends EventEmitter {
       this._subscribe('KANNAKA.inbox.audit');
     });
 
+    // One decoder per socket. TCP chunk boundaries fall anywhere, including
+    // inside a multibyte UTF-8 character; decoding each chunk on its own turned
+    // both halves into U+FFFD, which corrupted the text AND changed its byte
+    // length, so the byte-counted MSG parser below lost its framing. The
+    // decoder holds an incomplete trailing sequence until the next chunk.
+    const decoder = new StringDecoder('utf8');
     sock.on('data', (data) => {
       if (this._client !== sock) return;
-      this._buffer += data.toString();
+      this._buffer += decoder.write(data);
       this._processBuffer();
     });
 

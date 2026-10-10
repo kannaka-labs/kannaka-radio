@@ -19,6 +19,9 @@
 
 const assert = require('assert');
 const http = require('http');
+// The route is admin-gated (same token as /api/album/showcase); this file
+// tests its validation, so every request carries the operator token.
+process.env.RADIO_ADMIN_TOKEN = 'override-test-admin-token';
 const setupRoutes = require('../server/routes');
 const { ALBUMS } = require('../server/dj-engine');
 
@@ -70,7 +73,7 @@ function post(handler, url) {
     const server = http.createServer(handler);
     server.listen(0, '127.0.0.1', () => {
       const port = server.address().port;
-      const req = http.request({ host: '127.0.0.1', port, path: url, method: 'POST', timeout: 5000 }, (res) => {
+      const req = http.request({ host: '127.0.0.1', port, path: url, method: 'POST', timeout: 5000, headers: { authorization: 'Bearer override-test-admin-token' } }, (res) => {
         let d = '';
         res.on('data', (c) => (d += c));
         res.on('end', () => { server.close(); resolve({ status: res.statusCode, body: d }); });

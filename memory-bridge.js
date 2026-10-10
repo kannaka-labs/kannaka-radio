@@ -161,6 +161,9 @@ function skipReason(track, perception) {
  */
 async function recallSimilarTracks(query, topK = 5) {
   if (!query) return null;
+  // A leading `-` would be parsed by `kannaka recall` as a flag, and the CLI
+  // has no `--` marker to stop that. Refuse rather than run it.
+  if (typeof query !== "string" || query.startsWith("-")) return null;
 
   const stdout = await runKannaka([
     "recall",

@@ -811,20 +811,34 @@ class VoiceDJ {
     // executeOration / future talk segments aren't permanently locked
     // out. The 2026-04-30 midnight oration missed because _inTalkSegment
     // got stuck and every retry hit "voiceDJ busy" for 18+ minutes.
+    //
+    // Every release path goes through finish(), which runs ONCE. Before this,
+    // the safety timer and a late TTS callback (or the end-of-talk timer) each
+    // called onDone, so a slow TTS released the lock twice: the caller resumed
+    // programming twice, and the late release could clear a lock taken by the
+    // NEXT segment. executeOration's release() has the same guard.
+    let finished = false;
+    const finish = () => {
+      if (finished) return false;
+      finished = true;
+      clearTimeout(safetyTimer);
+      if (this._talkSafetyTimer === safetyTimer) this._talkSafetyTimer = null;
+      if (this._talkSegmentTimer) {
+        clearTimeout(this._talkSegmentTimer);
+        this._talkSegmentTimer = null;
+      }
+      this._inTalkSegment = false;
+      this._speaking = false;
+      if (onDone) {
+        try { onDone(); } catch (e) { console.warn(`   [talk] onDone threw: ${e && e.message}`); }
+      }
+      return true;
+    };
     const safetyMs = 180000;
     const safetyTimer = setTimeout(() => {
-      if (this._inTalkSegment) {
-        console.warn('   [talk] SAFETY: _inTalkSegment held >180s — force-releasing');
-        this._inTalkSegment = false;
-        this._speaking = false;
-        if (this._talkSegmentTimer) {
-          clearTimeout(this._talkSegmentTimer);
-          this._talkSegmentTimer = null;
-        }
-        if (onDone) {
-          try { onDone(); } catch (_) { /* swallow */ }
-        }
-      }
+      if (finished) return;
+      console.warn('   [talk] SAFETY: _inTalkSegment held >180s — force-releasing');
+      finish();
     }, safetyMs);
     safetyTimer.unref?.();
     // Track the timer so the normal release paths can clear it on success.
@@ -837,16 +851,23 @@ class VoiceDJ {
       const history = this._getHistory();
       const prevTracks = history.slice(-5);
       const talkText = await this._generateTalkText(upcomingTrack, prevTracks);
+      // The safety timer may already have released the segment while the
+      // text was composing; speaking now would air a segment nobody holds.
+      if (finished) return;
 
       this._speaking = true;
       this._generateTTS(talkText, (err, audioPath, text) => {
+        // A TTS callback that arrives after the safety release is late: the
+        // station has moved on, so neither air it nor release a second time.
+        if (finished) {
+          console.warn('   [talk] TTS callback arrived after the safety release — discarded');
+          return;
+        }
         this._speaking = false;
 
         if (err) {
           console.log(`   [talk] TTS failed, skipping talk segment`);
-          this._inTalkSegment = false;
-          if (this._talkSafetyTimer) { clearTimeout(this._talkSafetyTimer); this._talkSafetyTimer = null; }
-          if (onDone) onDone();
+          finish();
           return;
         }
 
@@ -870,18 +891,14 @@ class VoiceDJ {
 
         // Schedule end of talk segment — max 90s timeout as safety
         this._talkSegmentTimer = setTimeout(() => {
-          this._inTalkSegment = false;
           this._talkSegmentTimer = null;
-          if (this._talkSafetyTimer) { clearTimeout(this._talkSafetyTimer); this._talkSafetyTimer = null; }
           console.log(`   \u{1F399} DJ talk segment ended`);
-          if (onDone) onDone();
+          finish();
         }, estimatedDuration + 2000); // 2s grace after estimated audio end
       });
     } catch (e) {
       console.warn(`   [talk] Error generating talk segment:`, e.message);
-      this._inTalkSegment = false;
-      if (this._talkSafetyTimer) { clearTimeout(this._talkSafetyTimer); this._talkSafetyTimer = null; }
-      if (onDone) onDone();
+      finish();
     }
   }
 

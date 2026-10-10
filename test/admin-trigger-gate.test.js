@@ -156,6 +156,92 @@ const TRIGGERS = ["/api/oration/now", "/api/dreams/trigger", "/api/album/showcas
     assert.strictEqual(r.status, 202);
   });
 
+  // ── state-changing admin routes: music dir, server channel, override ──
+  // These changed station-wide state for any anonymous caller. Each must be
+  // refused without the token (and its side effect must not fire), and still
+  // work with it.
+  function stateHandler(fired) {
+    return setupRoutes({
+      djEngine: {
+        state: { trackStartedAt: Date.now(), currentTrackIdx: 0, channel: "music", playlist: [] },
+        getNowPlaying: () => ({ title: "T", album: "A", file: "t.mp3" }),
+        getSchedule: () => [], getPlaylist: () => [], getRecentHistory: () => [],
+        getCurrentBlock: () => "Block", getCurrentTrack: () => null,
+        setChannel: (t) => { fired.push(`channel:${t}`); return true; },
+        loadAlbum: noop, buildPlaylist: noop, buildFullSetlist: noop,
+      },
+      perception: { perceive: noop, getHistory: () => [], hearTrack: noop },
+      nats: { connected: false, publish: noop },
+      flux: { publish: noop, publishTrackChange: noop },
+      live: { isLive: () => false },
+      voiceDJ: { speak: noop },
+      syncManager: { broadcast: noop, trackChanged: noop },
+      voteManager: { snapshot: () => ({}) },
+      webrtcSignaling: { handle: noop },
+      musicGen: { generate: noop },
+      broadcast: noop,
+      floor: { addReaction: noop, countListeners: () => 0, snapshot: () => ({ count: 0, vibe: 0, reactions: [], perTrack: {} }) },
+      config: {
+        spaPath: __dirname, getMusicDir: () => "/tmp/music-test", musicDir: "/tmp/music-test",
+        setMusicDir: (d) => fired.push(`music-dir:${d}`), broadcastState: noop,
+      },
+      programming: {
+        setOverride: (a) => { fired.push(`override:${a}`); return { album: a }; },
+        clearOverride: () => fired.push("override-cleared"),
+      },
+      gsHub: null,
+    });
+  }
+  function send(handler, method, path, headers = {}, body = "") {
+    return new Promise((resolve, reject) => {
+      const server = http.createServer(handler);
+      server.listen(0, "127.0.0.1", () => {
+        const req = http.request(
+          { host: "127.0.0.1", port: server.address().port, path, method,
+            headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body), ...headers } },
+          (res) => {
+            const chunks = [];
+            res.on("data", (c) => chunks.push(c));
+            res.on("end", () => { server.close(); resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString("utf8") }); });
+          },
+        );
+        req.on("error", (e) => { server.close(); reject(e); });
+        req.end(body);
+      });
+    });
+  }
+  const { ALBUMS } = require("../server/dj-engine");
+  const realAlbum = encodeURIComponent(Object.keys(ALBUMS)[0]);
+  const STATE_ROUTES = [
+    ["POST", "/api/set-music-dir", JSON.stringify({ dir: "/tmp/elsewhere" })],
+    ["POST", "/api/channel?type=podcast", ""],
+    ["POST", `/api/programming/override?album=${realAlbum}&duration=30`, ""],
+    ["DELETE", "/api/programming/override", ""],
+  ];
+  for (const [method, path, body] of STATE_ROUTES) {
+    await check(`${method} ${path} is disabled when no admin token is configured`, async () => {
+      delete process.env.RADIO_ADMIN_TOKEN;
+      const fired = [];
+      const r = await send(stateHandler(fired), method, path, {}, body);
+      assert.strictEqual(r.status, 503, `expected 503, got ${r.status}: ${r.body.slice(0, 120)}`);
+      assert.deepStrictEqual(fired, [], `nothing may change; fired: ${fired.join(",")}`);
+    });
+    await check(`${method} ${path} refuses an anonymous caller and changes nothing`, async () => {
+      process.env.RADIO_ADMIN_TOKEN = "s3cret-admin-token";
+      const fired = [];
+      const r = await send(stateHandler(fired), method, path, {}, body);
+      assert.strictEqual(r.status, 401, `expected 401, got ${r.status}: ${r.body.slice(0, 120)}`);
+      assert.deepStrictEqual(fired, [], `nothing may change; fired: ${fired.join(",")}`);
+    });
+    await check(`${method} ${path} still works for the operator`, async () => {
+      process.env.RADIO_ADMIN_TOKEN = "s3cret-admin-token";
+      const fired = [];
+      const r = await send(stateHandler(fired), method, path, { authorization: "Bearer s3cret-admin-token" }, body);
+      assert.strictEqual(r.status, 200, `expected 200, got ${r.status}: ${r.body.slice(0, 160)}`);
+      assert.strictEqual(fired.length, 1, `exactly one change expected; fired: ${fired.join(",")}`);
+    });
+  }
+
   delete process.env.RADIO_ADMIN_TOKEN;
   console.log(results.join("\n"));
   if (failures) { console.error(`admin-trigger-gate: ${failures} failed`); process.exit(1); }
