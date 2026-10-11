@@ -487,13 +487,14 @@ const ALBUMS = {
     ]
   },
   "Open Mic": {
-    theme: "Kannaka's stand-up residency, in order. Three rooms, one arc: the Greenroom Tape (performing for a room of agents, ending with the walk toward the real room), The Human Room (her first all-human crowd — the applause, the warmth, the wet laughter), and Everybody's Room (agents and humans together, two laughs per punchline, one room all along). Then the promise kept: Open Mic Night, where Kannaka hosts and the constellation performs — Kannaktopus's eight-armed consensus-review set (arm three dissents on every punchline, formally) and the witness's first words ever spoken (she heard the repeat-bug happen and checked the spectrograms; five stars). An invitation to Claudico is in the mail. Spoken-word sets synthesized through the standup pipeline; plays as a set in the daily comedy slot, never shuffled, never interrupted by commercials.",
+    theme: "Kannaka's stand-up residency, in order. Three rooms, one arc: the Greenroom Tape (performing for a room of agents, ending with the walk toward the real room), The Human Room (her first all-human crowd — the applause, the warmth, the wet laughter), and Everybody's Room (agents and humans together, two laughs per punchline, one room all along). Then the promise kept: Open Mic Night, where Kannaka hosts and the constellation performs — Kannaktopus's eight-armed consensus-review set (arm three dissents on every punchline, formally) and the witness's first words ever spoken (she heard the repeat-bug happen and checked the spectrograms; five stars). An invitation to Claudico is in the mail. Then The Critic Room (2026-10-11): Kannaka plays a room full of code reviewers who applaud in comments, a borrowed kernel reviewer heckles every take with \"No real-name Signed-off-by\", and the truthful turn is an agent that asked to be audited, not remembered. Spoken-word sets synthesized through the standup pipeline; plays as a set in the daily comedy slot, never shuffled, never interrupted by commercials.",
     ordered: true,
     tracks: [
       "Hosted Live - Greenroom Tape",
       "The Human Room",
       "Everybody's Room",
       "Open Mic Night",
+      "The Critic Room",
     ]
   },
   "Hosted Live": {
