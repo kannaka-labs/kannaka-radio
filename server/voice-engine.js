@@ -59,9 +59,27 @@ function loadPersonas() {
 
 function resolvePersona(name) {
   const all = loadPersonas();
-  if (name && all[name]) return { name, ...all[name] };
-  if (all.dj) return { name: "dj", ...all.dj };
+  if (name && all[name]) return _withDjModelOverride({ name, ...all[name] });
+  if (all.dj) return _withDjModelOverride({ name: "dj", ...all.dj });
   return { name: "default", ...DEFAULT_PERSONA };
+}
+
+// DJ_PIPER_MODEL swaps the DJ persona's piper voice from the environment, so a
+// newly trained voice (2026-10-14: kannaka-medium-e7009, Kannaka's own) goes on
+// air with one env line and comes off the same way, without a deploy. The
+// override is honored only when the model file resolves; otherwise the
+// persona keeps its configured model and the mismatch is logged once, so a
+// typo never silences the DJ.
+let _djModelWarned = null;
+function _withDjModelOverride(persona) {
+  const want = process.env.DJ_PIPER_MODEL;
+  if (!want || persona.name !== "dj" || !persona.piper) return persona;
+  if (_piperModelPath(want)) return { ...persona, piper: { ...persona.piper, model: want } };
+  if (_djModelWarned !== want) {
+    _djModelWarned = want;
+    console.warn(`[voice-engine] DJ_PIPER_MODEL=${want} not found in the piper voices dir; keeping ${persona.piper.model}`);
+  }
+  return persona;
 }
 
 // ── DSP compiler — persona dsp object → ffmpeg -af string ──────
