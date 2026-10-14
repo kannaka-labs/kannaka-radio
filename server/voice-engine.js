@@ -243,12 +243,60 @@ function failureReason(err) {
   return m.slice(0, 300);
 }
 
-function postProcess(srcPath, dsp, outPath, cb, timeoutMs = DSP_BASE_MS) {
-  const filter = compileDsp(dsp);
-  const args = [
-    "-hide_banner", "-loglevel", "error", "-y",
-    "-i", srcPath,
-  ];
+// ── Loudness: every spoken persona lands at one integrated target ──
+// Measured on air 2026-10-14: the DJ (piper) rendered at about -18 LUFS, the
+// edge personas (oration, gossip, news) at -21 to -24, and the music sits at
+// -18. Narration three to six LU under the songs around it is what "the
+// narration gets skipped" sounds like from a car. The DSP recipes shape the
+// voices; they never set a level, and nothing after them did either.
+//
+// Two-pass loudnorm: pass 1 measures the voice AFTER its DSP, pass 2 applies a
+// linear gain from those measurements (linear=true), so the only change is the
+// level and a true-peak ceiling. A single-pass loudnorm would also compress the
+// dynamics, which on speech reads as pumping. If the measurement fails (ffmpeg
+// error, a silent render, an unparsable report) the clip renders exactly as
+// before, with one log line, because a level problem must never take a
+// segment off the air.
+//
+// Per persona: dsp.lufs (number) overrides the target, dsp.tp the ceiling,
+// dsp.loudnorm:false opts out. VOICE_TARGET_LUFS overrides the default for
+// every persona, VOICE_LOUDNORM=0 switches the pass off (the pre-#401 path).
+const VOICE_TARGET_LUFS = -18, VOICE_TARGET_TP = -1.5, VOICE_TARGET_LRA = 11;
+function loudnessTarget(dsp) {
+  const env = parseFloat(process.env.VOICE_TARGET_LUFS || "");
+  const base = Number.isFinite(env) ? env : VOICE_TARGET_LUFS;
+  const i = dsp && typeof dsp.lufs === "number" ? dsp.lufs : base;
+  const tp = dsp && typeof dsp.tp === "number" ? dsp.tp : VOICE_TARGET_TP;
+  return { i, tp, lra: VOICE_TARGET_LRA };
+}
+function loudnormEnabled(dsp) {
+  if (process.env.VOICE_LOUDNORM === "0") return false;
+  return !(dsp && dsp.loudnorm === false);
+}
+/** ffmpeg's loudnorm report (stderr, print_format=json) → numbers, or null when
+ *  the clip is unmeasurable (silence reports -inf). */
+function parseLoudnorm(stderr) {
+  const m = /\{[^{}]*"input_i"[^{}]*\}/.exec(String(stderr || ""));
+  if (!m) return null;
+  let j;
+  try { j = JSON.parse(m[0]); } catch (_) { return null; }
+  const out = {};
+  for (const k of ["input_i", "input_tp", "input_lra", "input_thresh", "target_offset"]) {
+    const v = parseFloat(j[k]);
+    if (!Number.isFinite(v)) return null;
+    out[k] = v;
+  }
+  return out;
+}
+function loudnormFilter(target, m) {
+  return `loudnorm=I=${target.i}:TP=${target.tp}:LRA=${target.lra}`
+    + `:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}`
+    + `:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true:print_format=none`;
+}
+function joinFilters(...parts) { return parts.filter(Boolean).join(","); }
+/** The encode args: DSP + (optional) loudnorm → icecast envelope. Pure. */
+function encodeArgs(srcPath, filter, outPath) {
+  const args = ["-hide_banner", "-loglevel", "error", "-y", "-i", srcPath];
   if (filter) args.push("-af", filter);
   args.push(
     "-ar", String(SR),
@@ -259,13 +307,40 @@ function postProcess(srcPath, dsp, outPath, cb, timeoutMs = DSP_BASE_MS) {
     "-write_xing", "0",
     outPath,
   );
-  execFile("ffmpeg", args, { timeout: timeoutMs }, (err, _stdout, stderr) => {
+  return args;
+}
+function measureLoudness(srcPath, filter, target, timeoutMs, cb) {
+  const af = joinFilters(filter, `loudnorm=I=${target.i}:TP=${target.tp}:LRA=${target.lra}:print_format=json`);
+  const args = ["-hide_banner", "-nostats", "-loglevel", "info", "-i", srcPath, "-af", af, "-f", "null", "-"];
+  execFile("ffmpeg", args, { timeout: timeoutMs, maxBuffer: 1 << 22 }, (err, _stdout, stderr) => {
     if (err) return cb(withReason(err, stderr));
-    try {
-      const sz = fs.statSync(outPath).size;
-      if (sz < 500) return cb(new Error(`post-process produced tiny file (${sz}b)`));
-    } catch (e) { return cb(e); }
-    cb(null, outPath);
+    const m = parseLoudnorm(stderr);
+    if (!m) return cb(new Error("no loudnorm report (silent or unparsable)"));
+    cb(null, m);
+  });
+}
+let _loudnormWarned = 0;
+
+function postProcess(srcPath, dsp, outPath, cb, timeoutMs = DSP_BASE_MS) {
+  const filter = compileDsp(dsp);
+  const encode = (af) => {
+    execFile("ffmpeg", encodeArgs(srcPath, af, outPath), { timeout: timeoutMs }, (err, _stdout, stderr) => {
+      if (err) return cb(withReason(err, stderr));
+      try {
+        const sz = fs.statSync(outPath).size;
+        if (sz < 500) return cb(new Error(`post-process produced tiny file (${sz}b)`));
+      } catch (e) { return cb(e); }
+      cb(null, outPath);
+    });
+  };
+  if (!loudnormEnabled(dsp)) return encode(filter);
+  const target = loudnessTarget(dsp);
+  measureLoudness(srcPath, filter, target, timeoutMs, (mErr, m) => {
+    if (mErr) {
+      if (_loudnormWarned++ < 3) console.warn(`[voice] loudness measure failed (${failureReason(mErr)}); rendering unnormalized`);
+      return encode(filter);
+    }
+    encode(joinFilters(filter, loudnormFilter(target, m)));
   });
 }
 
@@ -532,6 +607,12 @@ module.exports = {
   resolvePersona,
   loadPersonas,
   compileDsp,
+  postProcess,
+  loudnessTarget,
+  loudnormEnabled,
+  parseLoudnorm,
+  loudnormFilter,
+  encodeArgs,
   piperAvailable,
   elevenLabsEnabled,
   postProcess,
