@@ -142,23 +142,24 @@ def _gen_audiogen(size, jobs, out, device):
 
 
 def _gen_stable_audio(size, jobs, out, device):
+    # diffusers' StableAudioPipeline, not stable-audio-tools: the latter's pip install failed on the
+    # pod (run 7, 2026-10-14, a dependency build error hidden by `| tail`), and diffusers ships wheels only.
+    # The weights are gated on Hugging Face; HF_TOKEN must be in the pod's environment.
     import torch
-    from stable_audio_tools import get_pretrained_model
-    from stable_audio_tools.inference.generation import generate_diffusion_cond
-    name = "stabilityai/stable-audio-open-1.0" if size != "small" else "stabilityai/stable-audio-open-small"
+    from diffusers import StableAudioPipeline
+    name = "stabilityai/stable-audio-open-1.0"
     t0 = time.time()
-    model, cfg = get_pretrained_model(name)
-    model = model.to(device)
-    sr, sample_size = cfg["sample_rate"], cfg["sample_size"]
+    pipe = StableAudioPipeline.from_pretrained(name, torch_dtype=torch.float16).to(device)
+    sr = int(pipe.vae.sampling_rate)
     print(f"[stable-audio] loaded {name} in {time.time() - t0:.0f}s (sr {sr})")
     results = []
     for j in jobs:
         secs = min(float(j["seconds"]), MAX_SECONDS["stable-audio"])
-        cond = [{"prompt": j["prompt"], "seconds_start": 0, "seconds_total": secs}]
         t = time.time()
-        wav = generate_diffusion_cond(model, steps=100, cfg_scale=7, conditioning=cond, sample_size=sample_size,
-                                      sigma_min=0.3, sigma_max=500, sampler_type="dpmpp-3m-sde", device=device)
-        wav = wav[:, :, : int(secs * sr)]
+        g = torch.Generator(device).manual_seed(int(j.get("seed", 0)))
+        audio = pipe(prompt=j["prompt"], negative_prompt="Low quality.", num_inference_steps=100,
+                     audio_end_in_s=secs, num_waveforms_per_prompt=1, generator=g).audios
+        wav = audio[0].float().cpu()[None, :, : int(secs * sr)]  # (1, channels, samples), like the other engines
         path = os.path.join(out, f"{j['id']}--stable-audio.wav")
         _write_wav(path, wav, sr)
         dt = time.time() - t

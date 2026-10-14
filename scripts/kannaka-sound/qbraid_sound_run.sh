@@ -111,8 +111,10 @@ case '${ENGINES:-audiogen}' in *audiogen*)
   python3 -c 'from audiocraft.models import AudioGen; print(\"audiocraft ok\")' || echo AUDIOCRAFT_IMPORT_FAILED ;;
 esac
 case '${ENGINES:-stable-audio}' in *stable-audio*)
-  pip install -q stable-audio-tools 2>&1 | tail -3
-  python3 -c 'import stable_audio_tools; print(\"stable-audio-tools ok\")' ;;
+  pip install -q diffusers torchsde 2>&1 | tail -3
+  python3 -c 'from diffusers import StableAudioPipeline; print(\"diffusers stable-audio ok\")' || { echo BOOTSTRAP_FAILED diffusers; exit 3; }
+  # The repo is gated: prove the token can read it BEFORE the model load, loudly (set -e aborts the run).
+  python3 -c 'import os; from huggingface_hub import hf_hub_download; p=hf_hub_download(\"stabilityai/stable-audio-open-1.0\", \"model_config.json\", token=os.environ[\"HF_TOKEN\"]); print(\"HF_GATE_OK\", p)' || { echo HF_GATE_403_OR_NO_TOKEN; exit 9; } ;;
 esac
 python3 -c 'import torch; print(\"torch\", torch.__version__, \"cuda\", torch.cuda.is_available())'
 echo BOOTSTRAP_SECONDS \$(( \$(date +%s) - T ))
