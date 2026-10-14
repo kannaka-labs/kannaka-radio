@@ -17,10 +17,10 @@ const next = { file: "B/2.mp3", title: "Two", album: "B" };
 const voice = { path: "/tmp/oration.mp3", label: "Peace Oration, noon", kind: "oration", startedAt: 1000 };
 
 check("engine and stream agree: the engine's track, nothing next", () => {
-  assert.deepStrictEqual(onAirView(song, song, null), { current: song, upNext: null, swapPending: false, voice: false });
+  assert.deepStrictEqual(onAirView(song, song, null), { current: song, upNext: null, swapPending: false });
 });
 check("stream still on the old song while the engine loaded a show: the song is current, the show next", () => {
-  assert.deepStrictEqual(onAirView(next, song, null), { current: song, upNext: next, swapPending: true, voice: false });
+  assert.deepStrictEqual(onAirView(next, song, null), { current: song, upNext: next, swapPending: true });
 });
 check("a voice item on air wins over both, with the engine's track next", () => {
   const v = onAirView(song, song, voice);
@@ -29,7 +29,7 @@ check("a voice item on air wins over both, with the engine's track next", () => 
   assert.strictEqual(v.upNext, song);
 });
 check("a voice object without a path is not a voice item", () => {
-  assert.strictEqual(onAirView(song, song, { label: "x" }).voice, false);
+  assert.strictEqual(onAirView(song, song, { label: "x" }).voice, undefined);
 });
 
 check("the latency hint is the Icecast burst at the mount's bit rate, overridable by env", () => {

@@ -29,9 +29,9 @@ function onAirView(engineCurrent, onAir, voice) {
     return { current, upNext: engineCurrent || null, swapPending: false, voice: true };
   }
   if (onAir && onAir.file && engineCurrent && onAir.file !== engineCurrent.file) {
-    return { current: onAir, upNext: engineCurrent, swapPending: true, voice: false };
+    return { current: onAir, upNext: engineCurrent, swapPending: true };
   }
-  return { current: engineCurrent || null, upNext: null, swapPending: false, voice: false };
+  return { current: engineCurrent || null, upNext: null, swapPending: false };
 }
 
 /**
@@ -67,7 +67,7 @@ function stateView(djEngine, icecastSource, now = Date.now(), env = process.env)
   else if (dj && typeof icecastSource.onAirStartedAt === "function" && onAir && view.current && view.current.file === onAir.file) {
     onAirStartedAt = icecastSource.onAirStartedAt() || onAirStartedAt;
   }
-  return { ...view, onAirStartedAt, serverNow: now, streamLatencyHintSec: streamLatencyHintSec(env) };
+  return { ...view, voice: Boolean(view.voice), onAirStartedAt, serverNow: now, streamLatencyHintSec: streamLatencyHintSec(env) };
 }
 
 module.exports = { onAirView, stateView, streamLatencyHintSec };
