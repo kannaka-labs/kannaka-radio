@@ -1,0 +1,29 @@
+{
+ "label": "sound pilot 2026-10-14: beds, stings, SFX for the production",
+ "jobs": [
+  {"id": "bed-suspense-drone", "kind": "bed", "seconds": 40, "prompt": "Dark suspense drone bed, slow low synth pad, faint ticking, sparse, cinematic, no melody, loopable, for narration underneath"},
+  {"id": "bed-warm-piano-hearth", "kind": "bed", "seconds": 40, "prompt": "Warm quiet solo piano bed, soft felt piano, slow, intimate, gentle room reverb, for a story told by a fire, no drums"},
+  {"id": "bed-industrial-pursuit", "kind": "bed", "seconds": 40, "prompt": "Industrial pursuit bed, driving metallic percussion, low pulsing bass, tense, factory noir, steady tempo, no vocals"},
+  {"id": "bed-late-night-radio", "kind": "bed", "seconds": 40, "prompt": "Late night radio ambient bed, soft analog synth, slow electric piano chords, tape hiss, downtempo, calm, no vocals"},
+  {"id": "bed-newsroom-tension", "kind": "bed", "seconds": 40, "prompt": "Newsroom tension bed, urgent pulsing synth, light electronic percussion, brass stabs far away, broadcast news underscore"},
+  {"id": "bed-cathedral-oration", "kind": "bed", "seconds": 40, "prompt": "Cathedral oration bed, long sustained organ and choir pad, huge reverb, slow, sacred and calm, very quiet, no melody"},
+  {"id": "sting-show-intro", "kind": "sting", "seconds": 8, "prompt": "Short industrial noir show intro sting, rising metallic swell into a deep hit, dark synth, 6 seconds"},
+  {"id": "sting-show-outro", "kind": "sting", "seconds": 8, "prompt": "Short outro sting, dark synth chord resolving downward, metallic shimmer tail, cinematic, 6 seconds"},
+  {"id": "sting-station-ident", "kind": "sting", "seconds": 5, "prompt": "Radio station ident whoosh, bright synthetic sweep into a soft chime, clean, modern, 4 seconds"},
+  {"id": "sting-store-door-chime", "kind": "sting", "seconds": 4, "prompt": "Record store door chime, small bell over a shop door opening, friendly, 3 seconds"},
+  {"id": "sting-commercial-bumper", "kind": "sting", "seconds": 6, "prompt": "Commercial bumper, upbeat two-chord synth stab with a snappy drum fill, radio ad transition, 5 seconds"},
+  {"id": "sting-dream-glass", "kind": "sting", "seconds": 6, "prompt": "Dreamy glass tone sting, crystal bowl struck once with a shimmering reverb tail, ethereal, 5 seconds"},
+  {"id": "sfx-substation-hum", "kind": "sfx", "seconds": 10, "prompt": "Electrical substation hum, 60 hertz transformer buzz with crackle, outdoors at night"},
+  {"id": "sfx-winter-wind-road", "kind": "sfx", "seconds": 10, "prompt": "Winter wind blowing across an empty rural service road, gusts, dry snow, distant power lines"},
+  {"id": "sfx-lake-freighter-horn", "kind": "sfx", "seconds": 8, "prompt": "Great Lakes freighter ship horn, long deep blast echoing across water, foggy harbor"},
+  {"id": "sfx-footsteps-wet-mill", "kind": "sfx", "seconds": 8, "prompt": "Footsteps on a wet concrete mill floor, boots, echoing industrial interior, dripping water"},
+  {"id": "sfx-pneumatic-door", "kind": "sfx", "seconds": 5, "prompt": "Pneumatic door hissing open then closing with a soft thud, industrial building"},
+  {"id": "sfx-vinyl-crackle", "kind": "sfx", "seconds": 10, "prompt": "Vinyl record crackle and surface noise loop, no music, warm, steady"},
+  {"id": "sfx-teletype", "kind": "sfx", "seconds": 8, "prompt": "Old teletype machine printing a message, mechanical clattering keys, newsroom"},
+  {"id": "sfx-radio-tuning-sweep", "kind": "sfx", "seconds": 6, "prompt": "Analog radio tuning sweep across the dial, static, fragments of voices and music passing, settling on a station"},
+  {"id": "sfx-crowd-murmur", "kind": "sfx", "seconds": 10, "prompt": "Crowd murmur in a large hall, many indistinct voices, occasional laugh, room tone"},
+  {"id": "sfx-old-telephone-ring", "kind": "sfx", "seconds": 6, "prompt": "Old rotary telephone ringing twice, bell ringer, quiet room"},
+  {"id": "sfx-key-in-lock", "kind": "sfx", "seconds": 4, "prompt": "Metal key turning in a door lock, bolt sliding, wooden door"},
+  {"id": "sfx-server-room-fan", "kind": "sfx", "seconds": 10, "prompt": "Server room fan noise, steady rack fans, air conditioning hum, computer room"}
+ ]
+}
