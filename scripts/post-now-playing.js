@@ -93,12 +93,22 @@ const TAGS_BY_MOOD = {
   mysterious: ["#darksynth", "#twilightradio", "#cinematicmusic"],
 };
 
-function chooseTags(album) {
+// A human guest's track (server/index.js FEATURED_FOLDER / trackPrefix).
+// Never AI tags on these: the default pool's #AImusic and the broadcaster's
+// default #aiart told Solace Road's listeners their music was AI-made.
+const FEATURED_TAGS = ["#IndieMusic", "#newmusic", "#SupportIndieArtists"];
+function isFeatured(title, album) {
+  return album === "Featured Artist" || /^\[FEATURED\]/.test(title || "");
+}
+
+function chooseTags(album, title) {
   // Light heuristic: pick mood by album-name lookup against the
   // programming.js comments. Fall back to "default" pool.
   const lower = (album || "").toLowerCase();
   let pool = TAGS_BY_MOOD.default;
-  if (/rosa|transcendence|memories don|collective dreaming|reef|lonesome/i.test(lower)) {
+  if (isFeatured(title, album)) {
+    pool = FEATURED_TAGS;
+  } else if (/rosa|transcendence|memories don|collective dreaming|reef|lonesome/i.test(lower)) {
     pool = TAGS_BY_MOOD.contemplative;
   } else if (/becoming|neurogenesis|gifts|interference patterns|gift of sight|hosted live/i.test(lower)) {
     pool = TAGS_BY_MOOD.playful;
@@ -170,7 +180,7 @@ async function main() {
   }
 
   const caption = pickCaption(title, album);
-  const tags = chooseTags(album);
+  const tags = chooseTags(album, title);
   const text = `${caption}\n\n${tags}`.slice(0, 280);
   const link = `${RADIO_URL}/player`;
 
@@ -189,7 +199,8 @@ async function main() {
     process.exit(0);
   }
   console.log(`[now-playing] posting "${title}" / ${album} to: ${enabled.map((b) => b.name).join(", ")}`);
-  const results = await broadcastPost({ text, link }, { rootDir: ROOT });
+  const topic = isFeatured(title, album) ? "featured" : undefined;
+  const results = await broadcastPost({ text, link, topic }, { rootDir: ROOT });
   let anyOk = false;
   for (const r of results) {
     if (r.ok) {
