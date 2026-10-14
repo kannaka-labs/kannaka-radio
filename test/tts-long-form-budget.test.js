@@ -59,6 +59,18 @@ test('short patter keeps a short budget', () => {
   assert.ok(ve.piperTimeoutMs(words(12)) <= 70000);
 });
 
+// 2026-10-14 05:01Z: the noon oration (613 words, ~236 s of audio) rendered
+// fine and then died in the DSP pass, which had a fixed 30 s ffmpeg budget.
+test('the DSP pass gets a budget that grows with the text, like the renders', () => {
+  const t = ve.dspTimeoutMs(words(613));
+  assert.ok(t >= 150000, `dsp budget for 613 words is ${t} ms`);
+  assert.ok(t <= 300000, 'and bounded');
+  assert.ok(ve.dspTimeoutMs(words(12)) <= 40000, 'short patter stays short');
+  const src = require('node:fs').readFileSync(path.join(__dirname, '..', 'server', 'voice-engine.js'), 'utf8');
+  assert.ok(/\{ timeout: timeoutMs \}/.test(src), 'ffmpeg uses the passed budget, not a constant');
+  assert.ok(/\}, dspTimeoutMs\(o\.text\)\);/.test(src), 'the render path passes the text-scaled budget');
+});
+
 test('PIPER_MAX_WORDS defaults to 300 and reads the environment', () => {
   const saved = process.env.PIPER_MAX_WORDS;
   try {
