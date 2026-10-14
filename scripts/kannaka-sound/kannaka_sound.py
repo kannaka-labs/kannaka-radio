@@ -24,6 +24,7 @@ Output: DIR/<id>--<engine>.wav plus DIR/manifest.json (prompt, engine, seconds, 
 import argparse
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -229,25 +230,62 @@ def cmd_qbraid(a):
 
 # ---------------------------------------------------------------- post (this box, ffmpeg)
 
+KIND_DIR = {"bed": "beds", "sting": "stings", "sfx": "sfx"}
+
+
+def _loudnorm_stats(ff, path, lufs=-18.0):
+    """First loudnorm pass: the measured stats the second pass needs."""
+    r = subprocess.run([ff, "-v", "info", "-i", path, "-af", f"loudnorm=I={lufs}:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"],
+                       capture_output=True, text=True)
+    m = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", r.stderr, re.S)
+    return json.loads(m.group(0)) if m else None
+
+
 def cmd_post(a):
+    """wav -> Kannaka Sound Library mp3s: -18 LUFS, 44.1 kHz, beds/ stings/ sfx/, plus a library manifest."""
     ff = a.ffmpeg or "ffmpeg"
-    os.makedirs(a.out, exist_ok=True)
-    n = 0
+    renders = {}
+    mpath = os.path.join(a.dir, "manifest.json")
+    if os.path.exists(mpath):
+        with open(mpath, encoding="utf-8") as f:
+            for r in json.load(f).get("renders", []):
+                renders[r["file"]] = r
+    per_id = {}
+    for r in renders.values():
+        per_id.setdefault(r["id"], []).append(r["engine"])
+    library = []
     for name in sorted(os.listdir(a.dir)):
         if not name.endswith(".wav"):
             continue
+        r = renders.get(name, {"id": name[:-4], "engine": "", "prompt": "", "model": "", "seconds": None, "license": ""})
+        kind = r["id"].split("-", 1)[0]
+        stem = a.prefix + r["id"] + ("" if len(per_id.get(r["id"], [])) <= 1 else "-" + r["engine"])
+        sub = os.path.join(a.out, KIND_DIR.get(kind, "sfx"))
+        os.makedirs(sub, exist_ok=True)
+        dst = os.path.join(sub, stem + ".mp3")
         src = os.path.join(a.dir, name)
-        dst = os.path.join(a.out, name[:-4] + ".mp3")
+        # Measure integrated loudness, apply the exact gain, then a -1.5 dBTP limiter: loudnorm itself refuses to
+        # reach the target on peaky clips (crackle, rings, teletype have 30 dB crest factors) and lands 5 LU low.
         # areverse/afade/areverse fades the LAST 0.5 s whatever the clip's length.
-        af = f"loudnorm=I={a.lufs}:TP=-1.5:LRA=11,afade=t=in:d=0.02,areverse,afade=t=in:d=0.5,areverse"
-        cmd = [ff, "-v", "error", "-y", "-i", src, "-af", af, "-ar", "44100", "-ac", "2", "-b:a", "160k", dst]
-        r = subprocess.run(cmd, capture_output=True, text=True)
-        if r.returncode:
-            print(f"[post] FAIL {name}: {r.stderr.strip()[-200:]}", file=sys.stderr)
+        st = _loudnorm_stats(ff, src, a.lufs)
+        if not st:
+            print(f"[post] FAIL {name}: loudnorm measurement", file=sys.stderr)
             continue
-        n += 1
-    print(f"[post] {n} mp3 -> {a.out}")
-    return 0 if n else 1
+        gain = a.lufs - float(st["input_i"])
+        af = f"volume={gain:.2f}dB,alimiter=limit=0.84:level=false:attack=3:release=50,afade=t=in:d=0.02,areverse,afade=t=in:d=0.5,areverse"
+        cmd = [ff, "-v", "error", "-y", "-i", src, "-af", af, "-ar", "44100", "-ac", "2", "-b:a", "160k", dst]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode:
+            print(f"[post] FAIL {name}: {res.stderr.strip()[-200:]}", file=sys.stderr)
+            continue
+        out_st = _loudnorm_stats(ff, dst, a.lufs)
+        library.append({"file": f"{KIND_DIR.get(kind, 'sfx')}/{stem}.mp3", "kind": kind, "id": r["id"], "prompt": r["prompt"],
+                        "model": r["model"], "engine": r["engine"], "seconds": r["seconds"],
+                        "lufs": float(out_st["input_i"]) if out_st else None, "license": r["license"]})
+    with open(os.path.join(a.out, "manifest.json"), "w", encoding="utf-8") as f:
+        json.dump({"name": a.name, "clips": library}, f, indent=1)
+    print(f"[post] {len(library)} mp3 -> {a.out}")
+    return 0 if library else 1
 
 
 def build_parser():
@@ -262,6 +300,7 @@ def build_parser():
     p.add_argument("--host", default="debain2"); p.add_argument("--profile", default=None); p.add_argument("--engine", default=None)
     p.add_argument("--size", default="medium"); p.set_defaults(fn=cmd_qbraid)
     p = sub.add_parser("post"); p.add_argument("dir"); p.add_argument("--out", required=True); p.add_argument("--lufs", type=float, default=-18.0)
+    p.add_argument("--prefix", default="kannaka-sound-"); p.add_argument("--name", default="Kannaka Sound Library v0")
     p.add_argument("--ffmpeg", default=None); p.set_defaults(fn=cmd_post)
     return ap
 
