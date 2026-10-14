@@ -154,6 +154,14 @@ function piperMaxWords() {
 }
 function edgeTimeoutMs(text) { return _ttsTimeout(text, EDGE_TTS_BASE_MS, EDGE_TTS_PER_WORD_MS, EDGE_TTS_CAP_MS); }
 function piperTimeoutMs(text) { return _ttsTimeout(text, PIPER_TTS_BASE_MS, PIPER_TTS_PER_WORD_MS, PIPER_TTS_CAP_MS); }
+// The DSP pass (ffmpeg: pitch/eq/reverb + the icecast envelope) had a fixed
+// 30 s budget. A 613-word oration is about 4 min of audio; on O1's loaded
+// single vCPU the pass took longer than that and was killed (2026-10-14
+// 05:01Z, "edge-dsp(timed out (killed))"), so a perfectly good render was
+// thrown away and the oration aired 90 s late on the retry. Scale it like
+// the renders: 30 s + 250 ms/word, capped at 5 min.
+const DSP_BASE_MS = 30000, DSP_PER_WORD_MS = 250, DSP_CAP_MS = 300000;
+function dspTimeoutMs(text) { return _ttsTimeout(text, DSP_BASE_MS, DSP_PER_WORD_MS, DSP_CAP_MS); }
 
 function _atempoChain(t) {
   const out = [];
@@ -217,7 +225,7 @@ function failureReason(err) {
   return m.slice(0, 300);
 }
 
-function postProcess(srcPath, dsp, outPath, cb) {
+function postProcess(srcPath, dsp, outPath, cb, timeoutMs = DSP_BASE_MS) {
   const filter = compileDsp(dsp);
   const args = [
     "-hide_banner", "-loglevel", "error", "-y",
@@ -233,7 +241,7 @@ function postProcess(srcPath, dsp, outPath, cb) {
     "-write_xing", "0",
     outPath,
   );
-  execFile("ffmpeg", args, { timeout: 30000 }, (err, _stdout, stderr) => {
+  execFile("ffmpeg", args, { timeout: timeoutMs }, (err, _stdout, stderr) => {
     if (err) return cb(withReason(err, stderr));
     try {
       const sz = fs.statSync(outPath).size;
@@ -482,7 +490,7 @@ function synthesize(o, cb) {
           return tryNext(i + 1);
         }
         cb(null, outPath, engine);
-      });
+      }, dspTimeoutMs(o.text));
     };
     switch (engine) {
       case "piper": return renderPiper(o.text, persona, rawPath, onRaw);
@@ -500,6 +508,7 @@ module.exports = {
   failureReason,
   synthesize,
   edgeTimeoutMs,
+  dspTimeoutMs,
   piperTimeoutMs,
   piperMaxWords,
   resolvePersona,
