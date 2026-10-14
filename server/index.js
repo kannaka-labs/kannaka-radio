@@ -36,6 +36,7 @@ const { FluxPublisher } = require("./flux-publisher");
 const { LiveBroadcast } = require("./live-broadcast");
 const { VoiceDJ } = require("./voice-dj");
 const { PeaceOration } = require("./peace-oration");
+const { createSoundRuntime } = require("./sound-library");
 const { NewsBroadcast } = require("./news-broadcast");
 const { NewsTeaser } = require("./news-teaser");
 const { GossipBroadcast } = require("./gossip-broadcast");
@@ -475,6 +476,9 @@ const djEngine = new DJEngine({
         if (upcoming && !upcoming.commercial && upcoming.file !== actual.file && !switchDue) {
           voiceDJ.generateIntro(upcoming);
         }
+        // Stings at this seam: the store's door chime after its ad, the
+        // bumper before the first commercial of a block (sound-library).
+        sound.cues.onTrackChange(actual, upcoming);
       } catch (e) {
         console.warn(`[track-change] intro prep error: ${e && e.message}`);
       }
@@ -1170,9 +1174,19 @@ const onairState = require("./lib/onair-state");
 // Show intros go onto /stream (icecastSource is assigned further down; the
 // lambda resolves it at airtime). Without a stream, schedulers keep the
 // website-only intro and its hold.
+// ── The Kannaka Sound Library on the air (server/sound-library.js) ──
+// Beds under the voice and stings at the seams, from our own Stable Audio
+// Open clips on the music disk. SOUND_BEDS / SOUND_STINGS default off, so
+// with neither set this object does nothing and /stream is unchanged.
+const sound = createSoundRuntime({
+  env: process.env,
+  inject: (audioPath, meta) => { if (icecastSource) icecastSource.injectAudio(audioPath, meta); },
+});
 const showIntroInject = process.env.KANNAKA_ICECAST_SOURCE === "1"
   ? (audioPath, meta) => {
       if (!icecastSource) throw new Error("icecast-source not started");
+      // The show's sting goes on the queue first, so it airs ahead of the intro.
+      sound.cues.beforeShowIntro(meta);
       icecastSource.injectAudio(audioPath, meta);
     }
   : undefined;
@@ -1311,6 +1325,13 @@ deps.programming = programming;
 
 // Let the DJ know about the programming schedule
 voiceDJ.setProgramming(() => programming);
+// Station ident at the top of the hour, in plain DJ programming only.
+sound.cues.startClock(() => ({
+  channel: djEngine.state.channel,
+  live: live.state.active,
+  showPlaying: [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler]
+    .some((s) => s && s.getStatus().podcastPlaying),
+}));
 
 // Programming picks the opening set based on current time block.
 // startScheduleLoop() loads the time-appropriate album immediately.
@@ -1390,6 +1411,7 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
   icecastSource = new IcecastSource({
     djEngine,
     getMusicDir: () => MUSIC_DIR,
+    prepareVoice: sound.prepareVoice,
     onTrackEnd: (track) => {
       // The metadata is already pushed via onTrackChange when the next
       // track loads. A scheduled show that finished is no longer on air,
@@ -1417,6 +1439,13 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
       // Remember the scheduled show on air, so a restart resumes it
       // instead of dropping the listener into a song (lib/onair-state).
       if (track && track.isPodcastScheduled) onairState.record(track);
+      // The show's outro sting is queued as its last episode starts, so it
+      // airs right after that episode drains.
+      if (track && track.isPodcastScheduled) {
+        for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler]) {
+          if (s && typeof s.isLastEpisode === "function" && s.isLastEpisode(track.file)) sound.cues.onShowEnd(s._show.label);
+        }
+      }
       try {
         const album = djEngine.state.currentAlbum;
         if (!album) return;

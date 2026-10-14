@@ -107,6 +107,11 @@ class IcecastSource {
     // Fires when a queued voice item (intro, oration, narration) starts on
     // /stream, so the state broadcast and the Icecast title can say so.
     this._onVoiceStart = opts.onVoiceStart || (() => {});
+    // Optional: (path, meta) => Promise<path|null>. Runs when a voice item is
+    // queued, while the current song still plays, and may hand back another
+    // file to stream instead (sound-library mixes a bed under the voice).
+    // null or a failure keeps the original, so the voice always airs.
+    this._prepareVoice = typeof opts.prepareVoice === "function" ? opts.prepareVoice : null;
     this._currentVoiceStartedAt = null;
     this._cfg = Object.assign({}, DEFAULTS);
     this._ffmpeg = null;
@@ -170,7 +175,14 @@ class IcecastSource {
       }
       return;
     }
-    this._voiceQueue.push({ path: audioPath, meta, onDone: typeof onDone === "function" ? onDone : null });
+    const item = { path: audioPath, meta, onDone: typeof onDone === "function" ? onDone : null };
+    if (this._prepareVoice) {
+      item.pending = Promise.resolve()
+        .then(() => this._prepareVoice(audioPath, meta))
+        .then((p) => { if (p && typeof p === "string") item.path = p; })
+        .catch((e) => console.warn(`[icecast-source] prepareVoice ${meta.label || path.basename(audioPath)}: ${e.message}; airing the original`));
+    }
+    this._voiceQueue.push(item);
     console.log(`   \u{1F4FB} /stream voice queued: ${meta.label || path.basename(audioPath)} (${this._voiceQueue.length} pending)`);
   }
 
@@ -402,6 +414,8 @@ class IcecastSource {
       // the radio show's natural pacing. ADR-0004 Phase 3.
       while (this._voiceQueue.length > 0 && this._running) {
         const v = this._voiceQueue.shift();
+        // A bed mix still running (sound-library) finishes before the item airs.
+        if (v.pending) { try { await v.pending; } catch (_) {} }
         if (!fs.existsSync(v.path)) {
           if (v.onDone) { try { v.onDone(new Error("audio path missing")); } catch (_) {} }
           continue;
