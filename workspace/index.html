@@ -2986,6 +2986,35 @@ function showDreamTrackToast(data) {
   setTimeout(function() { toast.classList.remove('visible'); }, 5000);
 }
 
+var _npPaintTimer = null;
+var _msPaintTimer = null;
+
+/**
+ * Milliseconds to hold a now-playing change before painting it. The seam
+ * happened `serverNow - onAirStartedAt` ago on the server; this listener is
+ * `hintSec` (Icecast's burst) + `bufferedAheadSec` (what <audio> holds but
+ * has not played) behind the server. Paint when the audio reaches the seam;
+ * at once when it already has, or when this page is not playing /stream
+ * (bufferedAheadSec null) or the server sent no timing.
+ */
+function onAirDisplayDelayMs(onAirStartedAt, serverNow, hintSec, bufferedAheadSec) {
+  if (!onAirStartedAt || !serverNow || bufferedAheadSec === null || bufferedAheadSec === undefined) return 0;
+  var ageSec = Math.max(0, (Number(serverNow) - Number(onAirStartedAt)) / 1000);
+  var latencySec = (Number(hintSec) || 0) + (Number(bufferedAheadSec) || 0);
+  return Math.max(0, Math.round((latencySec - ageSec) * 1000));
+}
+
+/** Seconds of /stream this page has received but not yet played; null when it is not playing /stream. */
+function liveBufferedAheadSec() {
+  var a = document.getElementById('audio');
+  if (!a || a.paused || (a.currentSrc || a.src || '').indexOf('/stream') < 0) return null;
+  try {
+    var b = a.buffered;
+    if (!b || !b.length) return 0;
+    return Math.max(0, b.end(b.length - 1) - a.currentTime);
+  } catch (_) { return 0; }
+}
+
 function applyState(s) {
   state = s;
   if (!s) return;
@@ -2998,22 +3027,32 @@ function applyState(s) {
     // on the previous track until the talk finishes and fetchState
     // re-syncs everything together.
     if (!_inTalkSegment) {
-      // Update legacy header elements
-      document.getElementById('album').textContent = c.album || s.currentAlbum || '';
-      document.getElementById('track').textContent = c.title || '\u2014';
-      document.getElementById('theme').textContent = c.theme || '';
-      document.getElementById('info').textContent =
-        'Track ' + (s.currentTrackIdx + 1) + ' of ' + s.totalTracks +
-        (s.currentAlbum ? ' \u00b7 ' + s.currentAlbum : '') +
-        ' | ' + listenerCount + ' listening';
+      var paintNowPlaying = function() {
+        // Update legacy header elements
+        document.getElementById('album').textContent = c.album || s.currentAlbum || '';
+        document.getElementById('track').textContent = c.title || '\u2014';
+        document.getElementById('theme').textContent = c.theme || '';
+        document.getElementById('info').textContent = c.voice
+          ? (c.album || 'Kannaka Radio') + ' | ' + listenerCount + ' listening'
+          : 'Track ' + (s.currentTrackIdx + 1) + ' of ' + s.totalTracks +
+            (s.currentAlbum ? ' \u00b7 ' + s.currentAlbum : '') +
+            ' | ' + listenerCount + ' listening';
 
-      // Update DJ mode display elements
-      var djTrack = document.getElementById('dj-track');
-      var djAlbum = document.getElementById('dj-album');
-      var djBlock = document.getElementById('dj-block');
-      if (djTrack) djTrack.textContent = c.title || '\u2014';
-      if (djAlbum) djAlbum.textContent = c.album || s.currentAlbum || '';
-      if (djBlock) djBlock.textContent = s.programmingBlock || c.theme || '';
+        // Update DJ mode display elements
+        var djTrack = document.getElementById('dj-track');
+        var djAlbum = document.getElementById('dj-album');
+        var djBlock = document.getElementById('dj-block');
+        if (djTrack) djTrack.textContent = c.title || '\u2014';
+        if (djAlbum) djAlbum.textContent = c.album || s.currentAlbum || '';
+        if (djBlock) djBlock.textContent = s.programmingBlock || c.theme || '';
+      };
+      // The server's state flips at ITS seam; this listener hears that seam
+      // later, by Icecast's connect burst plus whatever <audio> has buffered
+      // ahead. Hold the text until the audio gets there, so the title changes
+      // when the song (or the oration) does, not seconds before it.
+      var npDelay = onAirDisplayDelayMs(s.onAirStartedAt, s.serverNow, s.streamLatencyHintSec, liveBufferedAheadSec());
+      clearTimeout(_npPaintTimer);
+      if (npDelay > 0) _npPaintTimer = setTimeout(paintNowPlaying, npDelay); else paintNowPlaying();
     }
 
     if (c.file && c.file !== currentFile && !_inTalkSegment) {
@@ -3058,8 +3097,11 @@ function applyState(s) {
       // music/podcast: leave audio.src alone — user-driven only.
 
       // Tell the OS we're playing media so iOS/Android keep audio alive
-      // when the screen locks and show lock-screen controls.
-      updateMediaSession(c, s);
+      // when the screen locks and show lock-screen controls. The lock
+      // screen holds its title the same way the page does.
+      var msDelay = onAirDisplayDelayMs(s.onAirStartedAt, s.serverNow, s.streamLatencyHintSec, liveBufferedAheadSec());
+      clearTimeout(_msPaintTimer);
+      if (msDelay > 0) _msPaintTimer = setTimeout(function() { updateMediaSession(c, s); }, msDelay); else updateMediaSession(c, s);
 
       // (music-audio-controls duplicate decoder removed 2026-05-08 — see
       //  the comment in the library section.)
