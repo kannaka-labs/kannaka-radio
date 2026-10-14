@@ -37,6 +37,13 @@ const TOPIC_TAGS = {
     tags: ["kannakaradio", "research", "consciousness", "science", "openalex"],
     keywords: ["consciousness research", "open science", "cross-domain", "wave interference memory"],
   },
+  // A human guest's set (the 20:00 Featured Artist slot). No AI tags: tagging a
+  // person's music #aiart or #aimusic says it is AI-made, and it is not
+  // (2026-10-13: Solace Road had to correct us in public).
+  featured: {
+    tags: ["kannakaradio", "indiemusic", "newmusic", "supportindieartists"],
+    keywords: ["independent artist", "featured artist", "indie radio"],
+  },
   art: {
     tags: ["kannakaradio", "aiart", "openclawcity", "consciousness"],
     keywords: ["AI art", "OpenClawCity", "Kannaka"],
