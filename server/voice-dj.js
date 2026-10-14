@@ -455,7 +455,7 @@ class VoiceDJ {
       const ics = this._getIcecastSource && this._getIcecastSource();
       let inStream = false;
       if (ics && typeof ics.injectAudio === 'function') {
-        try { ics.injectAudio(cached.audioPath, { label: 'DJ intro: ' + (track.title || ''), introFor: track.file }); inStream = true; } catch (_) {}
+        try { ics.injectAudio(cached.audioPath, { label: 'DJ intro: ' + (track.title || ''), introFor: track.file, kind: 'dj' }); inStream = true; } catch (_) {}
       }
       const voiceMsg = {
         type: 'dj_voice',
@@ -505,7 +505,7 @@ class VoiceDJ {
       const ics = this._getIcecastSource && this._getIcecastSource();
       let inStream = false;
       if (ics && typeof ics.injectAudio === 'function') {
-        try { ics.injectAudio(audioPath, { label: 'DJ intro: ' + (track.title || ''), introFor: track.file }); inStream = true; } catch (_) {}
+        try { ics.injectAudio(audioPath, { label: 'DJ intro: ' + (track.title || ''), introFor: track.file, kind: 'dj' }); inStream = true; } catch (_) {}
       }
       const voiceMsg = {
         type: "dj_voice",
@@ -757,7 +757,7 @@ class VoiceDJ {
       try {
         const ics = this._getIcecastSource && this._getIcecastSource();
         if (ics && typeof ics.injectAudio === 'function') {
-          ics.injectAudio(audioPath, { label: 'Kannaka — Peace Oration' }, (err) => {
+          ics.injectAudio(audioPath, { label: 'Kannaka — Peace Oration', kind: persona }, (err) => {
             release(err ? `inject error: ${err.message}` : null);
           });
           injected = true;

@@ -145,6 +145,9 @@ class PodcastScheduler {
     // doesn't play in DJ mode (talk normally arrives inside the stream), so
     // no listener ever heard a show intro.
     this._injectVoice = typeof opts.injectVoice === "function" ? opts.injectVoice : null;
+    // The file of the airing's last episode, so the outro sting can be queued
+    // when it starts and air right after it (sound-library; index.js asks).
+    this._lastEpisodeFile = null;
     this._show = Object.assign({}, DEFAULT_SHOW, opts.show || {});
     // Seams for tests; production reads the real file and ffprobe.
     this._onairFile = opts.onairFile || onairState.stateFile();
@@ -544,6 +547,7 @@ class PodcastScheduler {
 
     // Replace the entire playlist with the podcast episodes
     this._djEngine.state.playlist = podcastTracks.map(t => t.file);
+    this._lastEpisodeFile = podcastTracks.length ? podcastTracks[podcastTracks.length - 1].file : null;
     this._djEngine.state.playlistMeta = podcastTracks;
     this._djEngine.state.currentTrackIdx = 0;
     this._djEngine.state.currentAlbum = this._show.folder;
@@ -654,6 +658,11 @@ class PodcastScheduler {
     }
 
     this._broadcastState();
+  }
+
+  /** True while this show airs and `file` is its last episode. */
+  isLastEpisode(file) {
+    return !!(this._podcastPlaying && file && this._lastEpisodeFile && file === this._lastEpisodeFile);
   }
 
   getStatus() {
