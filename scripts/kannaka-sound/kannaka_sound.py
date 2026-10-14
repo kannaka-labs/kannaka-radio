@@ -91,24 +91,52 @@ def _write_wav(path, wav, sr):
     torchaudio.save(path, wav, sr)
 
 
-def _gen_audiocraft(engine, size, jobs, out, device):
-    from audiocraft.models import MusicGen, AudioGen
-    name = f"facebook/{'musicgen' if engine == 'musicgen' else 'audiogen'}-{size}"
+def _gen_musicgen(size, jobs, out, device):
+    """MusicGen through transformers: no audiocraft, no torch pin, no xformers."""
+    import torch
+    from transformers import AutoProcessor, MusicgenForConditionalGeneration
+    name = f"facebook/musicgen-{size}"
     t0 = time.time()
-    model = (MusicGen if engine == "musicgen" else AudioGen).get_pretrained(name, device=device)
-    print(f"[{engine}] loaded {name} in {time.time() - t0:.0f}s")
+    proc = AutoProcessor.from_pretrained(name)
+    model = MusicgenForConditionalGeneration.from_pretrained(name, torch_dtype=torch.float16 if device.startswith("cuda") else torch.float32).to(device)
+    sr = model.config.audio_encoder.sampling_rate
+    frame_rate = model.config.audio_encoder.frame_rate
+    print(f"[musicgen] loaded {name} in {time.time() - t0:.0f}s (sr {sr})")
     results = []
     for j in jobs:
-        secs = min(float(j["seconds"]), MAX_SECONDS[engine])
+        secs = min(float(j["seconds"]), MAX_SECONDS["musicgen"])
+        inputs = proc(text=[j["prompt"]], padding=True, return_tensors="pt").to(device)
+        t = time.time()
+        with torch.no_grad():
+            wav = model.generate(**inputs, do_sample=True, guidance_scale=3.0, max_new_tokens=int(secs * frame_rate))
+        path = os.path.join(out, f"{j['id']}--musicgen.wav")
+        _write_wav(path, wav, sr)
+        dt = time.time() - t
+        print(f"[musicgen] {j['id']}: {secs:.0f}s audio in {dt:.1f}s")
+        results.append({"id": j["id"], "engine": "musicgen", "model": name, "file": os.path.basename(path), "seconds": secs,
+                        "prompt": j["prompt"], "wall_seconds": round(dt, 1), "license": LICENSE["musicgen"]})
+    return results
+
+
+def _gen_audiogen(size, jobs, out, device):
+    """AudioGen is only in audiocraft (which pins torch 2.1 and wants xformers): best effort."""
+    from audiocraft.models import AudioGen
+    name = f"facebook/audiogen-{size}"
+    t0 = time.time()
+    model = AudioGen.get_pretrained(name, device=device)
+    print(f"[audiogen] loaded {name} in {time.time() - t0:.0f}s")
+    results = []
+    for j in jobs:
+        secs = min(float(j["seconds"]), MAX_SECONDS["audiogen"])
         model.set_generation_params(duration=secs)
         t = time.time()
         wav = model.generate([j["prompt"]])
-        path = os.path.join(out, f"{j['id']}--{engine}.wav")
+        path = os.path.join(out, f"{j['id']}--audiogen.wav")
         _write_wav(path, wav, model.sample_rate)
         dt = time.time() - t
-        print(f"[{engine}] {j['id']}: {secs:.0f}s audio in {dt:.1f}s")
-        results.append({"id": j["id"], "engine": engine, "model": name, "file": os.path.basename(path), "seconds": secs,
-                        "prompt": j["prompt"], "wall_seconds": round(dt, 1), "license": LICENSE[engine]})
+        print(f"[audiogen] {j['id']}: {secs:.0f}s audio in {dt:.1f}s")
+        results.append({"id": j["id"], "engine": "audiogen", "model": name, "file": os.path.basename(path), "seconds": secs,
+                        "prompt": j["prompt"], "wall_seconds": round(dt, 1), "license": LICENSE["audiogen"]})
     return results
 
 
@@ -149,14 +177,18 @@ def run_gen(a):
         if not jobs:
             continue
         try:
-            if engine in ("musicgen", "audiogen"):
-                manifest["renders"] += _gen_audiocraft(engine, a.size, jobs, a.out, a.device)
+            if engine == "musicgen":
+                manifest["renders"] += _gen_musicgen(a.size, jobs, a.out, a.device)
+            elif engine == "audiogen":
+                manifest["renders"] += _gen_audiogen(a.size, jobs, a.out, a.device)
             elif engine == "stable-audio":
                 manifest["renders"] += _gen_stable_audio(a.size, jobs, a.out, a.device)
         except Exception as e:  # one engine failing must not lose the others' renders
             msg = f"{engine}: {type(e).__name__}: {str(e)[:300]}"
             print("[gen] ENGINE FAILED", msg, file=sys.stderr)
             manifest["failures"].append(msg)
+        with open(os.path.join(a.out, "manifest.json"), "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=1)
     manifest["finished"] = time.strftime("%FT%TZ", time.gmtime())
     with open(os.path.join(a.out, "manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=1)

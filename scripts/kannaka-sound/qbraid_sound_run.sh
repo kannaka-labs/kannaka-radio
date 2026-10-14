@@ -102,8 +102,18 @@ HFTOK=$(cat ~/.cache/huggingface/token 2>/dev/null)
 $SSH "set -e; cd ~; T=\$(date +%s)
 export HF_TOKEN='$HFTOK' HF_HUB_DISABLE_PROGRESS_BARS=1
 python3 -c 'import torch; assert torch.cuda.is_available()' 2>/dev/null || pip install -q --index-url https://download.pytorch.org/whl/cu124 torch torchaudio
-pip install -q audiocraft huggingface_hub 2>&1 | tail -3 || true
-case "'${ENGINES:-stable-audio}'" in *stable-audio*) pip install -q stable-audio-tools 2>&1 | tail -3 || true;; esac
+pip install -q transformers accelerate huggingface_hub soundfile scipy 2>&1 | tail -3
+# audiogen lives only in audiocraft (pins torch 2.1, wants xformers): install on top of the CUDA torch, best effort.
+case '${ENGINES:-audiogen}' in *audiogen*)
+  pip install -q --no-deps audiocraft 2>&1 | tail -3 || true
+  pip install -q av einops flashy hydra-core hydra_colorlog julius num2words omegaconf sentencepiece spacy encodec protobuf torchmetrics librosa demucs lameenc 2>&1 | tail -3 || true
+  pip install -q --index-url https://download.pytorch.org/whl/cu124 xformers 2>&1 | tail -3 || true
+  python3 -c 'from audiocraft.models import AudioGen; print(\"audiocraft ok\")' || echo AUDIOCRAFT_IMPORT_FAILED ;;
+esac
+case '${ENGINES:-stable-audio}' in *stable-audio*)
+  pip install -q stable-audio-tools 2>&1 | tail -3
+  python3 -c 'import stable_audio_tools; print(\"stable-audio-tools ok\")' ;;
+esac
 python3 -c 'import torch; print(\"torch\", torch.__version__, \"cuda\", torch.cuda.is_available())'
 echo BOOTSTRAP_SECONDS \$(( \$(date +%s) - T ))
 python3 kannaka_sound.py gen --jobs jobs.json --out out --size '$SIZE' --device cuda --label qbraid-$SLUG ${ENGINES:+--engine $ENGINES}
