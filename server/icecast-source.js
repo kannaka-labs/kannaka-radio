@@ -104,6 +104,10 @@ class IcecastSource {
     this._getMusicDir = opts.getMusicDir;
     this._onTrackEnd = opts.onTrackEnd || (() => {});
     this._onTrackStart = opts.onTrackStart || (() => {});
+    // Fires when a queued voice item (intro, oration, narration) starts on
+    // /stream, so the state broadcast and the Icecast title can say so.
+    this._onVoiceStart = opts.onVoiceStart || (() => {});
+    this._currentVoiceStartedAt = null;
     this._cfg = Object.assign({}, DEFAULTS);
     this._ffmpeg = null;
     this._running = false;
@@ -139,6 +143,20 @@ class IcecastSource {
 
   onAirStartedAt() {
     return this._currentTrackStartedAt || null;
+  }
+
+  /** The voice item /stream is playing right now, or null (lib/on-air-view). */
+  onAirVoice() {
+    const v = this._running ? this._currentVoice : null;
+    if (!v) return null;
+    const meta = v.meta || {};
+    return {
+      path: v.path,
+      label: meta.label || path.basename(v.path, path.extname(v.path)),
+      album: meta.album || null,
+      kind: meta.kind || "voice",
+      startedAt: this._currentVoiceStartedAt || null,
+    };
   }
 
   injectAudio(audioPath, meta = {}, onDone) {
@@ -414,12 +432,14 @@ class IcecastSource {
         // Marks a one-shot performance as in flight so stop({drain:true}) can
         // wait for it instead of cutting mid-sentence (#54).
         this._currentVoice = v;
+        this._currentVoiceStartedAt = Date.now();
+        try { this._onVoiceStart(this.onAirVoice()); } catch (_) {}
         try { await this._streamFileToFfmpeg(v.path); }
         catch (e) {
           voiceErr = e;
           console.warn(`[icecast-source] voice ${v.path}: ${e.message}`);
         }
-        finally { this._currentVoice = null; }
+        finally { this._currentVoice = null; this._currentVoiceStartedAt = null; }
         // Notify the injector that the audio has actually drained through
         // the realtime pipeline. peace-oration uses this to mark "complete"
         // only AFTER on-air playback finishes — previously it relied on a

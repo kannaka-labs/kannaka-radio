@@ -9,7 +9,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { execFile } = require("child_process");
 const { ALBUMS } = require("./dj-engine");
-const { onAirView } = require("./lib/on-air-view");
+const { onAirView, stateView } = require("./lib/on-air-view");
 const { MIME, readBody, readBodyLimited, getSPA, findAudioFile } = require("./utils");
 const { handleAgentRequest, attachNatsClient } = require("./agent-endpoint");
 const { verifyKaxToken, traderIdFromClaims, bearerToken } = require("./kax-identity");
@@ -809,9 +809,17 @@ module.exports = function setupRoutes(deps) {
     if (parsed.pathname === "/api/state") {
       const state = djEngine.getState();
       const swarm = nats.getSwarmState();
+      // Same on-air view and seam timing the "state" broadcast carries, so a
+      // page that opens mid-song (or re-syncs) shows what /stream plays.
+      const view = stateView(djEngine, deps.icecastSource);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
         ...state,
+        current: view.current,
+        upNext: view.upNext,
+        onAirStartedAt: view.onAirStartedAt,
+        serverNow: view.serverNow,
+        streamLatencyHintSec: view.streamLatencyHintSec,
         musicDir: config.getMusicDir(),
         isLive: live.state.active,
         djVoice: { enabled: voiceDJ.isEnabled() },

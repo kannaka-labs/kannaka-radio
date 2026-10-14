@@ -148,6 +148,32 @@ console.log('\nicecast-source.test.js');
     }
   });
 
+  // ── On-air voice (lib/on-air-view reads this) ───────────────
+  await test('onAirVoice is null when idle and describes the queued item while it plays', () => {
+    const { is } = makeIs([], '/tmp');
+    assert.strictEqual(is.onAirVoice(), null, 'nothing on air before start');
+    is._running = true;
+    assert.strictEqual(is.onAirVoice(), null, 'running but no voice');
+    is._currentVoice = { path: '/tmp/x/peace-noon.mp3', meta: { label: 'Peace Oration, noon', kind: 'oration' } };
+    is._currentVoiceStartedAt = 1234;
+    assert.deepStrictEqual(is.onAirVoice(), { path: '/tmp/x/peace-noon.mp3', label: 'Peace Oration, noon', album: null, kind: 'oration', startedAt: 1234 });
+    is._currentVoice = { path: '/tmp/x/intro.mp3', meta: {} };
+    assert.strictEqual(is.onAirVoice().label, 'intro', 'a label falls back to the file name');
+    assert.strictEqual(is.onAirVoice().kind, 'voice');
+  });
+
+  await test('the voice drain marks the item on air and fires onVoiceStart BEFORE streaming it', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'server', 'icecast-source.js'), 'utf8');
+    const i = src.indexOf('this._currentVoice = v;');
+    const j = src.indexOf('await this._streamFileToFfmpeg(v.path)', i);
+    assert.ok(i > 0 && j > i, 'voice drain found');
+    const between = src.slice(i, j);
+    assert.ok(/this\._currentVoiceStartedAt = Date\.now\(\)/.test(between), 'start time stamped before the stream');
+    assert.ok(/this\._onVoiceStart\(this\.onAirVoice\(\)\)/.test(between), 'hook fired with the on-air view before the stream');
+    const fin = src.slice(j, src.indexOf('}', src.indexOf('finally', j)) + 1);
+    assert.ok(/_currentVoiceStartedAt = null/.test(fin), 'cleared when the item ends');
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed > 0) process.exit(1);
 })();

@@ -46,7 +46,7 @@ const { FloorManager } = require("./floor");
 // Forward-declared so VoiceDJ's getIcecastSource closure can capture it.
 // Actually instantiated near the bottom of init.
 let icecastSource = null;
-const { onAirView } = require("./lib/on-air-view");
+const { onAirView, stateView } = require("./lib/on-air-view");
 const { SyncManager } = require("./sync-manager");
 const { VoteManager } = require("./vote-manager");
 const WebRTCSignaling = require("./webrtc-signaling");
@@ -661,15 +661,18 @@ const musicGen = new MusicGenerator({
 function broadcastState() {
   const state = djEngine.getState();
   // Tell listeners what /stream is actually playing, not what the engine
-  // has queued to air next (lib/on-air-view).
-  const onAir = icecastSource && typeof icecastSource.onAirTrack === "function" ? icecastSource.onAirTrack() : null;
-  const view = onAirView(state.current, state.channel === "dj" ? onAir : null);
+  // has queued to air next, with the seam's server time so the player can
+  // hold the text until its own audio gets there (lib/on-air-view).
+  const view = stateView(djEngine, icecastSource);
   broadcast({
     type: "state",
     data: {
       ...state,
       current: view.current,
       upNext: view.upNext,
+      onAirStartedAt: view.onAirStartedAt,
+      serverNow: view.serverNow,
+      streamLatencyHintSec: view.streamLatencyHintSec,
       musicDir: MUSIC_DIR,
     }
   });
@@ -1392,6 +1395,16 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
       // track loads. A scheduled show that finished is no longer on air,
       // so a restart from here on must not resume it.
       if (track && track.isPodcastScheduled) onairState.clear(track.file);
+    },
+    // A voice item (intro, oration, narration) is on /stream between two
+    // tracks while the engine still points at the song that just ended.
+    // Say so: the state broadcast carries it as current, and the Icecast
+    // title follows for players that read the in-band metadata. No hook on
+    // voice end: the engine advances right after the queue drains, and that
+    // track change broadcasts the next song.
+    onVoiceStart: (voice) => {
+      broadcastState();
+      try { require("./icecast-metadata").updateMetadata({ title: voice.label, album: voice.album || "Kannaka Radio" }); } catch (_) {}
     },
     // Album-showcase narration hook. Bypasses executeOration's talk
     // lock (which collides with regular DJ track-intros). Calls
