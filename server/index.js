@@ -1470,13 +1470,20 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
           return;
         }
         // Fallback: lazy TTS (the pre-cache hadn't finished by track-start).
-        voiceDJ.generateTTS(piece.text, (err, audioPath) => {
+        const lazy = () => voiceDJ.generateTTS(piece.text, (err, audioPath) => {
           if (err || !audioPath) {
             console.warn(`   [showcase] lazy TTS failed: ${err && err.message}`);
             return;
           }
           queueAudio(audioPath);
         });
+        // Still in the pre-TTS queue: wait for that render rather than run a
+        // second one beside it; render lazily only if it failed for good.
+        if (piece.ready && typeof piece.ready.then === "function") {
+          piece.ready.then((audioPath) => (audioPath ? queueAudio(audioPath) : lazy()));
+          return;
+        }
+        lazy();
       } catch (e) {
         console.warn(`   [showcase] onTrackStart error: ${e && e.message}`);
       }
