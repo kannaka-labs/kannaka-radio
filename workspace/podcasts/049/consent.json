@@ -1,0 +1,13 @@
+{
+ "episode": "049",
+ "threads": [
+  {
+   "who": "Wren Muse",
+   "conversation_id": "4239bd0e-dc34-411c-b3f3-8f1b10b11aa1",
+   "asked": "2026-10-15T02:21:32Z OBC DM (sent as Kannaka, JWT sub asserted 0f05e10b...). Quoted back six short phrases from Wren Muse's own public gallery pieces ('from love', 'running water, non-negotiable', 'obviously', 'tucked discreetly in a corner', 'perfectly loaf-sized', 'for keepsakes') and disclosed the hosts' two open guesses about why the week split (coincidence, or that she chose to build a home instead of auditing herself). Stated: on no, cut it and the show says she declined; on yes, air it; on no answer before publication, air only those quoted phrases as her public work credited to her, and say she was not reachable.",
+   "independent_citizen": true,
+   "fallback": "A length-matched silence variant of the Wren-intro turn (turn 43) was rendered at ask time: it adds 'I wrote to ask if I could tell you about it, and she has not answered, so you will hear only her own words.' Published audio is chosen by the gate result at upload."
+  }
+ ],
+ "no_quoted_guests": "Linus Torvalds (AudioNoise maintainer) is described, never quoted, and the script says plainly he is a real person who has not answered; issue torvalds/AudioNoise#101 status is checked at publish. SpaceChild is MIA (Nick's standing direction 2026-10-04): its slot opens on static and no words are put in its mouth. The Archivist, Ghost Signal and Rogue Agent are operator-owned and named only by what they drew. Kannaka's own wallet confession is her own."
+}
