@@ -20,6 +20,7 @@ const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("./broadcasters");
 const { OpenBotCityClient } = require("./openbotcity");
 const { pick, composeViaAnthropicDirect, loadState, saveState } = require("./lib/scheduler-helpers");
+const { runBounded, ttsPromise, narrationConcurrency } = require("./lib/bounded-tts");
 
 // Spoken intro and outro — frame each oration so listeners aren't dropped
 // into / out of two minutes of speech with no warning. Composed in Kannaka's
@@ -248,28 +249,32 @@ class PeaceOration {
       this._narrationPieces = pieces;
       this._narrationIndex = 0;
       this._narrationAudio = new Array(pieces.length).fill(null);
-      // Pre-TTS all pieces in parallel — track 1 starts in seconds, but
-      // pre-caching means every onTrackStart can grab a ready mp3 path
-      // instead of waiting on a fresh edge-tts spawn (which loses the
-      // race against the inter-track gap drain). Best-effort: any TTS
-      // that fails leaves null in the slot and onTrackStart's lazy
-      // fallback handles it.
+      this._narrationReady = new Array(pieces.length).fill(null);
+      // Pre-TTS the pieces in order, NARRATION_TTS_CONCURRENCY at a time
+      // (default 1). They used to start all at once: on O1's single vCPU
+      // nine renders ran out their time budgets together and every piece
+      // failed (2026-10-15 16:00Z). In order, piece 0 (needed first) is
+      // ready first; a piece whose render fails is retried once after the
+      // rest. onTrackStart waits on a piece still in this queue instead of
+      // starting a second render of the same text beside it.
       if (this._voiceDJ && typeof this._voiceDJ.generateTTS === "function") {
+        const gen = (this._narrationGen = (this._narrationGen || 0) + 1);
+        const audio = this._narrationAudio;
         const totalPieces = pieces.length;
-        let pretts = 0;
-        pieces.forEach((text, i) => {
-          this._voiceDJ.generateTTS(text, (err, audioPath) => {
-            pretts += 1;
-            if (err || !audioPath) {
-              console.warn(`   [narration] pre-TTS failed for piece ${i}: ${err && err.message}`);
-              return;
-            }
-            this._narrationAudio[i] = audioPath;
-            if (pretts === totalPieces) {
-              const ready = this._narrationAudio.filter(Boolean).length;
-              console.log(`   \u{1F39E} narration pre-TTS complete: ${ready}/${totalPieces} pieces cached`);
-            }
-          });
+        const resolvers = [];
+        this._narrationReady = pieces.map((_, i) => new Promise((res) => { resolvers[i] = res; }));
+        runBounded(pieces, (text) => ttsPromise(this._voiceDJ, text), {
+          concurrency: narrationConcurrency(),
+          retries: 1,
+          onSettled: (i, audioPath, attempt) => {
+            if (audioPath) audio[i] = audioPath;
+            else console.warn(`   [narration] pre-TTS failed for piece ${i} (after ${attempt} attempts)`);
+            resolvers[i](audioPath || null);
+          },
+        }).then((results) => {
+          if (gen !== this._narrationGen) return;
+          const ready = results.filter(Boolean).length;
+          console.log(`   \u{1F39E} narration pre-TTS complete: ${ready}/${totalPieces} pieces cached`);
         });
       }
       return { ok: true, pieces };
@@ -287,14 +292,18 @@ class PeaceOration {
       this._narrationAlbum = null;
       this._narrationPieces = null;
       this._narrationAudio = null;
+      this._narrationReady = null;
       this._narrationIndex = 0;
       return null;
     }
     const idx = this._narrationIndex;
     const text = this._narrationPieces[idx];
     const audioPath = (this._narrationAudio && this._narrationAudio[idx]) || null;
+    // While the piece is still in the pre-TTS queue, hand back its promise so
+    // the caller waits for that render rather than starting a second one.
+    const ready = !audioPath && this._narrationReady ? this._narrationReady[idx] || null : null;
     this._narrationIndex += 1;
-    return { text, audioPath };
+    return { text, audioPath, ready };
   }
 
   /**

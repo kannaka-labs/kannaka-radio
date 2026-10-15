@@ -230,7 +230,10 @@ function ensureCommercials(voiceDJ, commercialsDir) {
 
   // Use the parent's name as the musicDir-relative prefix (e.g. "commercials")
   const relPrefix = path.basename(commercialsDir);
-  return Promise.all(COMMERCIAL_SCRIPTS.map(script => {
+  // Missing spots render NARRATION_TTS_CONCURRENCY at a time (default 1):
+  // a cold start used to render every missing spot at once on one vCPU.
+  const { runBounded, narrationConcurrency } = require("./lib/bounded-tts");
+  return runBounded(COMMERCIAL_SCRIPTS, script => {
     const fileName = scriptFilename(script);
     const absPath = path.join(commercialsDir, fileName);
     const relFile = path.join(relPrefix, fileName); // what we store in track.file
@@ -257,7 +260,7 @@ function ensureCommercials(voiceDJ, commercialsDir) {
         resolve({ ...script, file: relFile, _abs: absPath });
       });
     });
-  })).then(results => results.filter(Boolean));
+  }, { concurrency: narrationConcurrency(), retries: 0 }).then(results => results.filter(Boolean));
 }
 
 /**
