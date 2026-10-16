@@ -11,6 +11,19 @@ const { execFile } = require("child_process");
 const { ALBUMS } = require("./dj-engine");
 const voiceEngine = require("./voice-engine");
 
+// Stream label for a long-form segment, by persona. executeOration carries the
+// oration, the news bulletin and the gossip column alike; before this every one
+// of them aired (now-playing, icecast title, the [sound] bed log) as "Peace
+// Oration" (seen 2026-10-14 on the 16:20 gossip column).
+const ORATION_LABELS = {
+  oration: "Kannaka — Peace Oration",
+  news: "Gene — News Desk",
+  gossip: "Kannaka — Gossip Column",
+};
+function orationLabel(persona) {
+  return ORATION_LABELS[persona] || ORATION_LABELS.oration;
+}
+
 /**
  * Base URL for the Observatory. Genuinely external, so the production default
  * is preserved and simply made overridable via OBSERVATORY_URL. (#107)
@@ -757,7 +770,7 @@ class VoiceDJ {
       try {
         const ics = this._getIcecastSource && this._getIcecastSource();
         if (ics && typeof ics.injectAudio === 'function') {
-          ics.injectAudio(audioPath, { label: 'Kannaka — Peace Oration', kind: persona }, (err) => {
+          ics.injectAudio(audioPath, { label: orationLabel(persona), kind: persona }, (err) => {
             release(err ? `inject error: ${err.message}` : null);
           });
           injected = true;
@@ -1876,4 +1889,4 @@ function onAirResearchLine(content) {
   return `It was a paper: "${title}"${year ? `, from ${year}` : ''}.`;
 }
 
-module.exports = { VoiceDJ, observatoryBaseUrl, localRadioBaseUrl, parseConstellationMetrics, onAirResearchLine };
+module.exports = { VoiceDJ, observatoryBaseUrl, localRadioBaseUrl, parseConstellationMetrics, onAirResearchLine, orationLabel };
