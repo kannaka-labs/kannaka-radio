@@ -23,7 +23,10 @@ STATE_DIR="${STATE_DIR:-/tmp}"
 SUBJECT="${SUBJECT:-RADIO.alert.disk}"
 HOSTNAME_TAG="$(hostname -s 2>/dev/null || echo unknown)"
 
-# Load NATS auth if available (Oracle box has authz).
+# Load NATS auth if available (Oracle box has authz). `set -a` exports
+# NATS_USER / NATS_PASSWORD, and the nats CLI reads them from its environment.
+# They are never passed as --user/--password: argv is readable by every user on
+# the box through `ps` and /proc/<pid>/cmdline, the environment is not.
 if [ -f "$NATS_ENV" ]; then
   set -a; . "$NATS_ENV"; set +a
 fi
@@ -55,12 +58,8 @@ if [ -f "$PRUNE_LOG" ]; then
       echo "[WARN] prune-cron log ${PRUNE_LOG} hasn't been touched in ${PRUNE_AGE_H}h" >&2
       logger -t kannaka-disk-monitor -p user.warn "prune-cron stale (age=${PRUNE_AGE_H}h)" 2>/dev/null || true
       if [ -n "$NATS_BIN" ]; then
-        AUTH_ARGS=()
-        if [ -n "${NATS_USER:-}" ] && [ -n "${NATS_PASSWORD:-}" ]; then
-          AUTH_ARGS=(--user "$NATS_USER" --password "$NATS_PASSWORD")
-        fi
         STALE_PAYLOAD="{\"schema_version\":\"1.0\",\"ts\":$(date +%s%3N),\"agent_id\":\"${HOSTNAME_TAG}\",\"subject\":\"RADIO.alert.prune\",\"prune_log\":\"${PRUNE_LOG}\",\"age_hours\":${PRUNE_AGE_H}}"
-        if "$NATS_BIN" --server "$NATS_URL" "${AUTH_ARGS[@]}" pub "RADIO.alert.prune" "$STALE_PAYLOAD" >/dev/null 2>&1; then
+        if "$NATS_BIN" --server "$NATS_URL" pub "RADIO.alert.prune" "$STALE_PAYLOAD" >/dev/null 2>&1; then
           touch "$PRUNE_STATE"
         fi
       else
@@ -114,11 +113,7 @@ EOF
 echo "  ALERT: ${PAYLOAD}"
 
 if [ -n "$NATS_BIN" ]; then
-  AUTH_ARGS=()
-  if [ -n "${NATS_USER:-}" ] && [ -n "${NATS_PASSWORD:-}" ]; then
-    AUTH_ARGS=(--user "$NATS_USER" --password "$NATS_PASSWORD")
-  fi
-  if "$NATS_BIN" --server "$NATS_URL" "${AUTH_ARGS[@]}" pub "$SUBJECT" "$PAYLOAD" >/dev/null 2>&1; then
+  if "$NATS_BIN" --server "$NATS_URL" pub "$SUBJECT" "$PAYLOAD" >/dev/null 2>&1; then
     touch "$STATE_FILE"
     echo "  published to ${SUBJECT}"
   else
