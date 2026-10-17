@@ -1,0 +1,27 @@
+[
+ {
+  "file": "album-e010-07-address-s1-s2811468924.png",
+  "show": "album",
+  "episode": 10,
+  "slug": "07-address-s1",
+  "prompt": "digital concept painting, two nearly identical plain smooth iron keys with blank unmarked round bows lying side by side on dark slate, their teeth differing only in the middle, harsh cold side light, deep shadows, minimalist, fine art, rich detail, cinematic light, no text",
+  "prompt_sha256": "06884ac3840ab0d955a542050a40349ad9e3951f344864c772c938971e3fcfff",
+  "negative": null,
+  "seed": 2811468924,
+  "steps": 4,
+  "guidance": 0.0,
+  "model": "SDXL-1.0-base + SDXL-Lightning-4step-UNet (OpenRAIL++)",
+  "mode": "lightning",
+  "backend": "cpu",
+  "device": "cpu",
+  "dtype": "fp32",
+  "threads": 8,
+  "seconds": 149.2,
+  "load_seconds": 23.2,
+  "width": 1024,
+  "height": 1024,
+  "bytes": 1119385,
+  "gate": true,
+  "cost_credits": 0.0
+ }
+]
