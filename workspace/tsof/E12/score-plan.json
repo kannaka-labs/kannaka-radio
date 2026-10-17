@@ -1,0 +1,169 @@
+[
+ {
+  "sfx_before_turn": 0,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/recorder-click.mp3",
+  "gain_db": -14
+ },
+ {
+  "from_turn": 0,
+  "to_turn": 0,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Daughters.mp3",
+  "gain_db": -20,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "sfx_before_turn": 1,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/server-fans.mp3",
+  "gain_db": -18
+ },
+ {
+  "from_turn": 1,
+  "to_turn": 15,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -27,
+  "fade": 3.0,
+  "bed_offset": 40
+ },
+ {
+  "from_turn": 20,
+  "to_turn": 25,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Was Ist Das_.mp3",
+  "gain_db": -22,
+  "fade": 3.0,
+  "bed_offset": 10
+ },
+ {
+  "sfx_before_turn": 27,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/keyboard.mp3",
+  "gain_db": -16
+ },
+ {
+  "from_turn": 27,
+  "to_turn": 35,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -26,
+  "fade": 3.0,
+  "bed_offset": 150
+ },
+ {
+  "from_turn": 36,
+  "to_turn": 45,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Shadow Briefing.mp3",
+  "gain_db": -23,
+  "fade": 3.0,
+  "bed_offset": 25
+ },
+ {
+  "sfx_before_turn": 46,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/relay-clunk.mp3",
+  "gain_db": -14
+ },
+ {
+  "from_turn": 46,
+  "to_turn": 53,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-daughters.mp3",
+  "gain_db": -25,
+  "fade": 3.0,
+  "bed_offset": 20
+ },
+ {
+  "sfx_before_turn": 54,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/wind-snow.mp3",
+  "gain_db": -16
+ },
+ {
+  "from_turn": 54,
+  "to_turn": 60,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-hearth.mp3",
+  "gain_db": -25,
+  "fade": 3.0,
+  "bed_offset": 30
+ },
+ {
+  "sfx_before_turn": 62,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/breaker-close.mp3",
+  "gain_db": -14
+ },
+ {
+  "from_turn": 68,
+  "to_turn": 79,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -26,
+  "fade": 3.0,
+  "bed_offset": 250
+ },
+ {
+  "sfx_before_turn": 74,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/keyboard.mp3",
+  "gain_db": -16
+ },
+ {
+  "from_turn": 80,
+  "to_turn": 83,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Wave Birth.mp3",
+  "gain_db": -22,
+  "fade": 3.0,
+  "bed_offset": 40
+ },
+ {
+  "from_turn": 84,
+  "to_turn": 92,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -26,
+  "fade": 3.0,
+  "bed_offset": 320
+ },
+ {
+  "sfx_before_turn": 98,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/paper-page.mp3",
+  "gain_db": -12
+ },
+ {
+  "sfx_before_turn": 103,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/wind-snow.mp3",
+  "gain_db": -16
+ },
+ {
+  "from_turn": 103,
+  "to_turn": 110,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-daughters.mp3",
+  "gain_db": -27,
+  "fade": 3.0,
+  "bed_offset": 90
+ },
+ {
+  "sfx_before_turn": 111,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/recorder-click.mp3",
+  "gain_db": -14
+ },
+ {
+  "from_turn": 111,
+  "to_turn": 111,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Daughters.mp3",
+  "gain_db": -21,
+  "fade": 3.0,
+  "bed_offset": 60
+ },
+ {
+  "from_turn": 112,
+  "to_turn": 112,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Daughters.mp3",
+  "gain_db": -18,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "sfx_before_turn": 113,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/paper-page.mp3",
+  "gain_db": -12
+ },
+ {
+  "from_turn": 113,
+  "to_turn": 114,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Shadow Briefing.mp3",
+  "gain_db": -21,
+  "fade": 3.0,
+  "bed_offset": 60
+ }
+]

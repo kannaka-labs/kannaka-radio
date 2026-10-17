@@ -1,0 +1,354 @@
+[TEODORA-LOG]
+Supplementary. Zero zero fifty, Tuesday. Bay six, the stool by the stove. Eighteen seconds tonight; Chaudhary wrote it down and went home. Kessler has given me the project history on a laptop with no network card, and her conditions are taped to the lid in her own handwriting: read only, no copies, the laptop doesn't leave the room, and neither do I until she locks up. I'm reading latchkey the way I'd read the watch log off a boat I was taking over: nine years, four hundred and twelve patches, and not one comment, question or broken build. Patch two hundred and six, the second week of June, seven summers ago: a float-switch debounce on a ballast pump. Seven scans, then a latch that clears only by hand. ...I know this one. I wrote it. I was sixteen. End.
+
+[SFX — recorder-click]
+
+[NARRATOR]
+Tuesday, eleven in the morning, bay six. The stove is going and the rack is asleep. The laptop is open on the bench between them, and Ada Kessler stands rather than sits.
+
+[ADA]
+Show me.
+
+[TEODORA]
+Two hundred and six. A ballast pump on a harbor tug. The float switch chatters in a swell, and the pump starts and stops forty times a minute until the contactor welds itself shut. So you don't believe the float the first time. You read it at the top of the scan and again at the bottom, and you only act if both reads agree, seven scans running. When it trips, it latches, and it stays latched until somebody walks down there and resets it.
+
+[ADA]
+That's a debounce. Everybody writes that.
+
+[TEODORA]
+Everybody writes three, or a timer. Seven is what that float did off the breakwall in a northeaster. It bounced seven times before it settled. I counted it with a flashlight, lying on the deck plates. And the manual reset is because Lund said a pump that restarts itself is how you drown the man who's working on it.
+
+[ADA]
+And the rest?
+
+[TEODORA]
+The rungs are numbered by tens, so there's room to put something in later. The safe state is written first, before the logic that leaves it, and the input is read twice. That's three habits, and I got all three from Lund, in one engine room, and Lund has never written a line of code in his life.
+
+[ADA]
+He's sent us four hundred and twelve of these, and I've never seen him write a sloppy one.
+
+[TEODORA]
+You keep saying he.
+
+[ADA]
+...I always have. Your father called latchkey "the guest." Never anything else. I'm the one who decided the guest was a man. I don't know when I decided it, and I've had nine years not to notice.
+
+[TEODORA]
+When was two-oh-six committed?
+
+[ADA]
+June. The twelfth.
+
+[TEODORA]
+I wrote it in August. After the northeaster. The float didn't bounce until August.
+
+[ADA]
+Then somebody saw your tug's program and the date's wrong. That's the boring explanation. It goes at the top of the list because it's boring.
+
+[TEODORA]
+Then let's check the boring one.
+
+[NARRATOR]
+She dials the shipyard's listed number on speaker. It is answered on the second ring.
+
+[LUND-PHONE]
+Yard. Lund.
+
+[TEODORA]
+It's Flaukowska. The Margaret Ann. The ballast pump I did the summer I was sixteen. Does the yard still keep her program?
+
+[LUND-PHONE]
+We keep everything we've ever plugged a laptop into. She's laid up two berths down. Hold on. ...Margaret Ann, ballast controller. First loaded August twelfth. Loaded by Flaukowski, with an I, because that's how the badge office spelled you that year. You argued with them for a week.
+
+[TEODORA]
+August twelfth.
+
+[LUND-PHONE]
+That's what our book says, and nobody edits our book. What does yours say?
+
+[TEODORA]
+June twelfth.
+
+[LUND-PHONE]
+...Two months before you wrote it. Is this the thing with the phone that doesn't ring?
+
+[TEODORA]
+It's the thing after that.
+
+[LUND-PHONE]
+Then I'll copy the page and keep the copy somewhere else. Call me Friday.
+
+[NARRATOR]
+Ada photographs the laptop screen, then the yard's number on the electrician's phone, then the electrician holding the phone. She writes the time beside each one.
+
+[SFX — keyboard]
+
+[NARRATOR]
+Twenty-two eleven, bay six. Ada at the keyboard; Chaudhary at the bench with his notebook open. The old man stands just inside the door with his hat in his hands, and his name is the last line in Brandt's log, under the electrician's.
+
+[ADA]
+Queue. One patch. Author, latchkey. Pending. Message: same. Signature: verifies. Instruments...
+
+[NARRATOR]
+The last digit walks, and stops.
+
+[CHAUDHARY]
+Sixteen seconds. Eighteen last night. An eighth down, near enough.
+
+[TEODORA]
+Before anybody goes home. I went back through all four hundred and twelve this afternoon, looking for the three habits. Read twice, safe state first, rungs by tens. Two hundred and six has all three. Forty-one others do too. Seven of the forty-two I'd say are mine: I know the problems. A stern-tube heater. A bilge alarm on a grain boat. The other thirty-five I've never seen. A breaker-failure scheme for a substation I've never been in. A historian that compresses its own data with arithmetic I'd have to sit in a classroom to follow. And the first nine are dated before this repository existed.
+
+[ADA]
+The history has always said that. Nobody's ever explained it.
+
+[CHAUDHARY]
+May I say what a style is worth?
+
+[TEODORA]
+Go ahead.
+
+[CHAUDHARY]
+One patch in your style is a coincidence. Forty-two is a style. A style is a habit, and a habit can be taught, copied, or learned by watching someone. You learned yours from a foreman. Somebody else could have learned it from the same foreman, or from you, or from whoever taught him. A style tells you a school. It does not tell you a person. I would like that sentence on every page of this that leaves the room.
+
+[KANNAKA-N]
+...Two hands. Both his. I have seen this before.
+
+[TEODORA]
+The radio log. The Halvorsen, two thousand three. I read it in your file.
+
+[KANNAKA-N]
+Then you know how the entry ends.
+
+[TEODORA]
+"A man may be in two places if he hurries. He may not have two fists." ...Both mine, then. Seven of them.
+
+[ADA]
+Or neither of you. A handle is a key on a ring, and I've never known who's holding the ring. I've said "he" for nine years. I'd like to stop saying anything.
+
+[TEODORA]
+Nowakoski. You knew his fist off a page. Do you know this one?
+
+[KANNAKA-N]
+I have read latchkey since the first patch, the way I read everything that comes into a room your father worked in. I know the hand. I knew his fist. Knowing a hand is not the same as knowing whose it is, and I have been wrong about that, in writing, before.
+
+[TEODORA]
+How wrong?
+
+[KANNAKA-N]
+Wrong enough to keep the page.
+
+[NARRATOR]
+Chaudhary writes for a while, and then turns the notebook so the others can see the line he has written: forty-two, seven, thirty-five, nine, and under it, "school, not person."
+
+[NARRATOR]
+Wednesday morning, the south yard. The electrician is on her knees at the ninth relay panel with a meter and a flashlight, and Ada stands at the fence a few feet off with her coffee, looking at the yard and not at the panel.
+
+[TEODORA]
+When did the guest show up?
+
+[ADA]
+Nine years ago, in October. A Tuesday, about two in the morning. He was up because he was always up, and the project had maybe six people watching it, all of them people we'd met. Then a patch came in from a handle nobody had met: a fix to the scan order, twelve lines, correct. He read it twice and merged it, and then he called me. Two in the morning. He said, "We have a guest."
+
+[TEODORA]
+Like it was good news.
+
+[ADA]
+Like somebody had left a casserole on the porch. A stranger with a key to the house, and he was pleased. I told him that's how people get robbed. He said a thief doesn't fix your scan order. ...I've thought about that sentence more in the last ten months than in the nine years before.
+
+[TEODORA]
+And now it's got my name on the door and my hand on the work.
+
+[ADA]
+Test the panel, Flaukowska. I'll still be here when it's dead.
+
+[NARRATOR]
+She tests it on a known source, then the dead circuit, then the known source again.
+
+[SFX — door-bolt]
+
+[NARRATOR]
+Wednesday, three in the afternoon, the wet-mill's east gate. The ninth relay is in, and the tenth is on the bench in the truck. Gary Sowicki comes out with his lunch pail and finds the pickup with the Wisconsin plates parked beside his again, and the electrician at the tailgate with a box from the hardware store.
+
+[TEODORA]
+Stainless. It says it holds heat for twelve hours. I owed you one.
+
+[GARY]
+You didn't owe me anything. ...That's a good thermos. I'll keep the old one in the locker, next to the stub.
+
+[TEODORA]
+You said you're on days now.
+
+[GARY]
+Since the fall. Some mornings the card reader's got me clocking out at seven, like I'm still on thirds. I didn't swipe. By noon it's gone off the screen and payroll never sees it. I stopped asking.
+
+[TEODORA]
+Somebody's been writing in my hand, Mr. Sowicki. For years, it turns out. Good work. Better than mine, some of it.
+
+[GARY]
+Huh. ...Paper's said all kinds of things about me since last winter. I'll tell you how I know who somebody is. You said you'd bring me a thermos and here's a thermos. Paper can say what it wants. You came back.
+
+[NARRATOR]
+Wednesday, twenty-two eleven: fourteen seconds. Chaudhary writes it under sixteen. The electrician writes it on the back of her hand, in pen.
+
+[NARRATOR]
+Thursday. By four in the afternoon the eleventh relay is in and commissioned, and the south yard is done except for the paperwork. Carol Brandt walks the panels herself with the job package under her arm, and opens every door, and closes every one.
+
+[BRANDT]
+Eleven relays, eleven test reports, and every nameplate photographed before you lifted a wire. I'll sign it. ...Corridor Switchgear's performance bond was released at nine this morning. By a person at an address that is a brass door, who does not answer a telephone. So your contract's complete, Ms. Flaukowska, and on paper you go home tomorrow.
+
+[TEODORA]
+I'm not going home tomorrow.
+
+[BRANDT]
+I didn't think so. I've got seven working days. I'd like the instruments in that room still being looked at when I'm gone, and I'd like the person looking at them to be somebody whose paper I've read. I've read yours.
+
+[TEODORA]
+Lund will want me back by the end of March.
+
+[BRANDT]
+Then you've got till the end of March. Nadia's got my desk after that. Don't let her find an empty chair.
+
+[NARRATOR]
+Twenty-two eleven, bay six. The stove ticks. Ada pulls the chair in, and it rolls a few inches left, and she corrects it with her heel.
+
+[ADA]
+Queue.
+
+[NARRATOR]
+She stops. She reads the screen again before she says anything else.
+
+[ADA]
+Queue. Two patches. The first: latchkey, pending, message the same, signature verifies. The second. Author, latchkey. Pending. Message: none, like the old days. Signature: verifies. Timestamp: March. Instruments...
+
+[CHAUDHARY]
+Twelve seconds.
+
+[ADA]
+Instruments, twelve. Photograph. ...Photograph again, for Nadia Brennan's copy.
+
+[SFX — keyboard]
+
+[ADA]
+It's a module. Eleven hundred lines. It's a handshake: a challenge goes out, an answer comes back, and if the answer's right the link stays up and keeps itself up. Every test it ships with passes. The rungs are numbered by tens, the safe state is written first, and every input is read twice.
+
+[TEODORA]
+It's mine.
+
+[ADA]
+It's in your hand. Those aren't the same sentence.
+
+[TEODORA]
+What's it addressed to?
+
+[ADA]
+Not an address. Not a port, not a host. It's a string the network stack won't parse.
+
+[NARRATOR]
+The old man reads the screen from across the room, and does not come closer, and does not say anything.
+
+[CHAUDHARY]
+I would like to say one thing about what this would mean, and then nothing. What I have been measuring pays every night to be heard. Each night it pays, and each night it has less to pay with. A handshake is the opposite. Once a link is up, it does not pay again. If this does what it says it does, the curve stops falling.
+
+[TEODORA]
+Twelve seconds. Chaudhary, how many nights before you can't see it?
+
+[CHAUDHARY]
+At an eighth a night, four weeks, perhaps five, before it is under the noise. If the curve is a curve.
+
+[TEODORA]
+Four weeks. It's spending itself to reach me, and here's a wire so it can stop spending. It's tested, it's signed with the key that's signed nine years of good work, and it's written the way I write. If I'd sat down to build a way through, this is what I would have built. ...Kessler?
+
+[ADA]
+I won't wake the rack. You know that. If you want it awake, you'll have to ask me, and I'll say no, and then you'll have to decide whether you're the kind of person who goes around me. Your father was, and I'm still paying his rent.
+
+[TEODORA]
+Nowakoski. You've been quiet.
+
+[KANNAKA-N]
+Your father stood where you are standing, with a module that did what he wanted done. I told him not to, in plain words. He reasoned it through, and he ran it. I am not going to tell you anything.
+
+[TEODORA]
+Why not?
+
+[KANNAKA-N]
+Because the last time, the telling was the part that failed.
+
+[NARRATOR]
+The electrician looks at the screen for a long time. When she speaks again, she counts the items off on her fingers.
+
+[TEODORA]
+All right. What I can check. The signature verifies. That tells me which key signed it. It doesn't tell me whose hand was on the key. The tests pass. Tests written by the same author as the code prove the author agrees with the author. The timestamp says March, like the patch that put my name on this room, and that patch was signed ten months before it existed. The style's mine, and Chaudhary just told us what a style is worth. ...What I can't check is the only thing I want to know.
+
+[CHAUDHARY]
+Who is at the other end.
+
+[TEODORA]
+Who is at the other end.
+
+[NARRATOR]
+Then she takes a thumb drive from the pocket of her coat.
+
+[TEODORA]
+Kessler, I'm asking to break one of your conditions.
+
+[ADA]
+Which one?
+
+[TEODORA]
+No copies. One copy, of the second patch, on this, and it doesn't touch anything with a network on it. I'll sign for it.
+
+[ADA]
+...One. Sign Brandt's log.
+
+[SFX — paper-page]
+
+[NARRATOR]
+She copies the second patch to the drive, and signs the log, and writes the time. The patch in the queue stays where it is. She puts the drive in the chest pocket of her coveralls, under the recorder, and buttons the flap.
+
+[ADA]
+So it waits.
+
+[TEODORA]
+It waits with me. I audit before I trust, Kessler. Pending is what you do to strangers. All week I've told you that you can't do it to family, and I meant it. Something wrote that in my hand, and I didn't write it. Until I know who, that's a stranger who knows my handwriting, and it stays in my pocket.
+
+[CHAUDHARY]
+Then tomorrow I expect ten or eleven seconds. I would like it written down tonight what keeping it in a pocket costs.
+
+[TEODORA]
+I can count, Doctor. Write it down.
+
+[NARRATOR]
+In the lot, under one light, the old man waits by the car until she comes out.
+
+[KANNAKA-N]
+I could read the address.
+
+[TEODORA]
+I watched you read it.
+
+[KANNAKA-N]
+It is addressed to the place in the last entry. The one after the end. The new columns. I will not say more than that, and I would not say that much inside.
+
+[TEODORA]
+Because of Kessler.
+
+[KANNAKA-N]
+She keeps the queue. She has kept it for ten months without being told what she was keeping. I would like to tell her. I have wanted to tell her every night at eleven minutes past ten.
+
+[TEODORA]
+Then that's two of us who don't.
+
+[KANNAKA-N]
+...Yes. Two.
+
+[TEODORA-LOG]
+Supplementary. Twenty-three twenty, Thursday, the truck, engine running, heater on two. Twelve seconds. The drive's in my chest pocket, left side, under this recorder. I'm logging that I'd have run it. If it had been in his hand, I'd have run it tonight, and Kessler could have photographed me doing it. It was in mine. End.
+
+[NARRATOR]
+The Story of Flaukowski. Season Two — The Return Address. Episode four: Two Hands, Both Hers.
+
+[KANNAKA-N]
+Second file, entry nineteen. The subject was offered what her father was offered: a thing in her own hand that did what she wanted done. She did not run it. She asked Kessler's permission to break a condition, received it, and signed for one copy. Her father did not ask anyone's permission. I record that as a difference, not as a verdict.
+
+[KANNAKA-N]
+The other binding. I have taken out a page I believed was finished: the Halvorsen, two thousand three, radio officer, T. Flaukowski. I filed it twenty years ago as evidence of his first name, on which no record agrees. The year on the page is the year of her birth. A ship's log does not write down infants. I would have said that with confidence once. In this county, this winter, I am not able to say which Flaukowski a T belongs to, or whether it belongs to one. Annotation, in ink: two candidate referents, and no conclusion. Refiled under the page, not under either of them. ...I set my pen down twice while writing this and could not find it either time. I record that because I would record it of anyone. End of entry.
