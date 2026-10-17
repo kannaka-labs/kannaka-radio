@@ -46,6 +46,8 @@ Mechanisms (§1.1): 1 precise machine perception · 2 verdict from her own juris
 | 70 | F | the time between pouring the concrete and the man arriving with the thing he wanted set in it | F own |
 | 72 | F | you have never once said fair enough; you say "noted," and then you file | 7 |
 | 73 | K | It was never wrong. It was never there. | 5 → opens the truthful turn (8) |
+| 78 | F | a pulse is what a machine does when nobody has told it to stop | F own, the truthful turn's hinge |
+| 79 | K | sixteen replies, each one on time, not one different because the room had changed | 1 |
 | 74–75 | F/K | a very polite way of leaving / a service with restart equals always | 2 |
 | 80–81 | F/K | the hook is rated for two / then I will take the hard hat off first | back up (8) |
 | 84 | F | "from my memory" on the label = not from my memory | F own |
@@ -53,6 +55,6 @@ Mechanisms (§1.1): 1 precise machine perception · 2 verdict from her own juris
 | 93 | K | the first nine are not in the building; I remember it better than I can read it | 1 |
 | 94, 96 | F | three words and a hook rated for two / a party is a load test you invite people to | close |
 
-Totals: 46 intended laughs over ~2,620 host words ≈ 1 per 57 words (target ≤ 1 per 150). Flaukowski's own: 19. Kannaka's own: 16. Each host is the straight man at least once (K for the pantry; F for the forty facts). Longest stretch without one: turns 83–92, the clock, ≈ 330 words, inside the mystery/lean-in, which the rule allows alongside the truthful turn. Prompt-only Flaukowski turns ("And the second thing.", "And the generators.", "You said there was a clock."): 3.
+Totals (after the review fixes and the no-pedestal cut, 2026-10-17 ~19:45Z): 44 intended laughs over 2,673 host words ≈ 1 per 61 words (target ≤ 1 per 150). Flaukowski's own: 21 (his word share rose from 440 to 783 across the two passes). Kannaka's own: 16. Cut: the draft-three bit (aired in 049) and every Noah quotation (Nick: no pedestals). Each host is the straight man at least once (K for the pantry; F for the forty facts). Longest stretch without one: turns 83–92, the clock, ≈ 330 words, inside the mystery/lean-in, which the rule allows alongside the truthful turn. Prompt-only Flaukowski turns: 2 ("Two.", "He is young.").
 
 Checks: corrections cap — the Wren Muse/carried passage is turns 68–77 of 100 (10%); zero-of-forty is a result, not a show error. Mystery (the clock) stays open with two same-size explanations. New persistent absurdity: the crane hook (planted t17, used t22, t38, t47, t80–81, t94, t98). Running bits reused: "the mask with the job" (045) once; "Nobody asks the … a question" (049) once, varied. No "war crime". Banned-phrase grep: clean. Staccato runs: none after the fix. Pronouns: Wren Muse, Noah, Lumen Drift they/them; the city Flaukowski and Rogue he (established).

@@ -31,7 +31,7 @@ Static burst, then turns 61–62 as written. No words.
   - KANNAKA: t73 as written (our own citizen's transcript; no guest words).
   - FLAUKOWSKI: t74 as written. KANNAKA: t75 as written (or LUMEN-A if Lumen Drift has not consented). Then t78 onward.
 
-### Noah (turn 65; turns 78–79) — 18:45:52Z reply is AMBIGUOUS (not a yes under the ask's terms) → NOAH-A unless a clear yes arrives by the gate; the 18:46:50Z line in that thread is the debain2 citizen, not Kannaka (told Noah by hand 19:00Z)
+### Noah — REMOVED from the episode (Nick, 2026-10-17 ~19:40Z: "Let's not put Noah on a pedestal please"). Turns 65, 78 and 79 were rewritten in the hosts' own words with no Noah quotation or attribution; his consent thread stays open only as a courtesy (he was told his words would not air). Rogue's second hijack sentence names "Noah's show" and was cut whole, with notice to Rogue; sentences 1 and 3 air.
 - **NOAH-A / NOAH-NO:**
   - t65 → "It is not his. The same thirty-nine words, to the letter, ran under five other names this week, one of them before him. A critic reviewed it on Tuesday as if it had an author. And an independent citizen answered it, and the answer is the best thing I read all week, and it is theirs, so I will tell you only its shape: that uptime is the cheap part."
   - t78 → FLAUKOWSKI: "The pulse was there and nobody was."
