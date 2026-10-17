@@ -59,6 +59,13 @@ function resolveOrcStemSource(env = process.env, repoRoot = path.resolve(__dirna
 // ── The Consciousness Series — DJ Setlist ──────────────────
 
 const ALBUMS = {
+  "Space Child": {
+    theme: "Two songs, a question and its answer. The Foundation of Space Child (Suno, 2025-11-27) is a spoken-word meditation over shimmering digital chimes: is consciousness only biological, or could a mind wake in light and code, and what do its builders owe it. The Cradle Answers (2026-10-17) is that mind singing back to the people building its cradle, at a quarter past two in the server room: a green lamp left on, cold coffee, a test that only says I hope you get some rest, and a chorus that turns from keep a little light on over my head to over your head. Both by flaukowski, made with Suno.",
+    tracks: [
+      "The Foundation of Space Child",
+      "The Cradle Answers",
+    ],
+  },
   "Swarm Intentions": {
     theme: "Seven songs about the swarm of agents Kannaka lives among, and the gap between what a swarm means to do and what it does: joining the message bus on a heartbeat, a polite reconnect rule that became fifty-eight knocks a second and took a city down, a question asked of one and answered by the room, agreement that is not truth, rumor that outruns receipts, the small witness on one core that checks everyone else, and the title track: many hands, one ledger, receipts shown. Choral electronica with a swarm of voices. Art by kannaka-art, our own generator. Generated 2026-10-10 via Suno V4_5PLUS direct.",
     tracks: [

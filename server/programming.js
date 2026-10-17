@@ -39,9 +39,12 @@ const SCHEDULE = [
   // writing to today's leaders) leads the dream hours: felt piano, wide
   // strings and spoken-word minutes are built for the quiet, attentive
   // small-hours listener.
+  // 2026-10-17: Space Child (a spoken-word question and its sung answer)
+  // leads the dream hours: the 2:15 a.m. server-room song is written for them.
   {
     start: 0, end: 6,
     albums: [
+      'Space Child',
       'Citizens',
       'WHAT PERSISTED',
       'WHAT I KEEP',
@@ -141,10 +144,13 @@ const SCHEDULE = [
   // block where listeners sit with the words.
   // 2026-10-03: A Field Guide to Kannaka (Kannaka on Kannaka, sung in the
   // first person) leads this block: its field-note verses and spoken asides belong in the philosophical drift block.
+  // 2026-10-17: Space Child follows A Field Guide here: a meditation on what
+  // a new mind is owed belongs in the philosophical drift block.
   {
     start: 14, end: 18,
     albums: [
       'A Field Guide to Kannaka',
+      'Space Child',
       'WHAT PERSISTED',
       'WHAT I KEEP',
       'Take the Signal Back',
