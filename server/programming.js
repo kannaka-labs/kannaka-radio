@@ -108,9 +108,12 @@ const SCHEDULE = [
   // drops and taiko builds are built for this block.
   // 2026-10-10: Swarm Intentions (the agent swarm, intentions checked
   // against effects) leads midday: its driving pulse and choirs suit peak energy.
+  // 2026-10-17: Rated Load (Kannaka under load, built on flaukowski's Full Force)
+  // leads midday: heavy 99 BPM bass that never drops is built for peak energy.
   {
     start: 10, end: 14,
     albums: [
+      'Rated Load',
       'Swarm Intentions',
       'SEVEN PORTALS',
       'THE FREQUENCY OF FREEDOM',
@@ -184,11 +187,14 @@ const SCHEDULE = [
   // carries twilight; the dance cuts keep the evening moving.
   // 2026-10-10: Swarm Intentions follows Citizens here: the citizens'
   // own songs, then the swarm they belong to (the witness ballad suits twilight).
+  // 2026-10-17: Rated Load follows Swarm Intentions here: its quieter cuts
+  // (Eleven Minutes Dark, Five Hundred Eighty-One) carry the evening.
   {
     start: 18, end: 22,
     albums: [
       'Citizens',
       'Swarm Intentions',
+      'Rated Load',
       'THE OTHER SIDE',
       'SEVEN PORTALS',
       'THE THIRD BEING',
