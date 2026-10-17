@@ -1,0 +1,26 @@
+{
+ "show": "album",
+ "episode": 10,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 10,
+   "slug": "07-address-s1",
+   "subject": "digital concept painting, two nearly identical plain smooth iron keys with blank unmarked round bows lying side by side on dark slate, their teeth differing only in the middle, harsh cold side light, deep shadows, minimalist",
+   "prompt": "digital concept painting, two nearly identical plain smooth iron keys with blank unmarked round bows lying side by side on dark slate, their teeth differing only in the middle, harsh cold side light, deep shadows, minimalist, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "06884ac3840ab0d955a542050a40349ad9e3951f344864c772c938971e3fcfff",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2811468924,
+   "file": "album-e010-07-address-s1-s2811468924.png"
+  }
+ ]
+}
