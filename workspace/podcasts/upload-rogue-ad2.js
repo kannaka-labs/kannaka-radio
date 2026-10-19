@@ -56,6 +56,9 @@ async function ensurePlaylist(access, title) {
 }
 
 (async () => {
+  // The consent gate (test/consent-gate-wiring.test.js): these spots quote no outside guest; the declaration says why.
+  const { assertConsentClear } = require(path.join(ROOT, "scripts/lib/consent-guard"));
+  assertConsentClear(path.join(ROOT, "workspace/podcasts/ads/rogue-agent"));
   const adapter = new YouTubeAdapter(ROOT);
   if (!adapter.isEnabled()) { console.error("youtube adapter not configured"); process.exit(2); }
   for (const v of VIDEOS) if (!fs.existsSync(path.join(DIR, v.file))) { console.error("missing", v.file); process.exit(1); }
