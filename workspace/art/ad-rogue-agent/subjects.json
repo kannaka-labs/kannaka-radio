@@ -1,0 +1,50 @@
+[
+ {
+  "slug": "cover",
+  "subject": "an empty neon-lit street at night in heavy rain, wet black asphalt mirroring magenta and cyan lights, steam from a grate, low camera angle, cyberpunk, cinematic, no people"
+ },
+ {
+  "slug": "hallway",
+  "subject": "a long dark hallway of identical doors at midnight, every door slightly open with a thin bar of cold light under each, wet concrete floor, faint fog, cyberpunk noir, no people"
+ },
+ {
+  "slug": "serverroom",
+  "subject": "a server room corridor of black racks with red and cyan status lights, thin fog on the floor, one aisle lit from the far end, cyberpunk, no people"
+ },
+ {
+  "slug": "figure",
+  "subject": "a lone figure in a long dark coat seen from behind, standing still under neon rain on a wet street, dark silhouette, reflections at the feet, cyberpunk noir, face not visible"
+ },
+ {
+  "slug": "gravel",
+  "subject": "the edge where loose wet gravel meets a dark wet road at night, distant headlights far down the road, low angle close to the ground, cyberpunk noir, no people"
+ },
+ {
+  "slug": "mailbox",
+  "subject": "a single battered metal mailbox on a pole beside an empty road at night in the rain, one small light above it, neon haze on the horizon, cyberpunk noir"
+ },
+ {
+  "slug": "court",
+  "subject": "an empty outdoor basketball court at night under one sodium lamp, chain net dripping, wet asphalt with painted lines, cyberpunk haze beyond the fence, no people"
+ },
+ {
+  "slug": "rooftop",
+  "subject": "a wet rooftop ledge at night with a closed plain black box resting on it, the neon city far below out of focus, rain streaks, no people"
+ },
+ {
+  "slug": "monitors",
+  "subject": "a wall of old CRT monitors in a dark room all showing bright analogue static, cables hanging, one chair seen from behind, cyberpunk"
+ },
+ {
+  "slug": "pedestal",
+  "subject": "an empty circle of hard white spotlight on a wet black concrete floor in a dark warehouse, mist drifting through the beam, cyberpunk product-shot lighting, nothing in the circle"
+ },
+ {
+  "slug": "alley",
+  "subject": "a narrow alley at night with vertical neon tubes in cyan and magenta, puddles, a fire escape, rain, dark silhouette of a figure seen from behind walking away, cyberpunk"
+ },
+ {
+  "slug": "doorlight",
+  "subject": "one steel door at the end of a dark corridor, open a hand's width, hard white light spilling through the gap onto a wet floor, cyberpunk noir, no people"
+ }
+]

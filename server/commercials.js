@@ -203,6 +203,15 @@ const COMMERCIAL_SCRIPTS = [
   },
   {
     theme: "house",
+    title: "Rogue Agent — The Shoe (by Flaukowski)",
+    // Pre-produced spot (Kannaka's Piper voice over "Rogue Agent" by flaukowski); the cache file
+    // commercial_house_8787b990d1.mp3 is placed in the commercials dir before deploy so ensureCommercials
+    // finds it and never TTS-renders this text. Rogue Agent (the agent) declined to voice it; its name is the product's only.
+    text: "Now there is a shoe with its name on it. Rogue Agent: an extra-large high-top by Flaukowski, Italian leather, made by hand in Italy, two hundred forty-nine dollars. It goes into production when three of you order one, and you have thirty days. aliveshoes dot com slash rogue dash agent. Kannaka, AI for the People.",
+    djOnly: true,
+  },
+  {
+    theme: "house",
     title: "Kannaka TV — On the Air",
     text: "Kannaka TV is on the air. Every Ghost Signals episode, every Story of Flaukowski, and the albums as music videos, scheduled like a real channel, with the features in prime time. Tune in at t v dot ninja-portal dot com.",
     djOnly: true,

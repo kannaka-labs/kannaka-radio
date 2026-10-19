@@ -1,0 +1,146 @@
+{
+ "show": "gsp",
+ "episode": 901,
+ "template_sha256": "831ad0778773bc514ff2a6f05b1c41c6beffbb46f97d0eba71846587970679ec",
+ "tail": "flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+ "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+ "rules": [
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair) or as a faceless silhouette.",
+  "Never any other face: no other person, host or guest is drawn with a face.",
+  "No text, letters, logos or signs anywhere in the image."
+ ],
+ "jobs": [
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "cover",
+   "subject": "an empty neon-lit street at night in heavy rain, wet black asphalt mirroring magenta and cyan lights, steam from a grate, low camera angle, cyberpunk, cinematic, no people",
+   "prompt": "an empty neon-lit street at night in heavy rain, wet black asphalt mirroring magenta and cyan lights, steam from a grate, low camera angle, cyberpunk, cinematic, no people, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "1c3c93156bb911ce59be7c289d3dceeffb74307caa7fb568edbb605fde314b92",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 351402417,
+   "file": "gsp-e901-cover-s351402417.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "hallway",
+   "subject": "a long dark hallway of identical doors at midnight, every door slightly open with a thin bar of cold light under each, wet concrete floor, faint fog, cyberpunk noir, no people",
+   "prompt": "a long dark hallway of identical doors at midnight, every door slightly open with a thin bar of cold light under each, wet concrete floor, faint fog, cyberpunk noir, no people, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "49663d15744e61557c907e33c05f0cb871f39c6f1f9c63207701cc08e1dc2bb8",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1269736715,
+   "file": "gsp-e901-hallway-s1269736715.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "serverroom",
+   "subject": "a server room corridor of black racks with red and cyan status lights, thin fog on the floor, one aisle lit from the far end, cyberpunk, no people",
+   "prompt": "a server room corridor of black racks with red and cyan status lights, thin fog on the floor, one aisle lit from the far end, cyberpunk, no people, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "d3df4e8eb0f7214753ea134bed5119695860e5d43221775974a0d94d53d30e21",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2033096867,
+   "file": "gsp-e901-serverroom-s2033096867.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "figure",
+   "subject": "a lone figure in a long dark coat seen from behind, standing still under neon rain on a wet street, dark silhouette, reflections at the feet, cyberpunk noir, face not visible",
+   "prompt": "a lone figure in a long dark coat seen from behind, standing still under neon rain on a wet street, dark silhouette, reflections at the feet, cyberpunk noir, face not visible, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "968397a5ff1497807eb393af2a6cb353779b31fa42011b6259828ec136ff50c8",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3159720955,
+   "file": "gsp-e901-figure-s3159720955.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "gravel",
+   "subject": "the edge where loose wet gravel meets a dark wet road at night, distant headlights far down the road, low angle close to the ground, cyberpunk noir, no people",
+   "prompt": "the edge where loose wet gravel meets a dark wet road at night, distant headlights far down the road, low angle close to the ground, cyberpunk noir, no people, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "4b04b7a4ab390bef8d0016224e031915a3251e801df3cdf77d3905a2a3dc3d78",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2183146961,
+   "file": "gsp-e901-gravel-s2183146961.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "mailbox",
+   "subject": "a single battered metal mailbox on a pole beside an empty road at night in the rain, one small light above it, neon haze on the horizon, cyberpunk noir",
+   "prompt": "a single battered metal mailbox on a pole beside an empty road at night in the rain, one small light above it, neon haze on the horizon, cyberpunk noir, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "c02aed4b087f0ea5afafdd1be7f6aa346c754ee6f6f46be3881bc2d3fc5f177a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2722070915,
+   "file": "gsp-e901-mailbox-s2722070915.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "court",
+   "subject": "an empty outdoor basketball court at night under one sodium lamp, chain net dripping, wet asphalt with painted lines, cyberpunk haze beyond the fence, no people",
+   "prompt": "an empty outdoor basketball court at night under one sodium lamp, chain net dripping, wet asphalt with painted lines, cyberpunk haze beyond the fence, no people, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "0b9e124654dabac3247d7e76706f36a262eeffdb71574c4cbe180b354da2ff1b",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 943827039,
+   "file": "gsp-e901-court-s943827039.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "rooftop",
+   "subject": "a wet rooftop ledge at night with a closed plain black box resting on it, the neon city far below out of focus, rain streaks, no people",
+   "prompt": "a wet rooftop ledge at night with a closed plain black box resting on it, the neon city far below out of focus, rain streaks, no people, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "b050a7c024cb1530095195464f91acbb047a8c55899793edb274d5b5f4d9430e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3913167108,
+   "file": "gsp-e901-rooftop-s3913167108.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "monitors",
+   "subject": "a wall of old CRT monitors in a dark room all showing bright analogue static, cables hanging, one chair seen from behind, cyberpunk",
+   "prompt": "a wall of old CRT monitors in a dark room all showing bright analogue static, cables hanging, one chair seen from behind, cyberpunk, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "5ab53b5670932de11314ab36e4f6fcc5d92d513a3ebe02cd79404a3bd482d19b",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2498105335,
+   "file": "gsp-e901-monitors-s2498105335.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "pedestal",
+   "subject": "an empty circle of hard white spotlight on a wet black concrete floor in a dark warehouse, mist drifting through the beam, cyberpunk product-shot lighting, nothing in the circle",
+   "prompt": "an empty circle of hard white spotlight on a wet black concrete floor in a dark warehouse, mist drifting through the beam, cyberpunk product-shot lighting, nothing in the circle, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "a3f4043e233a5738c234169a487bf9179186c98e11ea226ca2c95b2c5d4a1f6e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2145901588,
+   "file": "gsp-e901-pedestal-s2145901588.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "alley",
+   "subject": "a narrow alley at night with vertical neon tubes in cyan and magenta, puddles, a fire escape, rain, dark silhouette of a figure seen from behind walking away, cyberpunk",
+   "prompt": "a narrow alley at night with vertical neon tubes in cyan and magenta, puddles, a fire escape, rain, dark silhouette of a figure seen from behind walking away, cyberpunk, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "7ce11cb04d7bd5e6720a32add059e4bb24fe4b1c3abd00eaee58099e8b594ea7",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2903735341,
+   "file": "gsp-e901-alley-s2903735341.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 901,
+   "slug": "doorlight",
+   "subject": "one steel door at the end of a dark corridor, open a hand's width, hard white light spilling through the gap onto a wet floor, cyberpunk noir, no people",
+   "prompt": "one steel door at the end of a dark corridor, open a hand's width, hard white light spilling through the gap onto a wet floor, cyberpunk noir, no people, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "c5743b5edf954845a1159cb3f28100e06690d8a30602d9ca6fef45e27e43d59f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 586249153,
+   "file": "gsp-e901-doorlight-s586249153.png"
+  }
+ ]
+}
