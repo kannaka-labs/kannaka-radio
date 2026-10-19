@@ -26,7 +26,7 @@
 #
 # Exit codes: 0 landed · 2 bad arguments · 3 ssh/remote failure · 4 slate rebuilt but the id is
 # NOT in it (not public, not in a carried playlist, or a title without a GSP-/TSOF- prefix that
-# is also under the nine-minute music floor) · 5 reload refused.
+# is also under the nine-minute music floor, or a Commercials-playlist item outside 10–90 s) · 5 reload refused.
 #
 # Every `node -e` that receives the id passes it after `--`: YouTube ids may begin with '-'
 # (TSOF E11 is -0qNLwU-S4I), and node otherwise parses one as its own option ("bad option").
@@ -113,6 +113,8 @@ fi
 WHERE=""
 grep -q "\"ref\": \"$ID\"" data/features.json && WHERE=feature
 grep -q "\"ref\": \"$ID\"" data/music.json && WHERE=music-video
+# A house spot (kannaka-tv ADR-0001 decision 3a): airs as a break between programmes, any daypart.
+[[ -f data/commercials.json ]] && grep -q "\"ref\": \"$ID\"" data/commercials.json && WHERE=commercial
 if [[ -z "$WHERE" ]]; then
   echo "NOT CARRIED: $ID is not in the rebuilt slate." >&2
   node -e '
@@ -122,7 +124,8 @@ if [[ -z "$WHERE" ]]; then
     console.error(`  found in playlist "${hit.playlist}": privacy=${hit.privacy} seconds=${hit.seconds} title=${JSON.stringify(hit.title)}`);
     if(hit.privacy!=="public")console.error("  build-slate carries PUBLIC videos only (a private one is a dead embed on air)");
     if(!hit.seconds)console.error("  no duration yet — YouTube is still processing it; re-run in a few minutes");
-    if(!/^(GSP|TSOF)[- ]/i.test(hit.title))console.error("  title has no GSP-/TSOF- prefix, so it is treated as music and must be 1–9 minutes");
+    if(/commercials/i.test(hit.playlist)){console.error("  it is in the Commercials playlist: a spot must be 10–90 s and not a vertical (#Shorts) cut");}
+    else if(!/^(GSP|TSOF)[- ]/i.test(hit.title))console.error("  title has no GSP-/TSOF- prefix, so it is treated as music and must be 1–9 minutes");
   ' -- "$CAT" "$ID" 2>&1 || true
   rm -f "$CAT" /tmp/kannaka-tv-catalogue.js
   exit 4
@@ -140,13 +143,13 @@ node -e '
   const id=process.argv[1], api=process.argv[2];
   (async()=>{
     const g=await (await fetch(api+"/api/guide?hours=12")).json();
-    const feats=(g.segments||[]).filter(s=>s.format==="feature"||s.format==="music-video");
+    const feats=(g.segments||[]).filter(s=>s.format==="feature"||s.format==="music-video"||s.format==="commercial");
     for(const s of feats){
       const r=await (await fetch(api+"/api/segment/"+encodeURIComponent(s.id))).json();
       if(r.segment&&r.segment.payload&&r.segment.payload.ref===id){
         console.log(`booked: ${new Date(s.startsAt).toISOString()} (${s.daypart}) — ${s.title}: ${s.subtitle}`);return;}
     }
-    console.log(`not yet booked in the next 12 h (${feats.length} long-form slots checked). Features air in Prime 18–22 Chicago; the picker takes the least-recently-aired quarter first, so a new episode is due at the next Prime pass.`);
+    console.log(`not yet booked in the next 12 h (${feats.length} slots checked). Features air in Prime 18–22 Chicago; a commercial airs as a break between programmes in any daypart, at most three breaks an hour; the picker takes the least-recently-aired quarter first.`);
   })().catch(e=>console.log("rundown check skipped: "+e.message));
 ' -- "$ID" "$API"
 
