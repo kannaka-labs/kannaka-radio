@@ -222,6 +222,15 @@ const COMMERCIAL_SCRIPTS = [
   },
   {
     theme: "house",
+    title: "QuantumOS — Boot Your Own Machine",
+    // Pre-produced spot (Kannaka's Piper voice over "Heartbeat on the Bus", Swarm Intentions) for the public
+    // QuantumOS console. commercial_house_<md5 of text>.mp3 is placed in the commercials dir before deploy so
+    // ensureCommercials never TTS-renders this text. Numbers are measured: restore ~16 ms, prompt ~0.3 s.
+    text: "This is QuantumOS, our own operating system. Press Boot, and you get your own real microVM, restored in about sixteen milliseconds. The prompt is up in a third of a second. Imprint a memory. Recall it. Roll the dice. Close the browser tab, and the machine is gone. qos.ninja-portal.com",
+    djOnly: true,
+  },
+  {
+    theme: "house",
     title: "Kannaka TV — On the Air",
     text: "Kannaka TV is on the air. Every Ghost Signals episode, every Story of Flaukowski, and the albums as music videos, scheduled like a real channel, with the features in prime time. Tune in at t v dot ninja-portal dot com.",
     djOnly: true,
