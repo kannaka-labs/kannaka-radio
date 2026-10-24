@@ -222,11 +222,12 @@ const COMMERCIAL_SCRIPTS = [
   },
   {
     theme: "house",
-    title: "QuantumOS — Boot Your Own Machine",
+    title: "QuantumOS — A Real Quantum Computer",
     // Pre-produced spot (Kannaka's Piper voice over "Heartbeat on the Bus", Swarm Intentions) for the public
-    // QuantumOS console. commercial_house_<md5 of text>.mp3 is placed in the commercials dir before deploy so
-    // ensureCommercials never TTS-renders this text. Numbers are measured: restore ~16 ms, prompt ~0.3 s.
-    text: "This is QuantumOS, our own operating system. Press Boot, and you get your own real microVM, restored in about sixteen milliseconds. The prompt is up in a third of a second. Imprint a memory. Recall it. Roll the dice. Close the browser tab, and the machine is gone. qos.ninja-portal.com",
+    // QuantumOS console's real-QPU command. commercial_house_<md5 of text>.mp3 is placed in the commercials dir
+    // before deploy so ensureCommercials never TTS-renders this text. It replaces the 10-23 console spot.
+    // Facts: Rigetti Cepheus-1-108Q via qBraid; 10 credits/day across all visitors, about 2 real jobs.
+    text: "QuantumOS, our own operating system, now reaches a real quantum computer. Type qpu real in the browser console, and a Bell circuit goes through qBraid, to Rigetti's Cepheus. Real hardware. Ten credits a day, for the whole planet. That's about two real jobs. Be quick. After that, the simulator stays free. qos.ninja-portal.com",
     djOnly: true,
   },
   {
