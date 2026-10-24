@@ -13,7 +13,7 @@ const DIR = process.argv[2];
 if (!DIR) { console.error("usage: upload-qos-qpu-ad.js <dir>"); process.exit(1); }
 const DESC = `QuantumOS's public browser console can now send a real circuit to a real quantum computer.
 
-In the console (https://qos.ninja-portal.com), qpu run bell runs on qBraid's free simulator, which is the default. qpu real bell asks a broker on the host to send the circuit through qBraid to the cheapest priced QPU that is online. Right now only Rigetti Cepheus-1-108Q fits the per-job cap. qpu job <id> fetches a result later, from any session. The guest VM has no network: the request leaves over its serial console (COM1) to the host broker, which holds the qBraid key.
+In the console (https://qos.ninja-portal.com), qpu run bell runs on qBraid's free simulator, which is the default. qpu real bell asks a broker on the host to send the circuit through qBraid to the cheapest priced QPU that is online. Right now only Rigetti Cepheus-1-108Q fits the per-job cap. qpu job followed by a job id fetches a result later, from any session. The guest VM has no network: the request leaves over its serial console (COM1) to the host broker, which holds the qBraid key.
 
 The first real job (broker job q49d3e636d8, qBraid job rigetti:rigetti:qpu:cepheus-1-108q-da4c-qjob-6adbf6282a6c33b9a67fccdd, 2026-10-24) was a Bell circuit with 20 shots. Counts: 11=11, 00=9, and no 01 or 10 outcomes. It went from submit to done in 22 seconds and billed 4.17 qBraid credits (about $0.04). Twenty shots is a demo, not a fidelity measurement.
 
