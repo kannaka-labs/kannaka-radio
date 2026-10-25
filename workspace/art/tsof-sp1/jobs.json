@@ -1,0 +1,223 @@
+{
+ "show": "tsof",
+ "episode": 90,
+ "template_sha256": "6de21000db839b5f908b7a3ab11139a47c2a543ad6e07b0f07b6e1182389d3b6",
+ "tail": "monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+ "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+ "rules": [
+  "No faces at all: figures are seen from behind, in silhouette, or out of frame.",
+  "No text, letters, logos or signs anywhere in the image.",
+  "Cyan appears only on computation or instruments (screens, indicator lamps, gauges), never on people or scenery."
+ ],
+ "jobs": [
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "cover",
+   "subject": "a stone county courthouse on a small island in a wide slow brown river, a low bridge at each end, July heat haze, seen from far down the riverbank at dusk, industrial-noir mood",
+   "prompt": "a stone county courthouse on a small island in a wide slow brown river, a low bridge at each end, July heat haze, seen from far down the riverbank at dusk, industrial-noir mood, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "94e4a91b00e31674644dc21bc2d0cf0519c15ce85f7df79a29c71e15ce12793d",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1823722813,
+   "file": "tsof-e090-cover-s1823722813.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "fence-night",
+   "subject": "a lone old man in a long charcoal wool coat seen from behind, holding a grey felt hat in his hands, standing beside a small concrete control house inside a chain-link substation fence at four in the morning, sodium floodlight, steel lattice and insulators around him",
+   "prompt": "a lone old man in a long charcoal wool coat seen from behind, holding a grey felt hat in his hands, standing beside a small concrete control house inside a chain-link substation fence at four in the morning, sodium floodlight, steel lattice and insulators around him, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "5880934aa30dca0530a202b734dd1aba0f56316c221c34b44d812808913ddd71",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 268083799,
+   "file": "tsof-e090-fence-night-s268083799.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "insulators",
+   "subject": "close view of porcelain insulators and steel bus bars in an electrical substation at night, cold blue light, heavy shadows, no people",
+   "prompt": "close view of porcelain insulators and steel bus bars in an electrical substation at night, cold blue light, heavy shadows, no people, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "4b6408fcea66e2cc4ad721c9ecdbeb8d5bd236c646512c09ad3aa269cb5de1a9",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3307260809,
+   "file": "tsof-e090-insulators-s3307260809.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "tray",
+   "subject": "a grey plastic security tray on rollers holding a ring with two brass keys, a black fountain pen, a folded grey felt hat and a plain white envelope, cold fluorescent light, close still life",
+   "prompt": "a grey plastic security tray on rollers holding a ring with two brass keys, a black fountain pen, a folded grey felt hat and a plain white envelope, cold fluorescent light, close still life, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "aa836087d0dd6f9b27e124afc94c5cfbbd9b3b3fc7e29f1f4c07d1f549cf31d5",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 148756430,
+   "file": "tsof-e090-tray-s148756430.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "cardigans",
+   "subject": "empty office chairs in a cold government room with knitted cardigans hung over their backs, pale blue air-conditioned light, venetian blind shadows",
+   "prompt": "empty office chairs in a cold government room with knitted cardigans hung over their backs, pale blue air-conditioned light, venetian blind shadows, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "e37302ad3bc6390d59df8aefc6a3a032e1ff7a9302547d0ca6b403e999367710",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2275345936,
+   "file": "tsof-e090-cardigans-s2275345936.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "courtroom",
+   "subject": "a small plain courtroom with four rows of empty wooden chairs, two tables and a raised wooden bench, a single flag on a pole, afternoon light through tall windows, empty of people",
+   "prompt": "a small plain courtroom with four rows of empty wooden chairs, two tables and a raised wooden bench, a single flag on a pole, afternoon light through tall windows, empty of people, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "ec4b3ef5cbfa6296cf73d41a2ecb5a43ccffb357faef7bfc18aa5d7b63de9718",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1665797931,
+   "file": "tsof-e090-courtroom-s1665797931.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "coat",
+   "subject": "a charcoal wool overcoat buttoned to the collar on an old man seen from behind, sitting very still on a wooden courtroom chair, his hands folded in his lap, warm dust in the window light",
+   "prompt": "a charcoal wool overcoat buttoned to the collar on an old man seen from behind, sitting very still on a wooden courtroom chair, his hands folded in his lap, warm dust in the window light, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "030038142d4c935c679b842486e3c2060841ca0b18bef736e45ed82d473e096f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 926026295,
+   "file": "tsof-e090-coat-s926026295.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "folder",
+   "subject": "a woman with short grey hair seen from behind sitting at a wooden table with a plain closed manila folder squared to the table edge, courtroom light",
+   "prompt": "a woman with short grey hair seen from behind sitting at a wooden table with a plain closed manila folder squared to the table edge, courtroom light, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "9dcce4712ffd3818a115f05d5ba6433d6427a1234fc9c8c712e4198dbb2fd250",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2419286048,
+   "file": "tsof-e090-folder-s2419286048.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "regulator",
+   "subject": "a large grey voltage regulator tank in an electrical substation yard in hot afternoon sun, a work crew's orange cones and coiled cables beside it, no people",
+   "prompt": "a large grey voltage regulator tank in an electrical substation yard in hot afternoon sun, a work crew's orange cones and coiled cables beside it, no people, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "232255c205a7b038c0bc85d84bc3c451ee7b8e0ebc43949eb4aa404723ca76b1",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3261029860,
+   "file": "tsof-e090-regulator-s3261029860.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "gate",
+   "subject": "an open chain-link gate topped with barbed wire at an electrical substation in bright afternoon heat, the gravel yard beyond, long shadows, no people",
+   "prompt": "an open chain-link gate topped with barbed wire at an electrical substation in bright afternoon heat, the gravel yard beyond, long shadows, no people, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "2e0a04ea9a53e3925e67a63ec7d175828b8b67932c104c38222345357e057c52",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1299137625,
+   "file": "tsof-e090-gate-s1299137625.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "hat-hands",
+   "subject": "an old man's weathered hands holding a grey felt hat against a charcoal wool coat, close view, warm light, no face in frame",
+   "prompt": "an old man's weathered hands holding a grey felt hat against a charcoal wool coat, close view, warm light, no face in frame, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "ad4004b9a6e1f6f921e639c706941cc99a1ac3618da6cdf158b7082d051ea501",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2156729657,
+   "file": "tsof-e090-hat-hands-s2156729657.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "stairs",
+   "subject": "the top of a wide stone staircase in an old courthouse corridor, a woman with short grey hair seen from behind holding a manila folder against her chest, watching someone go down, tall windows",
+   "prompt": "the top of a wide stone staircase in an old courthouse corridor, a woman with short grey hair seen from behind holding a manila folder against her chest, watching someone go down, tall windows, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "8b9e7fc3d126b6317e6aeccfb8d99d657866cffd9c3261f21d581079a6247ef8",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3751065411,
+   "file": "tsof-e090-stairs-s3751065411.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "coins",
+   "subject": "a few coins and folded banknotes being counted out onto a worn wooden counter under a small brass grille, cool light, close view, no hands",
+   "prompt": "a few coins and folded banknotes being counted out onto a worn wooden counter under a small brass grille, cool light, close view, no hands, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "d6d26ee69985601591bdcbd6ec1fb189e090405e79c95f4978cc78f03886795e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 4204384223,
+   "file": "tsof-e090-coins-s4204384223.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "jury-bench",
+   "subject": "a man in work coveralls seen from behind sitting on a long wooden bench in a courthouse hallway, a metal lunch pail between his boots, afternoon light",
+   "prompt": "a man in work coveralls seen from behind sitting on a long wooden bench in a courthouse hallway, a metal lunch pail between his boots, afternoon light, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "0a2ef6b86ce04b39f8f5f33d778cf3dfccee728f0507eb6b784f9cb74f80257e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2665915952,
+   "file": "tsof-e090-jury-bench-s2665915952.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "railing",
+   "subject": "two men seen from behind standing at an iron railing on courthouse steps above a wide slow brown river, one holding a jacket over his arm, the other in a long charcoal coat and hat, summer heat haze",
+   "prompt": "two men seen from behind standing at an iron railing on courthouse steps above a wide slow brown river, one holding a jacket over his arm, the other in a long charcoal coat and hat, summer heat haze, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "498b9ad478d94e3de5640803a588ecd18e22081bdd3c728e01b0ea05b2a6199c",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3722460604,
+   "file": "tsof-e090-railing-s3722460604.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "bridge",
+   "subject": "an old man in a long charcoal coat and grey hat seen from behind walking away across a low concrete bridge over a brown river in hot afternoon light, heat shimmer on the road",
+   "prompt": "an old man in a long charcoal coat and grey hat seen from behind walking away across a low concrete bridge over a brown river in hot afternoon light, heat shimmer on the road, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "49e20b130062c3e82bf5a22fef7971a53154e7cf8c42f298996268a26bd45388",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2746236151,
+   "file": "tsof-e090-bridge-s2746236151.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "folios",
+   "subject": "a long wooden table in a quiet county records room holding three large closed leather map folios, dust in a shaft of afternoon light, no people",
+   "prompt": "a long wooden table in a quiet county records room holding three large closed leather map folios, dust in a shaft of afternoon light, no people, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "9bb0cc923f1ffe8de77daf028742b43625d9ae164fb92a3554f5fbed0fdbe5de",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 4203730574,
+   "file": "tsof-e090-folios-s4203730574.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "laundromat",
+   "subject": "a lit upstairs window above a small corner laundromat at night, rows of dryers glowing warm through the plain ground-floor glass, a man's dark silhouette at the upstairs window, quiet empty street",
+   "prompt": "a lit upstairs window above a small corner laundromat at night, rows of dryers glowing warm through the plain ground-floor glass, a man's dark silhouette at the upstairs window, quiet empty street, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "54c55be8746a54a9c427e3ea0a1bb37ec155556b218c2cb4b8c6acc69bccc67f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2047634304,
+   "file": "tsof-e090-laundromat-s2047634304.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 90,
+   "slug": "public-road",
+   "subject": "a small electrical substation at the edge of a cornfield at dusk seen from a gravel public road, an old man in a long coat and hat seen from behind standing on the road outside the fence, power lines against an orange sky",
+   "prompt": "a small electrical substation at the edge of a cornfield at dusk seen from a gravel public road, an old man in a long coat and hat seen from behind standing on the road outside the fence, power lines against an orange sky, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "239e330068be15c30b4e0dd4779ce27db19d4f36c088a78af2ee075fc4a02958",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 4116997586,
+   "file": "tsof-e090-public-road-s4116997586.png"
+  }
+ ]
+}
