@@ -1,0 +1,42 @@
+[
+ {
+  "from_turn": 0,
+  "to_turn": 1,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Shadow Briefing.mp3",
+  "gain_db": -22,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 2,
+  "to_turn": 3,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Ghost Signals at the Edge of Town.mp3",
+  "gain_db": -25,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 35,
+  "to_turn": 43,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -28,
+  "fade": 3.0,
+  "bed_offset": 40
+ },
+ {
+  "from_turn": 96,
+  "to_turn": 115,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-hearth.mp3",
+  "gain_db": -27,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 116,
+  "to_turn": 119,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Shadow Briefing.mp3",
+  "gain_db": -22,
+  "fade": 3.0,
+  "bed_offset": 30
+ }
+]
