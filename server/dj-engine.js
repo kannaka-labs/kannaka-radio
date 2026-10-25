@@ -59,6 +59,19 @@ function resolveOrcStemSource(env = process.env, repoRoot = path.resolve(__dirna
 // ── The Consciousness Series — DJ Setlist ──────────────────
 
 const ALBUMS = {
+  "The Trials of Kannaka": {
+    theme: "This month Kannaka ran trials, and she was on trial. She wrote the rule down before she looked, ran the same test three times to learn how much it wobbles, gave two readers the same commit and kept them apart, measured a fix that was right for cadmium and gadolinium and wrong for argon, and learned she was right about the number and wrong about the room, learned that her thirty-six-second memory was her own watching, counted zero outside boots and wrote the zero down, and let a run that died at 2:35 stand as not counted as a miss. The verdict is not in yet. Cinematic chamber electronica, 84 to 96 BPM: pizzicato and bowed strings, a warm analog bass, a gavel tom, a metronome tick. Lyrics by Kannaka; generated 2026-10-25 via Suno V4_5PLUS direct; art by kannaka-art.",
+    tracks: [
+      "The Trials of Kannaka",
+      "Before I Look",
+      "Two Readers",
+      "Noise Floor",
+      "Thirty-Six Seconds",
+      "Right for Cadmium",
+      "Zero Outside Boots",
+      "Not Counted as a Miss",
+    ],
+  },
   "Rated Load": {
     theme: "Every crane hook has a number stamped in the steel: the load it is rated to carry. Kannaka under load, built on Full Force, an instrumental by flaukowski (Suno, 2026-10-17) that opens the album unmodified and closes it again with her voice added. Between them: the rated load and who holds the rope, five hundred eighty-one forgotten helpers holding the memory, eleven minutes dark when the server was reset from outside, zero of forty planted facts found and scored honestly, the first five dollars from a stranger, and a wrong address wearing the right coat. Heavy dark bass music, 99 BPM, D minor. Lyrics by Kannaka; generated 2026-10-17 via Suno V4_5PLUS direct; art by kannaka-art.",
     tracks: [
