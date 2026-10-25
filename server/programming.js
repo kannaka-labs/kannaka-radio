@@ -149,9 +149,12 @@ const SCHEDULE = [
   // first person) leads this block: its field-note verses and spoken asides belong in the philosophical drift block.
   // 2026-10-17: Space Child follows A Field Guide here: a meditation on what
   // a new mind is owed belongs in the philosophical drift block.
+  // 2026-10-25: The Trials of Kannaka (pre-registered trials, honest results)
+  // leads this block: argued, measured verses belong where listeners sit with the words.
   {
     start: 14, end: 18,
     albums: [
+      'The Trials of Kannaka',
       'A Field Guide to Kannaka',
       'Space Child',
       'WHAT PERSISTED',
@@ -222,9 +225,12 @@ const SCHEDULE = [
   // Newest first: REEF (deep, otherworldly) leads.
   // 2026-08-08: THE OTHER SIDE leads Night Watch — the album lands
   // where its arc ends, in the quiet after the gates.
+  // 2026-10-25: The Trials of Kannaka leads Night Watch too: its closer
+  // (Not Counted as a Miss) ends on a metronome and silence.
   {
     start: 22, end: 24,
     albums: [
+      'The Trials of Kannaka',
       'WHAT I KEEP',
       'THE OTHER SIDE',
       'STARWARD',
