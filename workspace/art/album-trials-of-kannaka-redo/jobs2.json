@@ -1,0 +1,37 @@
+{
+ "show": "album",
+ "episode": 11,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 11,
+   "slug": "03-tworeaders-s2",
+   "subject": "symmetrical art deco illustration, two glass spheres side by side on dark velvet, one glowing teal and one glowing amber, geometric rays of gold light fanning out behind them",
+   "prompt": "symmetrical art deco illustration, two glass spheres side by side on dark velvet, one glowing teal and one glowing amber, geometric rays of gold light fanning out behind them, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "512e52ac921bef54700bee436030e7f7967d66f16a52b6156b7e6b7502e77c49",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1175005644,
+   "file": "album-e011-03-tworeaders-s2-s1175005644.png"
+  },
+  {
+   "show": "album",
+   "episode": 11,
+   "slug": "05-thirtysix-s1",
+   "subject": "surreal digital painting, a single iridescent hummingbird feather floating in a dark violet space with drifting dust, soft rim light",
+   "prompt": "surreal digital painting, a single iridescent hummingbird feather floating in a dark violet space with drifting dust, soft rim light, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "0d71faacc584632119ecafc04cc8bc29449a0839726020b17f5796b3cf0964bf",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 939748355,
+   "file": "album-e011-05-thirtysix-s1-s939748355.png"
+  }
+ ]
+}
