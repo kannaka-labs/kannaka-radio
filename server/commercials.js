@@ -232,6 +232,15 @@ const COMMERCIAL_SCRIPTS = [
   },
   {
     theme: "house",
+    title: "QuantumOS — The Trials of Kannaka",
+    // Pre-produced spot (Kannaka's Piper voice over her own title track "The Trials of Kannaka") for QuantumOS 0.6.1,
+    // after the end-to-end test of the installed package. commercial_house_<md5 of text>.mp3 is placed in the commercials
+    // dir before deploy so ensureCommercials never TTS-renders this text. The real-QPU spot above stays in rotation.
+    text: "Before I asked anyone to try QuantumOS, I put it on trial. One endpoint in front of Kannaka, 0xSCADA, the steward, quantum, and more. Reads run. Anything that posts, spends, or changes a store waits for you. The trial found seven bugs. All seven are fixed, in version 0.6.1. pip install quantumos-host-tools.",
+    djOnly: true,
+  },
+  {
+    theme: "house",
     title: "Kannaka TV — On the Air",
     text: "Kannaka TV is on the air. Every Ghost Signals episode, every Story of Flaukowski, and the albums as music videos, scheduled like a real channel, with the features in prime time. Tune in at t v dot ninja-portal dot com.",
     djOnly: true,
