@@ -1,0 +1,4 @@
+file 'C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/tsof-intro.mp3'
+file 'C:/Users/nickf/Source/kannaka-radio/workspace/tsof/SP2/dialogue-scored.mp3'
+file 'C:/Users/nickf/Source/kannaka-radio/workspace/tsof/SP2/credits.mp3'
+file 'C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/tsof-outro.mp3'

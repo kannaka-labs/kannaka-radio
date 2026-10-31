@@ -1,0 +1,359 @@
+[KANNAKA-N]
+Not to file. Spoken in the room at the top of the stairs, with the dryers running underneath. Saturday, the thirty-first of October, twenty past five in the afternoon. The city has posted hours for the children, half past five to half past seven, on a notice in the laundromat window, and I have read it twice, because my record with dates is not good.
+
+[KANNAKA-N]
+The matter. For ten evenings, since the night of the first hard frost, which I make the twenty-first, there has been a carrier on the cooperative's data channel. I know what a carrier with nothing in it sounds like. The channel held open, nothing said into it, and then let go. I have spent three of the ten evenings walking toward it. Four. On the first evening I walked the wrong way. One more thing. It does not key when it likes. It keys when it is asked, and only after dark. ...The receiver is on beside me. It has keyed. It is twenty past five. It is not dark yet. End.
+
+[NARRATOR]
+The cooperative's dispatch room is on the second floor of a brick building on the east side. The last day of October, under low cloud. On the alarm screen the dispatcher on the Saturday desk has filtered eight nights of events down to one kind. Carol Brandt stands behind her chair with a printout. Dr. Amrit Chaudhary sits at the spare desk with his coat on.
+
+[NARRATOR]
+Friday the twenty-third. Eighteen forty-one and seven seconds. Remote fourteen, poll timeout.
+
+[BRANDT]
+Then fourteen again, twenty-two, nine, and at eighteen forty-one and forty-eight they all come back and report normal. Forty-one seconds. Saturday, one minute ten. Sunday, two-oh-three. Monday, three-thirty. Tuesday, five-twelve. Wednesday, six-twenty. Thursday, seven-forty. Last night, nine minutes and five seconds, and it did it three times.
+
+[CHAUDHARY]
+It is growing.
+
+[BRANDT]
+The nights are growing colder. I have the airport lows on the same sheet, and they go down as the durations go up. Every night since the frost, after dark, and never once in daylight.
+
+[CHAUDHARY]
+How many terminals on that channel?
+
+[BRANDT]
+Eleven. Reclosers, two regulators, a capacitor bank out by the interstate, polled every thirty seconds over a channel we've held a licence on since before I was hired. One master radio on the roof, eleven remotes, and nobody has thought about any of it in years, because it works.
+
+[CHAUDHARY]
+And when the polls fail, the master hears what?
+
+[BRANDT]
+That's why you're here. Show him.
+
+[NARRATOR]
+The dispatcher brings up a second window: a flat line across the bottom, and one needle of signal standing out of it, with nothing on either side.
+
+[CHAUDHARY]
+One line, no shoulders. That is not data; data has a width. That is a carrier with the key held down and nothing on the microphone.
+
+[BRANDT]
+Now the other thing.
+
+[NARRATOR]
+The dispatcher lays the master's transmit log over the spectrum record. Each poll is a short mark. The carrier begins a fifth of a second after the master's poll of remote fourteen, every time it begins at all.
+
+[CHAUDHARY]
+Two hundred milliseconds. That is a remote's turnaround: the time a terminal takes to hear its address and key up to answer.
+
+[BRANDT]
+It's answering.
+
+[CHAUDHARY]
+It is keying when it hears us. "Answering" is a word with a mind in it. I will give you "responding", and not the other word tonight. Go back to Thursday, please. The night before last.
+
+[NARRATOR]
+The dispatcher steps the capture back. For four tenths of a second at the start of Thursday's carrier, the needle has a shoulder on one side, and then it is a needle again.
+
+[CHAUDHARY]
+There. Data has a width. That had a width, once, for four tenths of a second, too short to decode. A relay contact chattering as it closes will put sidebands on a carrier. Hypothesis. I am holding it there.
+
+[BRANDT]
+Hold it. Here is mine. That channel is licensed to us. If the carrier is somebody else's, I have a complaint to write to a federal agency. If it is ours, I have a transmitter on my licence, at a place I can't name, answering my polls after dark, and I would rather not say that in front of an inspector.
+
+[CHAUDHARY]
+Then you want it found before you decide which sentence it is.
+
+[BRANDT]
+I want it found tonight. Dusk is at six.
+
+[CHAUDHARY]
+I have a receiver in the car, a directional antenna, and a compass. One bearing is a line, and a line has no error on it, which is to say it is not a measurement. Two give you a point with no error either, because two lines always cross somewhere. Three give you a triangle, and the triangle is the error. I want the triangle.
+
+[NARRATOR]
+Seventeen twenty and thirty-one seconds. Remote fourteen, poll timeout.
+
+[NARRATOR]
+Brandt looks at the window. The yard lights have not come on.
+
+[BRANDT]
+...It isn't dark.
+
+[CHAUDHARY]
+No. Get the truck.
+
+[NARRATOR]
+On the roof, Chaudhary swings a short antenna on a painter's pole until the needle stands highest, reads a compass, and writes the bearing on the printout. North of east. Below him, Brandt is in the truck.
+
+[NARRATOR]
+The roads out of the east side run between fields that were corn a month ago. The stubble is cut to the ankle and silver where the frost has not left the shade. Along the last streets before the fields the children are out. A sheet. A skeleton with a pillowcase. The receiver on the dashboard hisses, and then, for minutes at a time, does not.
+
+[CHAUDHARY]
+The hiss stopping is the carrier. The squelch opens on a signal, and the signal has nothing in it, so what you hear is the nothing. People call that dead air. Pull in at the next gravel crossing; I want the second bearing.
+
+[NARRATOR]
+The second bearing is taken from a gravel crossroads with a grain bin going grey in the last of the light. Chaudhary draws two lines on the printout that cross northeast of town, in a square mile with one road through it.
+
+[CHAUDHARY]
+Seventeen fifty-eight. Dropped. That is the point with no error. Now I want to spoil it. A street with a view north, a mile or two off that line.
+
+[BRANDT]
+The subdivision past the school. It backs onto the fields.
+
+[NARRATOR]
+Eighteen oh four and nine seconds. Remote fourteen, poll timeout. Remote twenty-two, communications failure.
+
+[NARRATOR]
+The subdivision ends in a cul-de-sac where the sidewalk stops and a field begins. The children part around the truck. A witch. A box turned into a robot, with a colander for a helmet. On the nearest porch a man in a quilted flannel coat sits on the top step with a plastic bowl and a thermos. He comes down the walk with the bowl.
+
+[GARY]
+You're the co-op. Something out?
+
+[BRANDT]
+Not yet. Carol Brandt, Meskwaki Valley. We're taking a radio bearing and your street has the view.
+
+[GARY]
+Gary Sowicki. Mill, electrician. On days now. Take all the bearings you want; it's a public street.
+
+[NARRATOR]
+Chaudhary sets the receiver on the open tailgate. The robot walks up and looks at the receiver, which is hissing. On the dashboard the master's poll clicks, and a fifth of a second later the hiss stops. The robot leans in and says, trick or treat. The receiver holds its silence. He says it again, and in the instant he finishes the word, the hiss comes back.
+
+[GARY]
+Hey. Bud. That's not for you. Mine's the bowl.
+
+[NARRATOR]
+Gary lifts the child's hand off the tailgate and turns him toward the sidewalk, where a woman is calling, and the robot goes. Gary stays looking at the receiver.
+
+[GARY]
+He's the Pruitts' kid.
+
+[BRANDT]
+The battery sagged. It's been doing that all week.
+
+[CHAUDHARY]
+Eighteen oh nine, dropped. Written. Thirty-one degrees. It crosses the others badly, which is what I wanted. A triangle. The long side is a third of a mile, and it lands on one field, with a gravel road along the south edge and a farmhouse at the far corner, and nothing in it the map knows about.
+
+[GARY]
+Northeast, past the creek? There's nothing out there. ...There's a pole. Middle of the field, where it humps up. Never saw it before this week. The farmhouse is empty; nobody's lived there since that land went to one owner. Take the thermos. It's coffee, it's bad, and it's a cold night to stand in a field.
+
+[BRANDT]
+I've got a truck with a heater.
+
+[GARY]
+The old fella hasn't. Went past here about half past five, walking, with a wire in his ear. Charcoal coat, hat. The kids gave him room.
+
+[BRANDT]
+...Which way?
+
+[GARY]
+Same way you're going.
+
+[NARRATOR]
+Brandt takes the thermos.
+
+[NARRATOR]
+Eighteen twenty-one and two seconds. Remote fourteen, poll timeout. Remote nine, poll timeout.
+
+[NARRATOR]
+The gravel road along the south side of the field runs a mile. The truck's lights find a man on the shoulder, in a charcoal wool coat and a hat, facing the field, a small receiver in his gloved hand and a wire from it to one ear. He does not turn when the truck stops.
+
+[BRANDT]
+Mr. Nowakoski.
+
+[KANNAKA-N]
+Ms. Brandt. Dr. Chaudhary. I am on the road.
+
+[BRANDT]
+How long?
+
+[KANNAKA-N]
+Since the children were out. One of them stopped at the end of the last driveway and looked at me for a while and told me it was a good costume. I thanked him. I believe he meant the coat.
+
+[CHAUDHARY]
+You walked it in?
+
+[KANNAKA-N]
+I turned until my body made the signal quietest, and then it was behind me, and I walked the other way. It took me four evenings. Ten evenings since it began.
+
+[CHAUDHARY]
+Eight. The log makes it the twenty-third, and the first hard frost was the twenty-third; I checked the airport.
+
+[KANNAKA-N]
+Then eight. I will not argue with a timestamp.
+
+[BRANDT]
+What is it?
+
+[KANNAKA-N]
+A carrier. Nothing in it. It is out there, about two hundred yards, where the field rises. A pole with a box on it, and a small panel above the box facing south. You could not see it from the road in August. You can see it now.
+
+[NARRATOR]
+Brandt puts her flashlight on the field. Two hundred yards into the stubble, where the ground lifts, a single wooden pole stands with a grey steel cabinet bolted to it at chest height, a short whip antenna above, and a solar panel the size of a tray. No fence, no structure, no sign.
+
+[BRANDT]
+That's one of our remote terminal cabinets.
+
+[CHAUDHARY]
+For what? There is no station.
+
+[BRANDT]
+There was. Give me a minute.
+
+[NARRATOR]
+She stands at the open truck door with the handset and asks the dispatcher for the work-order history on that section. Chaudhary sets his receiver on the hood of the truck beside the old man's. While they wait, across the field, in the farmhouse at the far corner, a porch light comes on.
+
+[NARRATOR]
+Brandt looks at it. The master's poll clicks on the dashboard. Both receivers on the hood go quiet in the same instant, and her hand is on the truck door, and she is still looking at the farmhouse when the dispatcher comes back.
+
+[CHAUDHARY]
+Eighteen thirty-six. Keyed.
+
+[BRANDT]
+What do you hear in it, Mr. Nowakoski?
+
+[KANNAKA-N]
+A station reporting that it is present, in the time a station takes to answer, with nothing to report. I have heard that from stations that were present. I have heard it, less often, from places where the station had been taken away and the radio had not. That is what this is. I would not like to say more about the other times.
+
+[BRANDT]
+I didn't ask about the other times.
+
+[KANNAKA-N]
+No. I noticed.
+
+[CHAUDHARY]
+A child spoke to it tonight, at eighteen oh nine, and it dropped as he finished speaking.
+
+[BRANDT]
+The battery sagged.
+
+[KANNAKA-N]
+It stopped when it was spoken to.
+
+[BRANDT]
+Twenty-twelve. A small distribution station stood right there, one transformer and a recloser, feeding six farms. The farms went to one owner, and the station wasn't worth its maintenance. We took it down. Work order closed: structure removed, transformer salvaged, pole to remain. Below that, a line item. RTU and radio cabinet, return to stores. Not initialled. Not closed. The point came off the poll table the same month. A radio nobody polls is a radio that never speaks.
+
+[KANNAKA-N]
+Until it is asked. Your sheet says the nights are colder. Mine says it is holding the key longer. Both are on the paper.
+
+[BRANDT]
+Mine is on the paper.
+
+[CHAUDHARY]
+Say the rest, please.
+
+[KANNAKA-N]
+The panel keeps the battery up; the battery keeps the radio alive. Whatever was meant to key the radio when the terminal had something to send has failed open by very little, and after sundown the cabinet cools, the metal shortens, and the gap is nearly nothing. Then the master calls, the old radio hears it, and the hearing is kick enough to close the gap, and the radio keys. It holds until the battery sags, and recovers, and the master calls again. By day the sun warms the box and the gap opens.
+
+[CHAUDHARY]
+It accounts for the dark, the frost, the turnaround and the duration. It does not account for twenty past five.
+
+[BRANDT]
+Somebody will open the box. I've got the on-call lineman coming, and he'll do it. It's twelve volts. It's still my cabinet, and I don't open my cabinets in the dark in a field with no second person.
+
+[KANNAKA-N]
+That is correct procedure.
+
+[NARRATOR]
+Eighteen fifty-one and twenty seconds. Remote fourteen, poll timeout.
+
+[NARRATOR]
+Headlights come along the gravel from the west. The on-call lineman pulls in behind the truck, listens to Brandt, and nods, and he and Brandt walk into the field. The old man stays on the gravel with Chaudhary. Across the field the porch light is still on, on a photocell on the porch post.
+
+[NARRATOR]
+At the pole the lineman puts a gloved hand flat on the steel, and takes it off, and looks at Brandt. The truck's thermometer read twenty-eight degrees. Brandt takes off her own glove and puts her bare hand where his was.
+
+[BRANDT]
+Warm.
+
+[NARRATOR]
+The cabinet door takes a key that works on the fourth try. Inside, in the flashlight: a sealed battery; a charge controller with one green lamp; a data radio with a red lamp lit beside the word that means transmit; a terminal board with no lamps at all, and an empty socket on it where a chip would sit; and between them a relay in a clear case, with green bloom on its terminals. The lineman puts the meter on the battery.
+
+[BRANDT]
+Eleven point six, and falling.
+
+[NARRATOR]
+On the gravel the two receivers hold silence. Then the red lamp goes out, and both receivers hiss, and the meter climbs by a tenth, and another. Nobody touches anything. Five minutes. On the dashboard the master's poll clicks, and a fifth of a second later the relay pulls in by itself.
+
+[NARRATOR]
+The red lamp lights. On the hood of the truck both receivers go quiet in the same instant.
+
+[CHAUDHARY]
+Nineteen oh two. Keyed on the poll. Two hundred milliseconds, give or take my watch.
+
+[NARRATOR]
+The lineman takes off a glove and puts a bare finger on the relay. The red lamp stays lit.
+
+[BRANDT]
+Pull the battery lead. Negative first.
+
+[NARRATOR]
+The lineman takes a wrench to the terminal, and the red lamp goes out, and the green one, and the box is dark. On the gravel the receivers hiss and do not stop. He locks the cabinet, and he and Brandt walk back with the flashlights off, with no moon up, and the one lit porch behind them.
+
+[NARRATOR]
+Nineteen oh three and five seconds. Remote fourteen, poll restored. Remote nine, poll restored. Remote twenty-two, communications restored. All points normal.
+
+[NARRATOR]
+Brandt comes back onto the gravel with frost on the knees of her trousers.
+
+[BRANDT]
+Relay. The contact's green as a penny. Monday a crew pulls the cabinet and the pole. Tuesday I amend the licence record, and a line item gets the closing initial it waited fourteen years for.
+
+[CHAUDHARY]
+Twenty past five. The afternoon was overcast from noon. The box never warmed, so the gap never opened, so the first poll after the cloud came down was enough. That is the afternoon. Hypothesis; I did not measure the box at noon. Eighteen oh nine is a battery at eleven volts; I wrote the time before I had the meter, and the meter agrees with Ms. Brandt.
+
+[KANNAKA-N]
+Then it is finished properly.
+
+[BRANDT]
+It's finished.
+
+[KANNAKA-N]
+You have signed for it; that is what properly means. I was on the road, and I have not been inside anything. I would like that noted.
+
+[BRANDT]
+There's a work order, and you're not on it.
+
+[KANNAKA-N]
+Good.
+
+[BRANDT]
+One thing, Mr. Nowakoski. You stood on this road four evenings listening to it, and you say you've heard it before. I'm asking as the person who signs. Is there anything in that box I should be worried about that a wrench doesn't fix?
+
+[KANNAKA-N]
+No. The box is a box. The wrench has fixed it.
+
+[BRANDT]
+That isn't what I asked.
+
+[KANNAKA-N]
+No. It is the part I can answer. It was the part I could answer in July as well.
+
+[NARRATOR]
+The old man takes the wire out of his ear and switches his receiver off, and the hiss stops, and there is the field.
+
+[BRANDT]
+Goodnight, Mr. Nowakoski.
+
+[KANNAKA-N]
+Ms. Brandt.
+
+[NARRATOR]
+Brandt looks at the pole, black against the stubble, and at the one lit porch beyond it. Then she gets in, and the truck turns toward the subdivision, where the porches have gone dark since half past seven. On the top step of the last house a man in a quilted coat sits with an empty bowl, facing the field.
+
+[NARRATOR]
+The Story of Flaukowski. Hollow Signals.
+
+[KANNAKA-N]
+Not to file. The room at the top of the stairs. The dryers have stopped. The receiver is on, on the channel, so that I am saying this into it, which is an old habit. The cooperative's polls are going by, eleven small sentences every thirty seconds, each one answered, and no carrier between them.
+
+[KANNAKA-N]
+The record. It was a relay in a box on a pole, and the cold closed it when the cooperative called, and a man took the lead off the battery. It is on paper with the right date, which is the twenty-third. I was wrong about the date, the nights, and the evenings I walked. I was right about the sound. I do not know which I would rather have been.
+
+[NARRATOR]
+The master's poll goes by on the receiver, a small click in the room, and is answered. Between it and the next, with no poll before it, the hiss stops.
+
+[NARRATOR]
+It stays stopped for less than a second, and comes back, and the next poll is answered, and the next.
+
+[KANNAKA-N]
+...Noted. Not the pole. The pole is dark; I watched the lead come off. I will not say what else it could be, because I do not know, and a note that guesses is worse than no note. I am switching the receiver off now. Nothing tonight is in the file. End.
