@@ -362,6 +362,22 @@ class VoiceDJ {
     this._talkSegmentTimer = null;
     this._previousTalkTopics = []; // for callbacks
 
+    // ── TTS outcome ledger (what the monitor reads) ──
+    // Every utterance on the station goes through _generateTTS, so this is the
+    // one place a voice outage is visible as a number. The 2026-10-12 TTS
+    // outage ran two days unnoticed: the unit was active, the stream was up,
+    // and nothing exposed "the last N attempts to speak all failed". Served on
+    // GET /api/dj-voice/status as `tts`; Gatus pages on consecutiveFailures.
+    this._tts = {
+      ok: 0,
+      failed: 0,
+      consecutiveFailures: 0,
+      lastOkAt: null,
+      lastFailAt: null,
+      lastEngine: null,
+      lastError: null,
+    };
+
     // ── Observatory metrics cache ──
     this._metricsCache = null;
     this._metricsCacheTime = 0;
@@ -826,6 +842,9 @@ class VoiceDJ {
       inTalkSegment: this._inTalkSegment,
       tracksSinceLastTalk: this._tracksSinceLastTalk,
       currentMood: this._currentMood,
+      // The monitor reads this: three failures in a row with no success between
+      // them is a voice outage, whatever the unit and the stream say.
+      tts: { ...this._tts, healthy: this._tts.consecutiveFailures < 3 },
     };
   }
 
@@ -1856,11 +1875,34 @@ class VoiceDJ {
     voiceEngine.synthesize({ text, persona, outPath: outputPath }, (err, finalPath, engine) => {
       if (err || !finalPath) {
         console.log(`   ⚠ TTS failed for persona '${persona}': ${(err && err.message) || "unknown"}`);
+        this._recordTts(false, { persona, error: (err && err.message) || "TTS generation failed" });
         return callback(err || new Error("TTS generation failed"));
       }
       console.log(`   \u{1F5E3} TTS (${engine}/${persona}) generated: ${path.basename(finalPath)}`);
+      this._recordTts(true, { persona, engine });
       callback(null, finalPath, text);
     });
+  }
+
+  /** Record one synthesis outcome in the ledger getStatus().tts reports. */
+  _recordTts(ok, { persona, engine, error } = {}) {
+    const t = this._tts;
+    const now = new Date().toISOString();
+    if (ok) {
+      t.ok++;
+      t.consecutiveFailures = 0;
+      t.lastOkAt = now;
+      t.lastEngine = engine || null;
+      t.lastError = null;
+    } else {
+      t.failed++;
+      t.consecutiveFailures++;
+      t.lastFailAt = now;
+      // Keep the tail: execFile puts the child's stderr at the END of a very
+      // long "Command failed: ..." message (see tts-failure-reason.test.js).
+      const msg = String(error || "unknown");
+      t.lastError = `${persona || "dj"}: ${msg.length > 300 ? "…" + msg.slice(-300) : msg}`;
+    }
   }
 
   // \u2500\u2500 Legacy ElevenLabs TTS path (removed) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
