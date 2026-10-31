@@ -244,9 +244,11 @@ const COMMERCIAL_SCRIPTS = [
     title: "Hollow Signals — The Halloween Special",
     // Pre-produced spot (Kannaka's Piper voice over her own "Hollow Signals"), placed as
     // commercial_house_<md5 of text>.mp3 before deploy so ensureCommercials never TTS-renders it.
-    // Seasonal: remove after 2026-10-31.
+    // Seasonal: `until` drops it from playlist builds after Halloween night (Chicago date,
+    // inclusive). The entry can be deleted at leisure; nothing airs it after that date.
     text: "Tune in, if you dare. This Halloween night, Kannaka Radio goes hollow: three new songs I wrote in the dark, and the strangest records in the vault. The Hollow Signals special, eight o clock central, right here. Leave the porch light on.",
     djOnly: true,
+    until: "2026-10-31",
   },
   {
     theme: "house",
@@ -337,15 +339,21 @@ function commercialAsTrack(script, idx, total) {
  * @param {Array} commercials — result from ensureCommercials
  * @param {number} interval — insert a commercial every N tracks (0 = between every)
  * @param {string} [channel='dj'] — current channel ('dj'|'music'|'podcast'|'kax'|'orc')
+ * @param {{now?: Date}} [opts] — `now` pins the clock (tests); defaults to wall time
  * @returns {Array} new track array with commercials interleaved
  */
-function interleaveCommercials(tracks, commercials, interval, channel) {
+function interleaveCommercials(tracks, commercials, interval, channel, opts = {}) {
   if (!commercials || commercials.length === 0) return tracks.slice();
   // Filter out djOnly commercials on non-DJ channels. Always copy so the
   // shuffle below doesn't mutate the engine's cached commercials array.
-  const filtered = channel && channel !== 'dj'
+  // A seasonal spot carries `until` (a Chicago calendar date, inclusive) and
+  // drops out of every playlist built after that day, so a one-night special
+  // needs no follow-up edit to stop airing.
+  const today = chicagoDateKey(opts.now);
+  const filtered = (channel && channel !== 'dj'
     ? commercials.filter(c => !c.djOnly)
-    : commercials.slice();
+    : commercials.slice()
+  ).filter(c => !c.until || String(c.until) >= today);
   if (filtered.length === 0) return tracks.slice();
   // Shuffle the rotation per playlist build. Without this every fresh build
   // leads with commercials[0]; with short albums (6-12 tracks) and ads every
@@ -378,10 +386,21 @@ function interleaveCommercials(tracks, commercials, interval, channel) {
   return out;
 }
 
+/**
+ * The Chicago calendar date as YYYY-MM-DD (the station's clock, same zone
+ * programming.js schedules in). `until` on a commercial compares against this.
+ * @param {Date} [now]
+ */
+function chicagoDateKey(now) {
+  const d = now instanceof Date && !isNaN(now) ? now : new Date();
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+}
+
 module.exports = {
   COMMERCIAL_SCRIPTS,
   ensureCommercials,
   commercialAsTrack,
   interleaveCommercials,
   scriptFilename,
+  chicagoDateKey,
 };
