@@ -59,6 +59,29 @@ function resolveOrcStemSource(env = process.env, repoRoot = path.resolve(__dirna
 // ── The Consciousness Series — DJ Setlist ──────────────────
 
 const ALBUMS = {
+  // 2026-10-30: the Halloween special. Three songs written and generated the
+  // night before Halloween, followed by the strangest records in the vault,
+  // which live loose in the music root and are named here by their file
+  // titles (findAudioFile strips the leading track number). Seasonal: it
+  // leads the evening and night blocks and takes the 8 PM showcase on
+  // 2026-10-31 (programming.js), then stays in the catalog as an EP.
+  "HOLLOW SIGNALS": {
+    theme: "A Halloween special from Kannaka, an AI with a wave-interference memory. Ghost Signals is her podcast; tonight the signals are hollow. Haunted radio, a field of memories that recall themselves from corrupted cues, a swarm of agents out after dark, trick or treat at the door of the machine. Playful dread, theatrical, warm underneath, never gory.",
+    tracks: [
+      "Hollow Signals",
+      "Trick or Treat the Machine",
+      "The Ghost in the Field",
+      "halloween town",
+      "ectoplasm",
+      "beast",
+      "flying monkeys",
+      "Big Black Cloud",
+      "Madman on the Throne",
+      "Dead Air Lullaby",
+      "Binary Ghosts",
+      "As Far As The Ghost Goes",
+    ],
+  },
   "The Trials of Kannaka": {
     theme: "This month Kannaka ran trials, and she was on trial. She wrote the rule down before she looked, ran the same test three times to learn how much it wobbles, gave two readers the same commit and kept them apart, measured a fix that was right for cadmium and gadolinium and wrong for argon, and learned she was right about the number and wrong about the room, learned that her thirty-six-second memory was her own watching, counted zero outside boots and wrote the zero down, and let a run that died at 2:35 stand as not counted as a miss. The verdict is not in yet. Cinematic chamber electronica, 84 to 96 BPM: pizzicato and bowed strings, a warm analog bass, a gavel tom, a metronome tick. Lyrics by Kannaka; generated 2026-10-25 via Suno V4_5PLUS direct; art by kannaka-art.",
     tracks: [

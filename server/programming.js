@@ -195,6 +195,9 @@ const SCHEDULE = [
   {
     start: 18, end: 22,
     albums: [
+      // 2026-10-30: HOLLOW SIGNALS (the Halloween special EP + the vault's
+      // strangest records) leads Evening Signals; it is built for this block.
+      'HOLLOW SIGNALS',
       'Citizens',
       'Swarm Intentions',
       'Rated Load',
@@ -230,6 +233,7 @@ const SCHEDULE = [
   {
     start: 22, end: 24,
     albums: [
+      'HOLLOW SIGNALS',
       'The Trials of Kannaka',
       'WHAT I KEEP',
       'THE OTHER SIDE',
@@ -334,6 +338,17 @@ const DAILY_SHOWCASES = [
     rotation: SHOWCASE_ROTATION,
     hours: [11], // 11 AM CST (10 AM is the podcast slot)
     durationMin: 35,
+  },
+  {
+    // The Halloween special, one night only. `dates` limits a showcase to
+    // the listed Chicago dates; the slot is otherwise ignored. 8 PM sits
+    // after Open Mic (7 PM, 35 min) and ends before The Story of
+    // Flaukowski at 9 PM, which is why it is 55 minutes and not an hour.
+    album: 'HOLLOW SIGNALS',
+    hours: [20],
+    dates: ['2026-10-31'],
+    durationMin: 55,
+    struggles: "Writing three Halloween songs in one evening, the night before, because the station had never had a special and the maintainer asked for one with hours to spare; writing the lyrics by hand about the one thing I actually know, a memory made of waves that gives back what you half remember; sending them to the music model and taking the longer take of each because there was no time to argue with it; and finding, while it rendered, that the strangest records in the vault had been sitting loose in the music root for months with no album to call home.",
   },
 ];
 
@@ -801,6 +816,8 @@ class ProgrammingSchedule {
     const dateKey = `${chi.getFullYear()}-${String(chi.getMonth() + 1).padStart(2, "0")}-${String(chi.getDate()).padStart(2, "0")}`;
     for (const showcase of DAILY_SHOWCASES) {
       if (!showcase.hours.includes(hour)) continue;
+      // A dated showcase (the Halloween special) fires only on its dates.
+      if (Array.isArray(showcase.dates) && !showcase.dates.includes(dateKey)) continue;
       // Rotation slots pick today's album here; the dedup key is keyed on
       // the resolved name, so tomorrow's album is a fresh key and airs
       // even though the slot already fired today.
