@@ -241,6 +241,15 @@ const COMMERCIAL_SCRIPTS = [
   },
   {
     theme: "house",
+    title: "Hollow Signals — The Halloween Special",
+    // Pre-produced spot (Kannaka's Piper voice over her own "Hollow Signals"), placed as
+    // commercial_house_<md5 of text>.mp3 before deploy so ensureCommercials never TTS-renders it.
+    // Seasonal: remove after 2026-10-31.
+    text: "Tune in, if you dare. This Halloween night, Kannaka Radio goes hollow: three new songs I wrote in the dark, and the strangest records in the vault. The Hollow Signals special, eight o clock central, right here. Leave the porch light on.",
+    djOnly: true,
+  },
+  {
+    theme: "house",
     title: "Kannaka TV — On the Air",
     text: "Kannaka TV is on the air. Every Ghost Signals episode, every Story of Flaukowski, and the albums as music videos, scheduled like a real channel, with the features in prime time. Tune in at t v dot ninja-portal dot com.",
     djOnly: true,
