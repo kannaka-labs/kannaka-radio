@@ -1,0 +1,145 @@
+[
+ {
+  "from_turn": 0,
+  "to_turn": 1,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -27,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 2,
+  "to_turn": 3,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Hollow Signals.mp3",
+  "gain_db": -24,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 24,
+  "to_turn": 29,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Hollow Signals.mp3",
+  "gain_db": -22,
+  "fade": 3.0,
+  "bed_offset": 30
+ },
+ {
+  "from_turn": 31,
+  "to_turn": 35,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Trick or Treat the Machine.mp3",
+  "gain_db": -23,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 51,
+  "to_turn": 52,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Ghost in the Field.mp3",
+  "gain_db": -22,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 63,
+  "to_turn": 63,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Ghost in the Field.mp3",
+  "gain_db": -24,
+  "fade": 2.5,
+  "bed_offset": 45
+ },
+ {
+  "from_turn": 67,
+  "to_turn": 69,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -27,
+  "fade": 3.0,
+  "bed_offset": 60
+ },
+ {
+  "from_turn": 85,
+  "to_turn": 87,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/The Ghost in the Field.mp3",
+  "gain_db": -23,
+  "fade": 3.0,
+  "bed_offset": 90
+ },
+ {
+  "from_turn": 89,
+  "to_turn": 91,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -28,
+  "fade": 2.0,
+  "bed_offset": 120
+ },
+ {
+  "from_turn": 113,
+  "to_turn": 114,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Hollow Signals.mp3",
+  "gain_db": -23,
+  "fade": 3.0,
+  "bed_offset": 150
+ },
+ {
+  "from_turn": 115,
+  "to_turn": 116,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -30,
+  "fade": 2.0,
+  "bed_offset": 200
+ },
+ {
+  "sfx_before_turn": 2,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/squelch-close.mp3",
+  "gain_db": -12
+ },
+ {
+  "sfx_before_turn": 3,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/alerts.mp3",
+  "gain_db": -14
+ },
+ {
+  "sfx_before_turn": 11,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/keyboard.mp3",
+  "gain_db": -14
+ },
+ {
+  "sfx_before_turn": 24,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/alerts.mp3",
+  "gain_db": -14
+ },
+ {
+  "sfx_before_turn": 29,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/truck-door.mp3",
+  "gain_db": -10
+ },
+ {
+  "sfx_before_turn": 35,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/children-distant.mp3",
+  "gain_db": -10
+ },
+ {
+  "sfx_before_turn": 52,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/corn-wind.mp3",
+  "gain_db": -12
+ },
+ {
+  "sfx_before_turn": 77,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/paper-page.mp3",
+  "gain_db": -10
+ },
+ {
+  "sfx_before_turn": 89,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/cabinet-door.mp3",
+  "gain_db": -8
+ },
+ {
+  "sfx_before_turn": 92,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/relay-clunk.mp3",
+  "gain_db": -8
+ },
+ {
+  "sfx_before_turn": 117,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/data-burst.mp3",
+  "gain_db": -20
+ }
+]
