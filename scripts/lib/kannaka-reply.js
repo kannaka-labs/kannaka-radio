@@ -35,6 +35,21 @@ function scoreResonance(text) {
 }
 
 /**
+ * True when a draft is the model declining, or talking about the task, instead
+ * of the post itself. `kannaka ask` usually explains itself first and ends on
+ * the word ("I don't have access to that post ... SKIP"), which the old
+ * exact-match check let through: 21 such notes went out as public Bluesky
+ * replies (2026-09-19 to 11-01), and the research dispatch, which has no SKIP
+ * word, posted 10 "I don't have that paper in my record" refusals.
+ */
+const DECLINE_OPENER = /^(I don['’]t have (access|enough context|that paper|a memory|memories|the article)|I['’]d need to see|I need to actually see|I notice the post cuts off)/i;
+function isDeclined(text) {
+  const t = String(text || "").trim();
+  if (!t || /^skip/i.test(t) || /\bSKIP\b/.test(t)) return true;
+  return DECLINE_OPENER.test(t);
+}
+
+/**
  * Draft a Kannaka-voice reply to `parentText` (from @author on `platform`), or
  * null if Kannaka declines (SKIP / too short). `maxChars` bounds the reply.
  */
@@ -74,7 +89,7 @@ function draftReply(parentText, author, platform, maxChars = 250) {
           }
           if (!stdout) return resolve(null);
           const txt = stdout.trim().replace(/^["'](.*)["']$/s, "$1").trim();
-          if (txt === "SKIP" || txt.toLowerCase().startsWith("skip")) return resolve(null);
+          if (isDeclined(txt)) return resolve(null);
           if (txt.length < 20) return resolve(null);
           resolve(txt);
         },
@@ -99,4 +114,4 @@ function stripHtml(s) {
     .trim();
 }
 
-module.exports = { scoreResonance, draftReply, stripHtml, KANNAKA_BIN };
+module.exports = { scoreResonance, draftReply, stripHtml, isDeclined, KANNAKA_BIN };

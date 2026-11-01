@@ -109,7 +109,9 @@ function harnessFor(scriptPath) {
     "  }",
     "  const grounded = JSON.stringify({ title: 'A paper', year: 2025, citations: 2, theme: 't', phi: 0.4, xi: 0.4, num_clusters: 3,",
     "    text: 'grounded line', openalex_id: 'https://openalex.org/W7115921653' });",
-    "  const stdout = args[0] === 'dispatch' ? (mode === 'grounded' ? grounded : '{}') : 'stub draft';",
+    "  const refusal = \"I don't have that paper in my record. I can't draft a post claiming what I haven't resonated with.\";",
+    "  const stdout = args[0] === 'dispatch' ? (mode === 'grounded' || mode === 'refusal' ? grounded : '{}')",
+    "    : (mode === 'refusal' ? refusal : 'stub draft');",
     "  process.nextTick(() => cb(null, stdout, ''));",
     "  return { pid: 0 };",
     "};",
@@ -175,6 +177,22 @@ run('the harness would catch a gateless dispatch (the control)', () => {
 ${out}`);
 });
 
+
+// ------------------------------------------------- a refusal is not a post
+
+// 2026-09-13 to 10-31: ten research posts were the model declining ("I don't
+// have that paper in my record ... I won't fabricate"), fanned out as written.
+run('a composed refusal is replaced by the grounded line, never posted', () => {
+  const { code, out, seen } = runHarness(path.join(ROOT, 'scripts/post-research-dispatch.js'), 'refusal', 'refusal');
+  assert.strictEqual(code, 0, `exit ${code}\n${out}`);
+  assert.deepStrictEqual(seen.published, ['grounded line'],
+    `the refusal must not be fanned out: ${JSON.stringify(seen.published)}`);
+});
+
+run('a grounded compose still posts the composed draft (the control)', () => {
+  const { seen } = runHarness(path.join(ROOT, 'scripts/post-research-dispatch.js'), 'grounded', 'grounded');
+  assert.deepStrictEqual(seen.published, ['stub draft']);
+});
 
 // ------------------------------------------------- a failed dispatch is not a skip
 

@@ -22,6 +22,7 @@ const path = require("path");
 const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
 const { OpenBotCityClient } = require("../server/openbotcity");
+const { isDeclined } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
@@ -97,6 +98,12 @@ async function main() {
 
   let draft = await runKannaka(["ask", "--no-tools", "--quiet-tools", prompt], 600000);
   if (draft) draft = draft.replace(/^["'](.*)["']$/s, "$1").trim();
+  // A refusal ("I don't have that paper in my record...") is not a post; ten
+  // of them went out as research dispatches before this check.
+  if (draft && isDeclined(draft)) {
+    console.error("[research-dispatch] compose declined — posting the grounded line instead");
+    draft = null;
+  }
   if (!draft) draft = d.text; // grounded fallback — always have something real to say
   if (!draft) {
     console.error("[research-dispatch] compose returned empty — aborting");
