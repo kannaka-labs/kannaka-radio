@@ -1301,24 +1301,38 @@ storyScheduler.start();
 deps.storyScheduler = storyScheduler;
 
 // ── Programming schedule — time-of-day album rotation ────
-const { ProgrammingSchedule } = require("./programming");
+const { ProgrammingSchedule, DAILY_SHOWCASES } = require("./programming");
 const programming = new ProgrammingSchedule({
   djEngine,
   voiceDJ,
   broadcast,
   broadcastState,
-  getPodcastStatus: () => ({
-    podcastPlaying: podcastScheduler.getStatus().podcastPlaying ||
-                    tsofScheduler.getStatus().podcastPlaying ||
-                    featuredScheduler.getStatus().podcastPlaying ||
-                    storyScheduler.getStatus().podcastPlaying,
-  }),
+  getPodcastStatus: () => {
+    for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler]) {
+      const status = s.getStatus();
+      if (status.podcastPlaying) {
+        return { podcastPlaying: true, label: s._show.label };
+      }
+    }
+    return { podcastPlaying: false };
+  },
   // peaceOration is constructed below; pass a getter so the showcase
   // trigger resolves it lazily at tick time (60s+ later).
   peaceOration: { composeAlbumNarration: (...args) => peaceOration.composeAlbumNarration(...args) },
   dataDir: path.join(BASE_DIR, "workspace"),
   showcaseStateFile: path.join(BASE_DIR, "workspace", "showcase-state.json"),
 });
+
+// Issue #426: Detect and log collisions between DAILY_SHOWCASES and PodcastScheduler airHours
+for (const showcase of DAILY_SHOWCASES) {
+  for (const hour of showcase.hours) {
+    for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler]) {
+      if (s._show && Array.isArray(s._show.airHours) && s._show.airHours.includes(hour)) {
+        console.warn(`[programming] warning: showcase "${showcase.album || 'rotation'}" at ${hour}:00 collides with program "${s._show.label}"`);
+      }
+    }
+  }
+}
 
 // Wire programming into deps so routes can access it
 deps.programming = programming;
