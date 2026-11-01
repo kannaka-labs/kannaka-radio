@@ -432,6 +432,7 @@ class ProgrammingSchedule {
     this._overrideFile = require("path").join(opts.dataDir || "/tmp", "override-state.json");
     this._override = this._loadOverride();
     this._lastShowcaseFired = this._loadShowcaseState();
+    this._lastShowcaseYielded = {}; // log once per slot per day
     this._preparingShowcase = null; // guards against overlapping prep
   }
 
@@ -805,29 +806,45 @@ class ProgrammingSchedule {
   _checkShowcaseTrigger() {
     if (this._preparingShowcase) return;
     if (!this._peaceOration) return;
-    const podcastStatus = this._getPodcastStatus();
-    if (podcastStatus && podcastStatus.podcastPlaying) return;
 
     const chi = this._chicagoNow();
     const hour = chi.getHours();
     const minute = chi.getMinutes();
     if (minute > 14) return;
 
+    const podcastStatus = this._getPodcastStatus();
     const dateKey = `${chi.getFullYear()}-${String(chi.getMonth() + 1).padStart(2, "0")}-${String(chi.getDate()).padStart(2, "0")}`;
+
     for (const showcase of DAILY_SHOWCASES) {
       if (!showcase.hours.includes(hour)) continue;
       // A dated showcase (the Halloween special) fires only on its dates.
       if (Array.isArray(showcase.dates) && !showcase.dates.includes(dateKey)) continue;
+
       // Rotation slots pick today's album here; the dedup key is keyed on
       // the resolved name, so tomorrow's album is a fresh key and airs
       // even though the slot already fired today.
       const today = resolveShowcase(showcase, chi);
       if (!today) {
-        console.warn(`[programming] showcase slot ${hour}:00 has no album in the catalog — skipping`);
+        // Only warn if we're NOT yielding to a podcast; if a program is playing
+        // we'd have yielded anyway, so the "missing album" warning is noise.
+        if (!podcastStatus.podcastPlaying) {
+          console.warn(`[programming] showcase slot ${hour}:00 has no album in the catalog — skipping`);
+        }
         continue;
       }
+
       const key = `${dateKey}T${String(hour).padStart(2, "0")}-${today.album}`;
       if (this._lastShowcaseFired[key]) continue; // already fired today
+
+      // Issue #426: if a podcast is playing, we yield the slot. Log it once
+      // per slot per day so the operator knows why it didn't fire.
+      if (podcastStatus && podcastStatus.podcastPlaying) {
+        if (!this._lastShowcaseYielded[key]) {
+          console.log(`[programming] showcase ${today.album} yielded to ${podcastStatus.label || "scheduled program"}`);
+          this._lastShowcaseYielded[key] = true;
+        }
+        continue;
+      }
 
       const album = ALBUMS[today.album];
       this._preparingShowcase = key;
