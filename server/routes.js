@@ -60,6 +60,15 @@ function checkDeletePassword(password) {
 // DISABLED, not open. A dangerous route that nobody configured should refuse,
 // and a refusal is recoverable in a way a published credential is not.
 let _warnedNoAdminToken = false;
+// Constant-time token compare for the bearer gates below (the audit of
+// 2026-11-01 found two gates comparing secrets with ===).
+function safeTokenEqual(supplied, expected) {
+  if (typeof supplied !== "string" || typeof expected !== "string" || !expected) return false;
+  const a = Buffer.from(supplied), b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  try { return crypto.timingSafeEqual(a, b); } catch (_) { return false; }
+}
+
 function adminTriggerOk(req, res) {
   const token = process.env.RADIO_ADMIN_TOKEN;
   if (!token) {
@@ -1246,6 +1255,17 @@ module.exports = function setupRoutes(deps) {
           return;
         }
       }
+      // A client's claim that the track ended is not evidence that it did:
+      // in DJ mode an "ended" POST within the first 30 s of a track is a skip
+      // wearing the natural-end name (audit 2026-11-01).
+      if (djEngine.state.channel === 'dj') {
+        const elapsedMs = Date.now() - (djEngine.state.trackStartedAt || 0);
+        if (elapsedMs < 30000) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ ok: false, reason: "too_early" }));
+          return;
+        }
+      }
       // ADR-0004 Phase 2: when the Node-driven Icecast source owns the
       // stream, IT is the authoritative track-advance signal. SPA's
       // audio.ended → /api/next would race it and double-skip tracks.
@@ -1414,9 +1434,16 @@ module.exports = function setupRoutes(deps) {
     // Hologram GSHub POSTs market resolutions here and we forward them
     // to the local stem-server at 127.0.0.1:3001 for persistence.
     if (parsed.pathname.match(/^\/api\/orc\/resonance\/[^/]+$/) && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       const stemId = parsed.pathname.split('/').pop();
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(stemId)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid stem id" }));
+        return;
+      }
       let body = "";
-      req.on("data", c => body += c);
+      let tooLarge = false;
+      req.on("data", c => { if (tooLarge) return; body += c; if (body.length > 65536) { tooLarge = true; res.writeHead(413, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "body too large" })); req.destroy(); } });
       req.on("end", () => {
         const data = body || "{}";
         const opts = {
@@ -1595,7 +1622,7 @@ module.exports = function setupRoutes(deps) {
       // never silently open.
       const ORACLE_TOKEN = process.env.GSHUB_ORACLE_TOKEN || "";
       const oracleAuthorized = () =>
-        ORACLE_TOKEN && req.headers["authorization"] === `Bearer ${ORACLE_TOKEN}`;
+        ORACLE_TOKEN && safeTokenEqual(req.headers["authorization"], `Bearer ${ORACLE_TOKEN}`);
       const denyOracle = () =>
         sendJson(ORACLE_TOKEN ? 403 : 503, {
           ok: false,
@@ -1980,6 +2007,8 @@ module.exports = function setupRoutes(deps) {
         try {
           const { filename } = JSON.parse(body);
           if (!filename) throw new Error("filename required");
+          // A queue entry names a library file, never a path (audit 2026-11-01).
+          if (typeof filename !== "string" || /[\\/]|\.\./.test(filename)) throw new Error("filename must be a bare library name");
           const queue = djEngine.addToQueue(filename);
           config.broadcastQueue();
           res.writeHead(200, { "Content-Type": "application/json" });
@@ -2020,6 +2049,7 @@ module.exports = function setupRoutes(deps) {
 
     // POST /api/dj-voice/toggle
     if (parsed.pathname === "/api/dj-voice/toggle" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       const enabled = voiceDJ.toggle();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ enabled }));
@@ -2037,6 +2067,7 @@ module.exports = function setupRoutes(deps) {
 
     // POST /api/live/start
     if (parsed.pathname === "/api/live/start" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       live.start();
       flux.publishLiveStatus(true);
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -2046,6 +2077,7 @@ module.exports = function setupRoutes(deps) {
 
     // POST /api/live/stop
     if (parsed.pathname === "/api/live/stop" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       live.stop();
       flux.publishLiveStatus(false);
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -2062,6 +2094,7 @@ module.exports = function setupRoutes(deps) {
 
     // POST /api/live/record-start — enable recording for current live session
     if (parsed.pathname === "/api/live/record-start" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       live.startRecording();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, recording: true }));
@@ -2070,6 +2103,7 @@ module.exports = function setupRoutes(deps) {
 
     // POST /api/live/record-stop — stop recording
     if (parsed.pathname === "/api/live/record-stop" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       live.stopRecording();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, recording: false }));
@@ -2338,6 +2372,7 @@ module.exports = function setupRoutes(deps) {
 
     // POST /api/generate — generate a dream track from consciousness state
     if (parsed.pathname === "/api/generate" && req.method === "POST") {
+      if (!adminTriggerOk(req, res)) return;
       if (!musicGen) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: false, reason: "Music generator not configured" }));
