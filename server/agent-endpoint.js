@@ -60,7 +60,12 @@ function checkAgentAuth(req, res) {
   const auth = req.headers["authorization"] || "";
   const bearer = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   const headerToken = (req.headers["x-agent-token"] || "").trim();
-  if (bearer === token || headerToken === token) return true;
+  const same = (a, b) => {
+    const x = Buffer.from(String(a)), y = Buffer.from(String(b));
+    if (x.length !== y.length) return false;
+    try { return require("crypto").timingSafeEqual(x, y); } catch (_) { return false; }
+  };
+  if (same(bearer, token) || same(headerToken, token)) return true;
   json(res, 401, { error: "unauthorized" });
   return false;
 }
