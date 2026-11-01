@@ -129,6 +129,10 @@ check('an unnumbered folder keeps the mtime rule', () => {
   assert.strictEqual(pick.file, 'beta.mp3');
 });
 
+// ctime cannot be set, so "landed" ticks at write time; on a fast Linux runner the
+// back catalogue and the newer file can land in the same millisecond, and a tie goes
+// to the numbered episode. Give the newer file its own millisecond.
+function landLater() { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30); }
 // 2026-10-31: the Halloween special "TSOF-SP2-Hollow-Signals.mp3" was
 // installed and touched at 22:01Z and the 9 PM slot still played E11 from the
 // rotation. episodeNumber() gives a special no number, and the newest-release
@@ -136,6 +140,7 @@ check('an unnumbered folder keeps the mtime rule', () => {
 // SP1 on 10-25 had the same silent miss.
 check('a special (no episode number) that lands after the top-numbered episode is the new release', () => {
   const { musicDir, dir } = makeFolder(['TSOF-E11-The-Finished-Instruments.mp3', 'TSOF-E12-Two-Hands-Both-Hers.mp3'], 14 * DAY);
+  landLater();
   fs.writeFileSync(path.join(dir, 'TSOF-SP2-Hollow-Signals.mp3'), 'x');
   const pick = makeScheduler(musicDir).pickTodayEpisode();
   assert.strictEqual(pick.reason, 'new-release', JSON.stringify(pick));
@@ -144,6 +149,7 @@ check('a special (no episode number) that lands after the top-numbered episode i
 
 check('a special older than the top-numbered episode does not outrank it', () => {
   const { musicDir, dir } = makeFolder(['TSOF-SP1-The-Trials-of-Kannaka.mp3', 'TSOF-E11-The-Finished-Instruments.mp3'], 14 * DAY);
+  landLater();
   fs.writeFileSync(path.join(dir, 'TSOF-E12-Two-Hands-Both-Hers.mp3'), 'x');
   const pick = makeScheduler(musicDir).pickTodayEpisode();
   assert.strictEqual(pick.reason, 'new-release', JSON.stringify(pick));
