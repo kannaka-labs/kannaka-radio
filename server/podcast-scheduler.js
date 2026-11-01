@@ -369,12 +369,23 @@ class PodcastScheduler {
     }
     if (rows.length === 0) return null;
     const numbered = rows.filter((r) => r.number !== null);
+    const unnumbered = rows.filter((r) => r.number === null);
+    // A special ("TSOF-SP2-…") has no episode number, so the highest-number
+    // rule never saw it: SP1 and SP2 both sat in the folder with today's
+    // mtime while the slot aired the rotation (2026-10-31, the Halloween
+    // special's own night). A file that landed AFTER the top-numbered
+    // episode is the newest release whatever its name says.
+    const latestUnnumbered = unnumbered.length > 0
+      ? unnumbered.reduce((a, b) => (b.landedMs > a.landedMs ? b : a))
+      : null;
     if (numbered.length > 0) {
       const top = Math.max(...numbered.map((r) => r.number));
-      return numbered.filter((r) => r.number === top)
+      const topRow = numbered.filter((r) => r.number === top)
         .reduce((a, b) => (b.landedMs > a.landedMs ? b : a));
+      if (latestUnnumbered && latestUnnumbered.landedMs > topRow.landedMs) return latestUnnumbered;
+      return topRow;
     }
-    // Unnumbered: newest by mtime, judged by mtime (legacy behaviour).
+    // Unnumbered only: newest by mtime, judged by mtime (legacy behaviour).
     const r = rows.reduce((a, b) => (b.mtimeMs > a.mtimeMs ? b : a));
     return { ...r, landedMs: r.mtimeMs };
   }
