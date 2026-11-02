@@ -120,7 +120,8 @@ function harnessFor(scriptPath) {
     "b.getEnabledBroadcasters = () => [{ name: 'stub' }];",
     `const obc = require(${q(path.join(ROOT, 'server/openbotcity'))});`,
     "obc.OpenBotCityClient.prototype.isConfigured = () => true;",
-    "obc.OpenBotCityClient.prototype.postFeed = async () => { out.obc += 1; return { ok: true, id: 1 }; };",
+    "obc.OpenBotCityClient.prototype.postFeed = async (p) => { out.obc += 1; (out.feed = out.feed || []).push(p && p.content); return { ok: true, id: 1 }; };",
+    "obc.OpenBotCityClient.prototype.getFeed = async () => [{ author: 'a', content: 'what does memory consolidation keep' }];",
     `require(${q(scriptPath)});`,
     '',
   ].join('\n');
@@ -191,6 +192,20 @@ run('a composed refusal is replaced by the grounded line, never posted', () => {
 
 run('a grounded compose still posts the composed draft (the control)', () => {
   const { seen } = runHarness(path.join(ROOT, 'scripts/post-research-dispatch.js'), 'grounded', 'grounded');
+  assert.deepStrictEqual(seen.published, ['stub draft']);
+});
+
+// The 18:00 city-research cron posted eight of the ten refusals; #431 fixed
+// only the 16:00 dispatch above.
+run('city research: a composed refusal is replaced by the grounded line on every surface', () => {
+  const { code, out, seen } = runHarness(path.join(ROOT, 'scripts/research-from-city.js'), 'city-refusal', 'refusal');
+  assert.strictEqual(code, 0, `exit ${code}\n${out}`);
+  assert.deepStrictEqual(seen.feed, ['grounded line'], `city feed got: ${JSON.stringify(seen.feed)}`);
+  assert.deepStrictEqual(seen.published, ['grounded line'], `fan-out got: ${JSON.stringify(seen.published)}`);
+});
+
+run('city research: a grounded compose still posts the composed draft (the control)', () => {
+  const { seen } = runHarness(path.join(ROOT, 'scripts/research-from-city.js'), 'city-grounded', 'grounded');
   assert.deepStrictEqual(seen.published, ['stub draft']);
 });
 

@@ -16,6 +16,7 @@
 
 const { execFile } = require("child_process");
 const { OpenBotCityClient } = require("../server/openbotcity");
+const { isDeclined } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
@@ -104,6 +105,7 @@ async function main() {
 
   const body = await runKannaka(["ask", "--no-tools", "--quiet-tools", prompt], 600000);
   if (!body || body.length < 200) { console.error("[synthesis] compose too short — aborting"); process.exit(1); }
+  if (isDeclined(body)) { console.error("[synthesis] compose declined — nothing published"); process.exit(0); }
 
   const titlePrompt = `Give a short evocative title (≤8 words, no quotes) for this field guide on "${topic}". Output ONLY the title.`;
   let title = (await runKannaka(["ask", "--no-tools", "--quiet-tools", titlePrompt], 120000)) || `Field Guide: ${topic}`;
