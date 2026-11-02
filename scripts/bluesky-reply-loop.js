@@ -32,6 +32,7 @@ const path = require("path");
 const { execFile } = require("child_process");
 const os = require("os");
 const { BlueskyClient, loadBlueskyCredentials } = require("../server/bluesky");
+const { isDeclined } = require("./lib/kannaka-reply");
 
 const ROOT = path.resolve(__dirname, "..");
 const KANNAKA_BIN = process.env.KANNAKA_BIN
@@ -219,7 +220,7 @@ function draftReply(parentText, authorHandle) {
         }
         if (!stdout) return resolve(null);
         const txt = cleanDraft(stdout.trim().replace(/^["'](.*)["']$/s, "$1").trim());
-        if (txt === "SKIP" || txt.toLowerCase().startsWith("skip")) return resolve(null);
+        if (isDeclined(txt)) return resolve(null);
         if (txt.length < 20) return resolve(null);
         if (!fitsReply(txt)) {
           console.log(`           SKIP — draft is ${graphemeCount(txt)} graphemes, over the ${REPLY_MAX_GRAPHEMES} cap; not posting a truncated reply`);
