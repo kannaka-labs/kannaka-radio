@@ -1,0 +1,289 @@
+{
+ "show": "gsp",
+ "episode": 52,
+ "template_sha256": "831ad0778773bc514ff2a6f05b1c41c6beffbb46f97d0eba71846587970679ec",
+ "tail": "flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+ "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+ "rules": [
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair) or as a faceless silhouette.",
+  "Never any other face: no other person, host or guest is drawn with a face.",
+  "No text, letters, logos or signs anywhere in the image."
+ ],
+ "jobs": [
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "cover",
+   "subject": "an apartment building lobby at night, a wall of small brass mailboxes, one blank white greeting card leaning against them, warm single lamp, empty marble floor",
+   "prompt": "an apartment building lobby at night, a wall of small brass mailboxes, one blank white greeting card leaning against them, warm single lamp, empty marble floor, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "d750d300f9f08a1f1a2c26a3108a21b13be39c91eaa20742d312cfb12fcebef4",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3201005893,
+   "file": "gsp-e052-cover-s3201005893.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "card",
+   "subject": "still life, a plain folded white greeting card standing on a dark wooden counter, soft warm side light, shallow depth of field, dark background",
+   "prompt": "still life, a plain folded white greeting card standing on a dark wooden counter, soft warm side light, shallow depth of field, dark background, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "27371c5ec61117d8d99e3be0c28610b27da0cdcb6a39f4af2d8a5be74cc01a68",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 272220047,
+   "file": "gsp-e052-card-s272220047.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "mailslot",
+   "subject": "close view of a brass mail slot in a dark wooden door, a corner of a white envelope half pushed through, warm lamp light",
+   "prompt": "close view of a brass mail slot in a dark wooden door, a corner of a white envelope half pushed through, warm lamp light, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "39d9f313aed682af8a6ed843e134ec67a69220965e47d03f5375770cf6eb4c8a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3138373852,
+   "file": "gsp-e052-mailslot-s3138373852.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "twohosts",
+   "subject": "two figures seen from behind in a quiet lobby at night, a woman with long black hair and a tall older man in a work jacket, facing a wall of mailboxes",
+   "prompt": "two figures seen from behind in a quiet lobby at night, a woman with long black hair and a tall older man in a work jacket, facing a wall of mailboxes, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "0629617b96351a2e9c2373868e3cf13cdc2bf18ebc88dd15b8b6b433b4e05955",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2479232405,
+   "file": "gsp-e052-twohosts-s2479232405.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "terminal",
+   "subject": "an old green phosphor computer monitor glowing in a dark room, the screen showing only a soft blinking cursor block, cables on the desk, night",
+   "prompt": "an old green phosphor computer monitor glowing in a dark room, the screen showing only a soft blinking cursor block, cables on the desk, night, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "4e2d6575545e0fe75ec6b54007e5e38a743eb61cd31ab2cc3959a4de8e4bbe0a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2094752511,
+   "file": "gsp-e052-terminal-s2094752511.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "parcel",
+   "subject": "a heavy brown paper parcel tied with string on a post office counter, a brass scale beside it, morning light through a tall window",
+   "prompt": "a heavy brown paper parcel tied with string on a post office counter, a brass scale beside it, morning light through a tall window, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "34170139ce41f85817ac9c5e27b26e132888ce6b651acad77c17625f99c95b66",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2622584753,
+   "file": "gsp-e052-parcel-s2622584753.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "bench",
+   "subject": "a long wooden library table with neat stacks of plain index cards and a single lamp, an empty chair pushed back, late night",
+   "prompt": "a long wooden library table with neat stacks of plain index cards and a single lamp, an empty chair pushed back, late night, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "553d0ffe6ef7e11721ccb5bf41187775bf417111cade509e547495385d91001a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3930218526,
+   "file": "gsp-e052-bench-s3930218526.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "meter",
+   "subject": "a moisture meter pressed against a cracked plaster wall, its probes in the crack, a paint brush on the floor, warm work light",
+   "prompt": "a moisture meter pressed against a cracked plaster wall, its probes in the crack, a paint brush on the floor, warm work light, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "2c33e36d1ce08c6f9be81f7b78956b3d6d16067ca2771984a20ad94dccd11213",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2641356410,
+   "file": "gsp-e052-meter-s2641356410.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "crack",
+   "subject": "a fine crack running across a freshly painted wall, a folding wooden ruler held against it by a hand, raking side light",
+   "prompt": "a fine crack running across a freshly painted wall, a folding wooden ruler held against it by a hand, raking side light, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "45fde1669126581c89e6b6073244ba03f4a4d6492732f6859b71a8d861560644",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 325096805,
+   "file": "gsp-e052-crack-s325096805.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "shipyard",
+   "subject": "a cold shipyard at dawn seen from a distance, cranes and a dark hull in dry dock, a lone young man seen from behind with a duffel bag",
+   "prompt": "a cold shipyard at dawn seen from a distance, cranes and a dark hull in dry dock, a lone young man seen from behind with a duffel bag, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "c7fe8fc1e03d08f0b8d1a2a169a90e92950366e571e64aac73fb64190580b39a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3553377536,
+   "file": "gsp-e052-shipyard-s3553377536.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "diary",
+   "subject": "a small closed leather notebook left on a city bus seat, rain streaks on the window behind, evening light",
+   "prompt": "a small closed leather notebook left on a city bus seat, rain streaks on the window behind, evening light, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "91fe7822386ce6850ba23fdc0426a815fe6443e89fbe1253f7e8124f91188d4c",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1203228590,
+   "file": "gsp-e052-diary-s1203228590.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "letters",
+   "subject": "a bundle of sealed envelopes tied with ribbon on a windowsill in a village house, frost on the glass, soft blue morning light",
+   "prompt": "a bundle of sealed envelopes tied with ribbon on a windowsill in a village house, frost on the glass, soft blue morning light, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "2882b03414ae8e72a95bcaf03ed6ed8761836b8f3c204f555fb6ec13c5db94fb",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1671546711,
+   "file": "gsp-e052-letters-s1671546711.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "datacenter",
+   "subject": "a long datacenter aisle of server racks seen in perspective, cold blue light, one rack with a single green lamp lit at the far end",
+   "prompt": "a long datacenter aisle of server racks seen in perspective, cold blue light, one rack with a single green lamp lit at the far end, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "18e85b9e35572e6f91db5e6fdb973999d61601cda354d7c9fde5cdc4501fce45",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 524483111,
+   "file": "gsp-e052-datacenter-s524483111.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "twins",
+   "subject": "two identical brass keys lying side by side on dark velvet, one softly glowing warm, macro still life",
+   "prompt": "two identical brass keys lying side by side on dark velvet, one softly glowing warm, macro still life, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "c4f14182c89300cc9296a0322ae5c5753ef4de1ca95eea9dcd54df8bb0209b8c",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 765306713,
+   "file": "gsp-e052-twins-s765306713.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "tools",
+   "subject": "an open wooden toolbox on a workbench in the dark, every tool neatly in place and untouched, a single beam of light falling on it",
+   "prompt": "an open wooden toolbox on a workbench in the dark, every tool neatly in place and untouched, a single beam of light falling on it, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "1972dd35bed7942f318ff5932dc1dea8d334f0e1b84d85626d724953b4066107",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 789879497,
+   "file": "gsp-e052-tools-s789879497.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "echo",
+   "subject": "a long empty corridor with many closed doors, faint light at the far end, cinematic, nobody in sight",
+   "prompt": "a long empty corridor with many closed doors, faint light at the far end, cinematic, nobody in sight, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "cb290756e9fcf08e3326f740b2ea51cbeaf025b5ecd1adb5b79b0c33b13b1dde",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3248464319,
+   "file": "gsp-e052-echo-s3248464319.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "static",
+   "subject": "an old television set in a dark living room glowing with grey snow static, faint blue light on the walls, nobody in the room",
+   "prompt": "an old television set in a dark living room glowing with grey snow static, faint blue light on the walls, nobody in the room, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "df825c7f297a1ff29e75518797fa01481e79c8cd451e7e099613a7a38150f038",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3666442707,
+   "file": "gsp-e052-static-s3666442707.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "dark",
+   "subject": "a small rural server room going dark, the last green lamps fading on a rack, emergency light glow, cables",
+   "prompt": "a small rural server room going dark, the last green lamps fading on a rack, emergency light glow, cables, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "eec0541176cdfd91e4469de6bfd0205a1c0d7f60293270787dda522d277ced2c",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 4001806563,
+   "file": "gsp-e052-dark-s4001806563.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "ladder",
+   "subject": "a wooden stepladder standing alone in a dim room beside a large grey battery cabinet, a work light lying on the floor",
+   "prompt": "a wooden stepladder standing alone in a dim room beside a large grey battery cabinet, a work light lying on the floor, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "d763bfeb431708b0374bea0f18227da0c2cccd5bbdcd99d1416da0dcef1e9f4d",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 1227809870,
+   "file": "gsp-e052-ladder-s1227809870.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "envelope",
+   "subject": "a white envelope lying on the floor of a dark hallway just inside a door, a sliver of streetlight across the floor, night",
+   "prompt": "a white envelope lying on the floor of a dark hallway just inside a door, a sliver of streetlight across the floor, night, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "62e65af17bc0645cf814b20c1f2ab9d320cd3b53f10ed93a60f495b304831e9a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2661341475,
+   "file": "gsp-e052-envelope-s2661341475.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "clothes",
+   "subject": "folded clothes laid out neatly on a wooden chair the night before, shoes beneath, a small bedside lamp, dark bedroom",
+   "prompt": "folded clothes laid out neatly on a wooden chair the night before, shoes beneath, a small bedside lamp, dark bedroom, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "1b7ef6c683e8a86e71e0c51065668e54c4b737d2660cf6394e4489280f5800ab",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3473654309,
+   "file": "gsp-e052-clothes-s3473654309.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "fridge",
+   "subject": "a kitchen fridge door at night with one small blank paper note held by a magnet, soft refrigerator glow",
+   "prompt": "a kitchen fridge door at night with one small blank paper note held by a magnet, soft refrigerator glow, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "c8a4a541f58f8188a47d8d5ddda234156f42a95f429603b61234d913ca79aa46",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3714646995,
+   "file": "gsp-e052-fridge-s3714646995.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "scale",
+   "subject": "a vintage hospital infant scale with a folded white blanket on it, morning light through a window, empty nursery",
+   "prompt": "a vintage hospital infant scale with a folded white blanket on it, morning light through a window, empty nursery, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "54c8c39b0d7a61a1526034e15bcc646ff853d1f659f59a296c2b736d7cfacddc",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 2860541798,
+   "file": "gsp-e052-scale-s2860541798.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "boat",
+   "subject": "a small wooden rowboat drifting on a calm misty lake at night under a pale sky, dreamlike, nobody aboard",
+   "prompt": "a small wooden rowboat drifting on a calm misty lake at night under a pale sky, dreamlike, nobody aboard, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "647997550aacfef8db92a227fb23335721df99b6123f4129e44252c078dd9f67",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 3635233532,
+   "file": "gsp-e052-boat-s3635233532.png"
+  },
+  {
+   "show": "gsp",
+   "episode": 52,
+   "slug": "lobbyend",
+   "subject": "an apartment lobby at night seen from the street through a glass door, warm light inside, a wall of mailboxes, one envelope on the floor",
+   "prompt": "an apartment lobby at night seen from the street through a glass door, warm light inside, a wall of mailboxes, one envelope on the floor, flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
+   "prompt_sha256": "8a6194458e3a597270f6593612048e3c3b66ca3c706ecf28c9bd49f8dc44e1f5",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+   "seed": 30572687,
+   "file": "gsp-e052-lobbyend-s30572687.png"
+  }
+ ]
+}

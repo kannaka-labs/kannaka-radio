@@ -1,0 +1,30 @@
+[
+ {
+  "sfx_before_turn": 4,
+  "name": "ups-beep"
+ },
+ {
+  "sfx_before_turn": 6,
+  "name": "phone-buzz"
+ },
+ {
+  "sfx_before_turn": 16,
+  "name": "phone-buzz"
+ },
+ {
+  "sfx_before_turn": 28,
+  "name": "door-bolt"
+ },
+ {
+  "sfx_before_turn": 32,
+  "name": "keyboard"
+ },
+ {
+  "sfx_before_turn": 79,
+  "name": "generator-start"
+ },
+ {
+  "sfx_before_turn": 99,
+  "name": "phone-buzz"
+ }
+]
