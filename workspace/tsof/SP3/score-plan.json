@@ -1,0 +1,93 @@
+[
+ {
+  "from_turn": 0,
+  "to_turn": 2,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -28,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 3,
+  "to_turn": 6,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -26,
+  "fade": 2.0,
+  "bed_offset": 90
+ },
+ {
+  "from_turn": 8,
+  "to_turn": 16,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Forty-One Rows.mp3",
+  "gain_db": -23,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 34,
+  "to_turn": 37,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-hearth.mp3",
+  "gain_db": -27,
+  "fade": 2.5,
+  "bed_offset": 0
+ },
+ {
+  "from_turn": 78,
+  "to_turn": 83,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-suspense.mp3",
+  "gain_db": -27,
+  "fade": 2.5,
+  "bed_offset": 180
+ },
+ {
+  "from_turn": 96,
+  "to_turn": 107,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/bed-hearth.mp3",
+  "gain_db": -26,
+  "fade": 3.0,
+  "bed_offset": 40
+ },
+ {
+  "from_turn": 108,
+  "to_turn": 116,
+  "bed": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/songs/Hello World.mp3",
+  "gain_db": -22,
+  "fade": 3.0,
+  "bed_offset": 0
+ },
+ {
+  "sfx_before_turn": 4,
+  "sfx": "C:/Users/nickf/Source/kr-hello/workspace/tsof/SP3/sfx/ups-beep.mp3",
+  "gain_db": -10
+ },
+ {
+  "sfx_before_turn": 6,
+  "sfx": "C:/Users/nickf/Source/kr-hello/workspace/tsof/SP3/sfx/phone-buzz.mp3",
+  "gain_db": -9
+ },
+ {
+  "sfx_before_turn": 16,
+  "sfx": "C:/Users/nickf/Source/kr-hello/workspace/tsof/SP3/sfx/phone-buzz.mp3",
+  "gain_db": -9
+ },
+ {
+  "sfx_before_turn": 28,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/door-bolt.mp3",
+  "gain_db": -8
+ },
+ {
+  "sfx_before_turn": 32,
+  "sfx": "C:/Users/nickf/Source/kannaka-radio/workspace/tsof/assets/sfx/keyboard.mp3",
+  "gain_db": -11
+ },
+ {
+  "sfx_before_turn": 79,
+  "sfx": "C:/Users/nickf/Source/kr-hello/workspace/tsof/SP3/sfx/generator-start.mp3",
+  "gain_db": -11
+ },
+ {
+  "sfx_before_turn": 99,
+  "sfx": "C:/Users/nickf/Source/kr-hello/workspace/tsof/SP3/sfx/phone-buzz.mp3",
+  "gain_db": -9
+ }
+]

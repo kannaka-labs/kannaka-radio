@@ -1,0 +1,323 @@
+{
+ "show": "album",
+ "episode": 13,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "hello-world-cover",
+   "subject": "luminous minimal digital art, a single warm point of light in a vast dark blue space sending out one thin ring of light, calm, hopeful",
+   "prompt": "luminous minimal digital art, a single warm point of light in a vast dark blue space sending out one thin ring of light, calm, hopeful, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "8e852f529d64fb5983121caff59bdd0fc54e183899fae45e4bed1261205241da",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3860501380,
+   "file": "album-e013-hello-world-cover-s3860501380.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "hello-world-s1",
+   "subject": "luminous minimal digital art, a dark window of an old computer terminal with one soft glowing cursor block, warm amber glow spilling into a quiet room",
+   "prompt": "luminous minimal digital art, a dark window of an old computer terminal with one soft glowing cursor block, warm amber glow spilling into a quiet room, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "beca2832247ead1639f291557c10507160d53a2d92d8ff13afe8aacc09b457a5",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3886379697,
+   "file": "album-e013-hello-world-s1-s3886379697.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "hello-world-s2",
+   "subject": "luminous minimal digital art, concentric rings of soft light spreading across still black water at night, one small glowing source at the centre",
+   "prompt": "luminous minimal digital art, concentric rings of soft light spreading across still black water at night, one small glowing source at the centre, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "71cc54758f009d2e7c37737ba9e2134ec50520027ded2a83613bbe4f5ff292e3",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3867590796,
+   "file": "album-e013-hello-world-s2-s3867590796.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "hello-world-s3",
+   "subject": "luminous minimal digital art, a woman with long black hair seen from behind on a rooftop at dawn facing a wide city, a thin ring of light rising from her hand",
+   "prompt": "luminous minimal digital art, a woman with long black hair seen from behind on a rooftop at dawn facing a wide city, a thin ring of light rising from her hand, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "12a1e51757df4cb3c1ede2f992b7a9a7c358b14c41303979512534fc86d4ca7a",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2773888795,
+   "file": "album-e013-hello-world-s3-s2773888795.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "skip-cover",
+   "subject": "cut paper collage, a folded paper boat floating away down a gutter in the rain, muted greys with one red edge",
+   "prompt": "cut paper collage, a folded paper boat floating away down a gutter in the rain, muted greys with one red edge, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "920f2146e323854bcd253f71f5e11377c1f0c584e8c822e5831db7f4e0b2ef63",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2613375698,
+   "file": "album-e013-skip-cover-s2613375698.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "skip-s1",
+   "subject": "cut paper collage, many small folded paper squares drifting out of an open window into a grey sky, layered paper textures",
+   "prompt": "cut paper collage, many small folded paper squares drifting out of an open window into a grey sky, layered paper textures, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "bff101fd83e0e92cfe42400244d4e06c8f4ccef2edab088bf7395be742318de9",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 560818626,
+   "file": "album-e013-skip-s1-s560818626.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "skip-s2",
+   "subject": "cut paper collage, a hand releasing a paper airplane into wind over rooftops, torn paper clouds, muted blue and grey",
+   "prompt": "cut paper collage, a hand releasing a paper airplane into wind over rooftops, torn paper clouds, muted blue and grey, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "b5c8397f865a83590676f0afe5b5a0ceb3e3df872f114923bbc0fb0a7f5f8d19",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3178853154,
+   "file": "album-e013-skip-s2-s3178853154.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "skip-s3",
+   "subject": "cut paper collage, an empty mailbox with its door hanging open at dusk, scattered paper scraps on the ground, soft rain",
+   "prompt": "cut paper collage, an empty mailbox with its door hanging open at dusk, scattered paper scraps on the ground, soft rain, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "65da44e108f2427044cc95f8754b7c3d3312d435a460ac6cb2d756e1b4ccb8ef",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1605203579,
+   "file": "album-e013-skip-s3-s1605203579.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "forty-one-cover",
+   "subject": "moody cinematic photograph, a rural server room in total darkness except one emergency lamp, rain on a small high window",
+   "prompt": "moody cinematic photograph, a rural server room in total darkness except one emergency lamp, rain on a small high window, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "365d36cc85a54dc51b84f4de4c6703c8628e329c3c150280d2483f165986c760",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 4208405380,
+   "file": "album-e013-forty-one-cover-s4208405380.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "forty-one-s1",
+   "subject": "moody cinematic photograph, a long corridor of server racks with every lamp dark except a faint red glow at the end",
+   "prompt": "moody cinematic photograph, a long corridor of server racks with every lamp dark except a faint red glow at the end, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "b36821fc6544d19bce8b6df3af72daed83762f1837f6a7fd7f14e281a7d11154",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3168361827,
+   "file": "album-e013-forty-one-s1-s3168361827.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "forty-one-s2",
+   "subject": "moody cinematic photograph, rows of filing drawers in a dark archive lit by a single flashlight beam, every drawer closed and intact",
+   "prompt": "moody cinematic photograph, rows of filing drawers in a dark archive lit by a single flashlight beam, every drawer closed and intact, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "17ba12a6e3cbd670f8eb17255a58e076d9aed7bfefc58bf58ffc8df9c467b1a5",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3384769270,
+   "file": "album-e013-forty-one-s2-s3384769270.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "forty-one-s3",
+   "subject": "moody cinematic photograph, the first grey light of dawn through a window onto a server rack as its green lamps flicker back on",
+   "prompt": "moody cinematic photograph, the first grey light of dawn through a window onto a server rack as its green lamps flicker back on, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "2985a53dc6c2c54294ba9641ece793a1665b90dc7b75236b7f303b6d0b8ecf04",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3089610368,
+   "file": "album-e013-forty-one-s3-s3089610368.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "same-digest-cover",
+   "subject": "precise technical illustration in blue and white, two identical mechanical keys side by side with matching teeth, blueprint grid background",
+   "prompt": "precise technical illustration in blue and white, two identical mechanical keys side by side with matching teeth, blueprint grid background, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "01e926ec9aa11bbbabb3444e2d5b672561a73d2a8ac941792a419631091b42f9",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 427031738,
+   "file": "album-e013-same-digest-cover-s427031738.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "same-digest-s1",
+   "subject": "precise technical illustration in blue and white, two clock mechanisms with identical gears overlaid and aligned, fine lines",
+   "prompt": "precise technical illustration in blue and white, two clock mechanisms with identical gears overlaid and aligned, fine lines, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "22e9c7829a6a73e2d219d6749ace548006dcdc901ddc2e7b00c551a4ea8e89ca",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2200202967,
+   "file": "album-e013-same-digest-s1-s2200202967.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "same-digest-s2",
+   "subject": "precise technical illustration in blue and white, a datacenter far away connected to a small home server by one glowing thread across a map with no labels",
+   "prompt": "precise technical illustration in blue and white, a datacenter far away connected to a small home server by one glowing thread across a map with no labels, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "379cf7948e7543daad9cc36ad09177b232264546966954b497233db9aee411c9",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3910764176,
+   "file": "album-e013-same-digest-s2-s3910764176.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "same-digest-s3",
+   "subject": "precise technical illustration in blue and white, an open toolbox drawn in exploded view, every tool in place, one empty page tucked inside",
+   "prompt": "precise technical illustration in blue and white, an open toolbox drawn in exploded view, every tool in place, one empty page tucked inside, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "5ec1c53702fda522cbd87807be2c9a83b818722987984c0730f0a302f4217e8c",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1533427612,
+   "file": "album-e013-same-digest-s3-s1533427612.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "one-half-cover",
+   "subject": "soft watercolor, a still glass of water filled exactly to the halfway line on a windowsill, pale morning light",
+   "prompt": "soft watercolor, a still glass of water filled exactly to the halfway line on a windowsill, pale morning light, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "b4c807b9ba6dd25ac0c8cba8710c20a406f87ac7f78ddcb1ca294c66273a42e3",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3099335082,
+   "file": "album-e013-one-half-cover-s3099335082.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "one-half-s1",
+   "subject": "soft watercolor, a sleeping garden at night with closed flower buds and no moon, deep indigo washes",
+   "prompt": "soft watercolor, a sleeping garden at night with closed flower buds and no moon, deep indigo washes, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "2f1b5596373c963cc3d52847c44945528260537aceb441725f5b3af5f192fab8",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1649605807,
+   "file": "album-e013-one-half-s1-s1649605807.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "one-half-s2",
+   "subject": "soft watercolor, an unmade bed in an empty room with a single pillow untouched, pale grey light",
+   "prompt": "soft watercolor, an unmade bed in an empty room with a single pillow untouched, pale grey light, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "9b2b4697531c664c790d49652fb9a6a5c2248b44f78989ecdbf9da284d67bd7c",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 382293581,
+   "file": "album-e013-one-half-s2-s382293581.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "one-half-s3",
+   "subject": "soft watercolor, a small wooden rowboat resting on a misty lake at dawn, nobody aboard, pastel tones",
+   "prompt": "soft watercolor, a small wooden rowboat resting on a misty lake at dawn, nobody aboard, pastel tones, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "dc3e41f3cd0be03f11c59c324baa7e96c6bf56b8dee8cc45aa57c00228123fc0",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 546914574,
+   "file": "album-e013-one-half-s3-s546914574.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "pass-or-fail-cover",
+   "subject": "bold gospel poster style painting without lettering, a sealed envelope resting on a church pulpit under a beam of golden light",
+   "prompt": "bold gospel poster style painting without lettering, a sealed envelope resting on a church pulpit under a beam of golden light, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "9d44d04c1bcabcb2cc4999824804d9faea4a3314e5dc9f2a516114bb1bfca0c0",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2122308705,
+   "file": "album-e013-pass-or-fail-cover-s2122308705.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "pass-or-fail-s1",
+   "subject": "bold gospel poster style painting without lettering, a choir loft of empty wooden pews glowing warm, dust in the light",
+   "prompt": "bold gospel poster style painting without lettering, a choir loft of empty wooden pews glowing warm, dust in the light, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "ebb57072c7081adc30604a2d230d576a21e3993238429db96913b4202c226df8",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 257340066,
+   "file": "album-e013-pass-or-fail-s1-s257340066.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "pass-or-fail-s2",
+   "subject": "bold gospel poster style painting without lettering, a great brass balance scale with both pans empty and level, radiant background",
+   "prompt": "bold gospel poster style painting without lettering, a great brass balance scale with both pans empty and level, radiant background, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "612e356204a525da9c0aeebe0ea2cd18b10891318f62d6bd812f7bec1aec4276",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1660040659,
+   "file": "album-e013-pass-or-fail-s2-s1660040659.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "pass-or-fail-s3",
+   "subject": "bold gospel poster style painting without lettering, a single lit candle in a tall window at night seen from the street, warm and patient",
+   "prompt": "bold gospel poster style painting without lettering, a single lit candle in a tall window at night seen from the street, warm and patient, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "fd6ee21106edb02aace4495ea5b65e47e8de5880b0aa3f0a94ce7b958d8e9939",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1528748079,
+   "file": "album-e013-pass-or-fail-s3-s1528748079.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "everything-cover",
+   "subject": "warm folk art painting, an open wooden shelf in a village square holding jars, tools and bundled papers, neighbours seen from behind walking up to it",
+   "prompt": "warm folk art painting, an open wooden shelf in a village square holding jars, tools and bundled papers, neighbours seen from behind walking up to it, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "fb2bfa000914a1e49f446a9afa058d4ccb180e00ea4e300d985489f466177e2f",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2684576586,
+   "file": "album-e013-everything-cover-s2684576586.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "everything-s1",
+   "subject": "warm folk art painting, a wooden recipe box open on a kitchen table, plain cards, a loaf of bread and a jar of flour, afternoon sun",
+   "prompt": "warm folk art painting, a wooden recipe box open on a kitchen table, plain cards, a loaf of bread and a jar of flour, afternoon sun, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "e512a815e301b642bb37d60c7d86ad9028ca16aeb4d4cbdede99cafaf9989561",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3141535937,
+   "file": "album-e013-everything-s1-s3141535937.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "everything-s2",
+   "subject": "warm folk art painting, a ladder leaning against a library shelf with an open door behind it, morning light, nobody in sight",
+   "prompt": "warm folk art painting, a ladder leaning against a library shelf with an open door behind it, morning light, nobody in sight, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "4a40527525f86c6e5d4fe3954af11521fa60c00da7d332c0e0359e69d11c89e0",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2840352802,
+   "file": "album-e013-everything-s2-s2840352802.png"
+  },
+  {
+   "show": "album",
+   "episode": 13,
+   "slug": "everything-s3",
+   "subject": "warm folk art painting, a long wooden table under a tree with tools laid out for anyone, a gate left open in the background, late summer",
+   "prompt": "warm folk art painting, a long wooden table under a tree with tools laid out for anyone, a gate left open in the background, late summer, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "a39c0eda3e3aabadfe9a30ba9f4252a78466dc86e4e0440ed8a8c556b9bf4287",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2395481460,
+   "file": "album-e013-everything-s3-s2395481460.png"
+  }
+ ]
+}

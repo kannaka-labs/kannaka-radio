@@ -154,6 +154,8 @@ const SCHEDULE = [
   {
     start: 14, end: 18,
     albums: [
+      // 2026-11-06: HELLO WORLD (first contact, checkable by strangers) leads.
+      'HELLO WORLD',
       'The Trials of Kannaka',
       'A Field Guide to Kannaka',
       'Space Child',
@@ -195,6 +197,8 @@ const SCHEDULE = [
   {
     start: 18, end: 22,
     albums: [
+      // 2026-11-06: HELLO WORLD leads Evening Signals, ahead of the seasonal EP.
+      'HELLO WORLD',
       // 2026-10-30: HOLLOW SIGNALS (the Halloween special EP + the vault's
       // strangest records) leads Evening Signals; it is built for this block.
       'HOLLOW SIGNALS',

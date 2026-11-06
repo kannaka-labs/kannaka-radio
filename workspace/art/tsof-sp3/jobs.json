@@ -1,0 +1,322 @@
+{
+ "show": "tsof",
+ "episode": 92,
+ "template_sha256": "6de21000db839b5f908b7a3ab11139a47c2a543ad6e07b0f07b6e1182389d3b6",
+ "tail": "monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+ "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+ "rules": [
+  "No faces at all: figures are seen from behind, in silhouette, or out of frame.",
+  "No text, letters, logos or signs anywhere in the image.",
+  "Cyan appears only on computation or instruments (screens, indicator lamps, gauges), never on people or scenery."
+ ],
+ "jobs": [
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "cover",
+   "subject": "a row of eight rented garage bays on a dark street in freezing drizzle at night, one roll-up door with a thin warm light underneath, wet asphalt, streetlights dark",
+   "prompt": "a row of eight rented garage bays on a dark street in freezing drizzle at night, one roll-up door with a thin warm light underneath, wet asphalt, streetlights dark, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "45f30699a52a7eb9bfd9cdb4117576f4391d5f43b0654537d07c3f7fde1bc958",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1099528601,
+   "file": "tsof-e092-cover-s1099528601.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "laundromat",
+   "subject": "a narrow rented room above a laundromat at night, one lamp, an old radio receiver on a table, rain on a curtainless window, empty chair",
+   "prompt": "a narrow rented room above a laundromat at night, one lamp, an old radio receiver on a table, rain on a curtainless window, empty chair, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "be77d721f5b88e62f02a187088cc523b3e78b44f616a008d08d29516f9ce0b58",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3252077634,
+   "file": "tsof-e092-laundromat-s3252077634.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "avenue",
+   "subject": "a quiet wide avenue at night seen from across the street, a row of closed garage doors, a man in a charcoal coat and hat seen from behind on the far sidewalk",
+   "prompt": "a quiet wide avenue at night seen from across the street, a row of closed garage doors, a man in a charcoal coat and hat seen from behind on the far sidewalk, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "424e66a0c13a7e9945ee469cd318406d9a75df450c79817f8afc4092a330fec1",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3949451522,
+   "file": "tsof-e092-avenue-s3949451522.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "greybox",
+   "subject": "a small grey steel alarm box mounted on a concrete block wall beside a server rack, one small green lamp lit, dim room",
+   "prompt": "a small grey steel alarm box mounted on a concrete block wall beside a server rack, one small green lamp lit, dim room, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "001b6e5c85963dee602b13f3476d378c96a45b9a0e765fb30587631124bcf3fc",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 102866904,
+   "file": "tsof-e092-greybox-s102866904.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "bench",
+   "subject": "a workbench under a single desk lamp in a cold concrete bay, a closed laptop, a chair pushed in, a server rack in the shadows behind",
+   "prompt": "a workbench under a single desk lamp in a cold concrete bay, a closed laptop, a chair pushed in, a server rack in the shadows behind, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "307156c4e79ccf8cc4bda572ba665a98d41821cecc4619ccbe5560da2cfb861e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2937141708,
+   "file": "tsof-e092-bench-s2937141708.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "blackout",
+   "subject": "a city street at night as the streetlights go dark, freezing drizzle in the last light, wet asphalt",
+   "prompt": "a city street at night as the streetlights go dark, freezing drizzle in the last light, wet asphalt, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "d29c8d8e044171758e09b270638b1e2fc9e1ffadc0b87e7855a7f889f9a2e43f",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1956845931,
+   "file": "tsof-e092-blackout-s1956845931.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "amberlamp",
+   "subject": "close view of a small grey steel box on a wall with one amber lamp glowing in the dark, cold blue shadows",
+   "prompt": "close view of a small grey steel box on a wall with one amber lamp glowing in the dark, cold blue shadows, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "5a51e84d37df687bacd0934e54faf0c23b4ceb71e95f389d1294243ea2e27636",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2716737913,
+   "file": "tsof-e092-amberlamp-s2716737913.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "battery",
+   "subject": "a squat battery cabinet under a server rack in a dark room, one red lamp on its front, cables, concrete floor",
+   "prompt": "a squat battery cabinet under a server rack in a dark room, one red lamp on its front, cables, concrete floor, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "71ef2ffd10ba6b0bfc279d9f2f8300b1518d02e68f5826c226b9a8033a9e6816",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2757523989,
+   "file": "tsof-e092-battery-s2757523989.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "nightstand",
+   "subject": "a phone glowing face up on a nightstand in a dark bedroom, its screen a soft blank light, a work jacket on a chair",
+   "prompt": "a phone glowing face up on a nightstand in a dark bedroom, its screen a soft blank light, a work jacket on a chair, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "be0399bdc088d9a66b02a62ca0d28a74652be82abc196c04bd66644f59f257a8",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1607697394,
+   "file": "tsof-e092-nightstand-s1607697394.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "vanyard",
+   "subject": "a white service van in a narrow driveway at night in freezing drizzle, headlights off, a kitchen window lit in the house behind",
+   "prompt": "a white service van in a narrow driveway at night in freezing drizzle, headlights off, a kitchen window lit in the house behind, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "df4be1a1db70c340022b421898053d608c87c318bb761e65be1b37ef8c20d557",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1501907729,
+   "file": "tsof-e092-vanyard-s1501907729.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "dresses",
+   "subject": "a woman seen from behind pulling on a heavy work jacket in a dark kitchen, van keys on a hook by the door",
+   "prompt": "a woman seen from behind pulling on a heavy work jacket in a dark kitchen, van keys on a hook by the door, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "3aef3b128d11870f7f175f2029c114fac972b4a8d7b6f4d7d411e0836e4865be",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1736199444,
+   "file": "tsof-e092-dresses-s1736199444.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "apartment",
+   "subject": "a second floor apartment kitchen at night, a single cup in the sink, a thick closed technical manual on the table under a lamp",
+   "prompt": "a second floor apartment kitchen at night, a single cup in the sink, a thick closed technical manual on the table under a lamp, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "aa8cd3345cd653f1932fbf7300b199cd58b733579be9c7344b022e0504dd86aa",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2885112166,
+   "file": "tsof-e092-apartment-s2885112166.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "drive",
+   "subject": "the inside of a car at a dark intersection in freezing drizzle, wipers mid sweep, traffic lights dark, a phone glowing on the passenger seat",
+   "prompt": "the inside of a car at a dark intersection in freezing drizzle, wipers mid sweep, traffic lights dark, a phone glowing on the passenger seat, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "6d705f8469d2b2db03c0fb33f5078e12270995292e724cdb417eec97f38591c0",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1557172978,
+   "file": "tsof-e092-drive-s1557172978.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "outagemap",
+   "subject": "a phone held in a gloved hand inside a dark car, the screen a soft blank glow, drizzle on the windshield",
+   "prompt": "a phone held in a gloved hand inside a dark car, the screen a soft blank glow, drizzle on the windshield, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "f9ba6acf41eea48dd396985b1b8328d629f6767a36c40751d7e55c0b69aad9e1",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3005305061,
+   "file": "tsof-e092-outagemap-s3005305061.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "vanarrives",
+   "subject": "a white work van parked across a garage door at night, engine running, headlights on the closed roll-up door, drizzle in the beams",
+   "prompt": "a white work van parked across a garage door at night, engine running, headlights on the closed roll-up door, drizzle in the beams, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "831b3f0faadfd9ae3629bb37f2c4872a23037a679f5dfcb9e52fc818644c2170",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2096173765,
+   "file": "tsof-e092-vanarrives-s2096173765.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "handshake",
+   "subject": "two women seen from behind at night, one leaning to a van window, a handshake through the open window, headlights and drizzle",
+   "prompt": "two women seen from behind at night, one leaning to a van window, a handshake through the open window, headlights and drizzle, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "33b2290f224384f9ab1108036e41b9c58767654777e5d16c71e7862390c01f5e",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1483158835,
+   "file": "tsof-e092-handshake-s1483158835.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "insidebay",
+   "subject": "the inside of a dark concrete garage bay lit by a flashlight beam, a server rack against the back wall with one slowly glowing lamp, a wood stove in the corner",
+   "prompt": "the inside of a dark concrete garage bay lit by a flashlight beam, a server rack against the back wall with one slowly glowing lamp, a wood stove in the corner, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "4b89a19f6d47b84cd0c66966539153b8b8b9ecf16c4594727dac7f69a1230b98",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 602008551,
+   "file": "tsof-e092-insidebay-s602008551.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "stove",
+   "subject": "a small cast iron wood stove in the corner of a concrete workshop, a woman seen from behind kneeling to lay a fire, a flashlight on the floor",
+   "prompt": "a small cast iron wood stove in the corner of a concrete workshop, a woman seen from behind kneeling to lay a fire, a flashlight on the floor, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "d87b62d1fde8043ba773558f0428e71e3b30329b4759db077dbc01578fa89d1a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2591471274,
+   "file": "tsof-e092-stove-s2591471274.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "laptop",
+   "subject": "a laptop on a concrete floor connected by a cable to a small grey box on the wall, a woman kneeling seen from behind, cold room",
+   "prompt": "a laptop on a concrete floor connected by a cable to a small grey box on the wall, a woman kneeling seen from behind, cold room, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "30fde4a8b1845530c3196028e1e8ca5091e285728aa4abdec804a835cb5dbef8",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3112996799,
+   "file": "tsof-e092-laptop-s3112996799.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "fire",
+   "subject": "a wood stove door slightly open with a small fire catching, warm orange light across a cold concrete floor",
+   "prompt": "a wood stove door slightly open with a small fire catching, warm orange light across a cold concrete floor, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "b3ce20a6093112eaf1ed0669af95c8bdc3fb1f928db65a9c3aeaae2951dabe3d",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3321218523,
+   "file": "tsof-e092-fire-s3321218523.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "generator",
+   "subject": "a small portable generator on a wet apron beside a white van at night, exhaust pointing away, an orange extension cord running under a garage door",
+   "prompt": "a small portable generator on a wet apron beside a white van at night, exhaust pointing away, an orange extension cord running under a garage door, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "6f9b1e379469c48af97e8db2c994e312f0c6f56431b498cbb07ef749189b2462",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1577331019,
+   "file": "tsof-e092-generator-s1577331019.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "cord",
+   "subject": "an orange extension cord running under a nearly closed roll-up door at night, warm light leaking out, drizzle",
+   "prompt": "an orange extension cord running under a nearly closed roll-up door at night, warm light leaking out, drizzle, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "21ed9527bc4a60882e297eae0262f893c123b582d8fb95ffe27d44d0b62c9abe",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2531296488,
+   "file": "tsof-e092-cord-s2531296488.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "phoneface",
+   "subject": "a phone lying face down on a concrete floor beside a wood stove, warm firelight, quiet",
+   "prompt": "a phone lying face down on a concrete floor beside a wood stove, warm firelight, quiet, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "435cd88438a9870eafa0cf7c4764c4e5ab378548f443f9b5312ba649a5f7324a",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2008756485,
+   "file": "tsof-e092-phoneface-s2008756485.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "bucket",
+   "subject": "a utility bucket truck in the distance folding its boom at dawn in drizzle, streetlights coming back on along a wet avenue",
+   "prompt": "a utility bucket truck in the distance folding its boom at dawn in drizzle, streetlights coming back on along a wet avenue, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "ca8a8b059a47d903f4a2f2c6532b0de3e42a35ff6535e4a53cfd03e7813c9152",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 1477533442,
+   "file": "tsof-e092-bucket-s1477533442.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "dawn",
+   "subject": "a garage bay at dawn, a woman seen from behind sitting at a workbench, the small window over the door turning grey, a stove glowing",
+   "prompt": "a garage bay at dawn, a woman seen from behind sitting at a workbench, the small window over the door turning grey, a stove glowing, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "4e9d8fac64c723c661e3686e54b97365244f79aa941ce45454f9397af87e546d",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 525991866,
+   "file": "tsof-e092-dawn-s525991866.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "bridge",
+   "subject": "a river bridge at night seen from the walkway, half of the city dark beyond it, a man in a charcoal coat and hat seen from behind at the rail",
+   "prompt": "a river bridge at night seen from the walkway, half of the city dark beyond it, a man in a charcoal coat and hat seen from behind at the rail, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "cd2a6653658db7be2f0792edb6d13dd7629219c42e0057782dd52cff9a0e5480",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 3416426222,
+   "file": "tsof-e092-bridge-s3416426222.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "receiver",
+   "subject": "an old radio receiver switched off on a table in a small rented room, grey morning light, an empty chair",
+   "prompt": "an old radio receiver switched off on a table in a small rented room, grey morning light, an empty chair, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "58c01d66b54eda27709fb50771079dcdc83ca900c387ddc16f51304e25147d98",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 214519151,
+   "file": "tsof-e092-receiver-s214519151.png"
+  },
+  {
+   "show": "tsof",
+   "episode": 92,
+   "slug": "vanleaves",
+   "subject": "a white work van driving away along a row of garage doors at night, red tail lights in drizzle, one door with light underneath",
+   "prompt": "a white work van driving away along a row of garage doors at night, red tail lights in drizzle, one door with light underneath, monochrome ink linocut screen print, black linework on paper-white, cold grey wash, one cyan accent, industrial noir, winter, no text",
+   "prompt_sha256": "aba42571beb7095539a9b8fcce44da6fe63352e92dc9450dcc5c40aebe6072ca",
+   "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, warm colours, red",
+   "seed": 2748435145,
+   "file": "tsof-e092-vanleaves-s2748435145.png"
+  }
+ ]
+}

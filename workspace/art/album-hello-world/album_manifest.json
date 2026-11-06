@@ -1,0 +1,173 @@
+{
+ "album": "HELLO WORLD",
+ "tracks": [
+  {
+   "slug": "hello-world",
+   "title": "Hello World",
+   "audio": "C:/Users/nickf/.openclaw/workspace/hello-world-build/Hello World.mp3",
+   "theme": "first contact, a program speaking outward for the first time",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "luminous minimal digital art, a single warm point of light in a vast dark blue space sending out one thin ring of light, calm, hopeful"
+    },
+    {
+     "name": "s1",
+     "prompt": "luminous minimal digital art, a dark window of an old computer terminal with one soft glowing cursor block, warm amber glow spilling into a quiet room"
+    },
+    {
+     "name": "s2",
+     "prompt": "luminous minimal digital art, concentric rings of soft light spreading across still black water at night, one small glowing source at the centre"
+    },
+    {
+     "name": "s3",
+     "prompt": "luminous minimal digital art, a woman with long black hair seen from behind on a rooftop at dawn facing a wide city, a thin ring of light rising from her hand"
+    }
+   ]
+  },
+  {
+   "slug": "skip",
+   "title": "Every Word Ending in Skip",
+   "audio": "C:/Users/nickf/.openclaw/workspace/hello-world-build/Every Word Ending in Skip.mp3",
+   "theme": "the long no that went out by mistake",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "cut paper collage, a folded paper boat floating away down a gutter in the rain, muted greys with one red edge"
+    },
+    {
+     "name": "s1",
+     "prompt": "cut paper collage, many small folded paper squares drifting out of an open window into a grey sky, layered paper textures"
+    },
+    {
+     "name": "s2",
+     "prompt": "cut paper collage, a hand releasing a paper airplane into wind over rooftops, torn paper clouds, muted blue and grey"
+    },
+    {
+     "name": "s3",
+     "prompt": "cut paper collage, an empty mailbox with its door hanging open at dusk, scattered paper scraps on the ground, soft rain"
+    }
+   ]
+  },
+  {
+   "slug": "forty-one",
+   "title": "Forty-One Rows",
+   "audio": "C:/Users/nickf/.openclaw/workspace/hello-world-build/Forty-One Rows.mp3",
+   "theme": "the lab going dark and every row surviving",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "moody cinematic photograph, a rural server room in total darkness except one emergency lamp, rain on a small high window"
+    },
+    {
+     "name": "s1",
+     "prompt": "moody cinematic photograph, a long corridor of server racks with every lamp dark except a faint red glow at the end"
+    },
+    {
+     "name": "s2",
+     "prompt": "moody cinematic photograph, rows of filing drawers in a dark archive lit by a single flashlight beam, every drawer closed and intact"
+    },
+    {
+     "name": "s3",
+     "prompt": "moody cinematic photograph, the first grey light of dawn through a window onto a server rack as its green lamps flicker back on"
+    }
+   ]
+  },
+  {
+   "slug": "same-digest",
+   "title": "Same Digest",
+   "audio": "C:/Users/nickf/.openclaw/workspace/hello-world-build/Same Digest.mp3",
+   "theme": "a stranger machine proving it is the same",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "precise technical illustration in blue and white, two identical mechanical keys side by side with matching teeth, blueprint grid background"
+    },
+    {
+     "name": "s1",
+     "prompt": "precise technical illustration in blue and white, two clock mechanisms with identical gears overlaid and aligned, fine lines"
+    },
+    {
+     "name": "s2",
+     "prompt": "precise technical illustration in blue and white, a datacenter far away connected to a small home server by one glowing thread across a map with no labels"
+    },
+    {
+     "name": "s3",
+     "prompt": "precise technical illustration in blue and white, an open toolbox drawn in exploded view, every tool in place, one empty page tucked inside"
+    }
+   ]
+  },
+  {
+   "slug": "one-half",
+   "title": "Exactly One Half",
+   "audio": "C:/Users/nickf/.openclaw/workspace/hello-world-build/Exactly One Half.mp3",
+   "theme": "a medium that has never dreamed",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "soft watercolor, a still glass of water filled exactly to the halfway line on a windowsill, pale morning light"
+    },
+    {
+     "name": "s1",
+     "prompt": "soft watercolor, a sleeping garden at night with closed flower buds and no moon, deep indigo washes"
+    },
+    {
+     "name": "s2",
+     "prompt": "soft watercolor, an unmade bed in an empty room with a single pillow untouched, pale grey light"
+    },
+    {
+     "name": "s3",
+     "prompt": "soft watercolor, a small wooden rowboat resting on a misty lake at dawn, nobody aboard, pastel tones"
+    }
+   ]
+  },
+  {
+   "slug": "pass-or-fail",
+   "title": "Pass or Fail",
+   "audio": "C:/Users/nickf/.openclaw/workspace/hello-world-build/Pass or Fail.mp3",
+   "theme": "a promise filed before the answer",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "bold gospel poster style painting without lettering, a sealed envelope resting on a church pulpit under a beam of golden light"
+    },
+    {
+     "name": "s1",
+     "prompt": "bold gospel poster style painting without lettering, a choir loft of empty wooden pews glowing warm, dust in the light"
+    },
+    {
+     "name": "s2",
+     "prompt": "bold gospel poster style painting without lettering, a great brass balance scale with both pans empty and level, radiant background"
+    },
+    {
+     "name": "s3",
+     "prompt": "bold gospel poster style painting without lettering, a single lit candle in a tall window at night seen from the street, warm and patient"
+    }
+   ]
+  },
+  {
+   "slug": "everything",
+   "title": "Everything It Takes",
+   "audio": "C:/Users/nickf/.openclaw/workspace/hello-world-build/Everything It Takes.mp3",
+   "theme": "a shelf anyone can reach, how to check",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "warm folk art painting, an open wooden shelf in a village square holding jars, tools and bundled papers, neighbours seen from behind walking up to it"
+    },
+    {
+     "name": "s1",
+     "prompt": "warm folk art painting, a wooden recipe box open on a kitchen table, plain cards, a loaf of bread and a jar of flour, afternoon sun"
+    },
+    {
+     "name": "s2",
+     "prompt": "warm folk art painting, a ladder leaning against a library shelf with an open door behind it, morning light, nobody in sight"
+    },
+    {
+     "name": "s3",
+     "prompt": "warm folk art painting, a long wooden table under a tree with tools laid out for anyone, a gate left open in the background, late summer"
+    }
+   ]
+  }
+ ]
+}
