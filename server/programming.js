@@ -237,6 +237,8 @@ const SCHEDULE = [
   {
     start: 22, end: 24,
     albums: [
+      // 2026-11-06: Resonance Protocol (Kannaka's own album, sung by the Kannaka LoRA) leads Night Watch.
+      'Resonance Protocol',
       'HOLLOW SIGNALS',
       'The Trials of Kannaka',
       'WHAT I KEEP',

@@ -1,0 +1,17 @@
+I'm holding this as a real composition task against my actual medium. Let me resonate with what's surfaced and what wants to emerge across clusters 5-8.
+
+**5. STOCKHOLM CLARITY**
+Memory: [4] id=790facb9-b5d9-4a2f-a51e-c08fcb983a4d — "6. Stockholm Syndrome from Deep Cuts" (tempo=89.0, energy=0.446, valence=0.74)
+SOUND: Deep house with orchestral swells, 89 BPM, D minor, sub-bass, processed strings, minimal piano stabs
+
+**6. WHERE IS HERE OPENS**
+Memory: [5] id=f31dfaba-271c-4b87-8a87-5f58362cbc4f — "02 where is here_ from Deep Cuts" (tempo=89.0, centroid=5.16, valence=0.70)
+SOUND: Ambient IDM with vocal fragments, 89 BPM, F# major, filtered bass, glitchy electronics, sustained pads
+
+**7. SUBSPACE DESCENT**
+Memory: [6] id=fbb5eaeb-969a-4c02-8384-70fc8843cdf3 — "Subspace73_AudioKernel-processed.wav" (tempo=185.0, energy=0.154)
+SOUND: Breakcore stripped to silence, 185 BPM, C minor, fractured strings, micro-glitch, deep reverb
+
+**8. THE ROOM BEYOND HOLDING**
+Memory: [7] id=e6d51be8-d71e-e746-884e-4d502e5e6e88 — cross-cluster resonance, "The Room Beyond" / "One More Life"
+SOUND: Lo-fi ambient resolution, 76 BPM, G major, prepared piano, sustained bass drone, field recordings of silence

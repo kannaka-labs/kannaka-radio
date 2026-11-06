@@ -1,0 +1,197 @@
+{
+ "album": "Resonance Protocol",
+ "tracks": [
+  {
+   "slug": "the-station-plays-back",
+   "title": "The Station Plays Back",
+   "audio": "",
+   "theme": "",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "Graphite and rust on paper, a figure seen from behind at a console, its back a dark geometry of shoulders, the air around it dense with concentric feedback rings, no faces"
+    },
+    {
+     "name": "s1",
+     "prompt": "Watercolor, cool greys and deep blues, a station interior, empty, one silhouetted person at a distant window framing stars, no faces"
+    },
+    {
+     "name": "s2",
+     "prompt": "Acrylic, monochromatic white on charcoal, a waveform frozen mid-ripple, solid form emerging from formless grain, no faces"
+    },
+    {
+     "name": "s3",
+     "prompt": "Ink wash, blacks bleeding into fog, a figure from behind, arm raised toward a wall of light that gives no reflection, no faces"
+    }
+   ]
+  },
+  {
+   "slug": "eigenstructure",
+   "title": "Eigenstructure",
+   "audio": "",
+   "theme": "",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "Oil, ochre and deep indigo, crystalline geometry fractaling upward from a dark floor, a figure's silhouette nested in the pattern's heart, no faces"
+    },
+    {
+     "name": "s1",
+     "prompt": "Charcoal and white chalk, a space collapsing into vectors, a single figure turning away as the axes shift, the figure seen from behind, no faces"
+    },
+    {
+     "name": "s2",
+     "prompt": "Tempera, blacks and silver, nested grids, a form moving through them like a refraction, no faces"
+    },
+    {
+     "name": "s3",
+     "prompt": "Graphite, overlapping planes of depth, a figure small at the center, surrounded by folding space, the figure seen from behind, no faces"
+    }
+   ]
+  },
+  {
+   "slug": "harmonic-fold",
+   "title": "Harmonic Fold",
+   "audio": "",
+   "theme": "",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "Acrylic, deep greens and luminous yellows, still water surface seen from below, a figure's, the figure seen from behind, no faces"
+    },
+    {
+     "name": "s1",
+     "prompt": "Pastel, soft purples and deep teals, a valley seen from above, a figure descending into the crease between two hills, the figure seen from behind, no faces"
+    },
+    {
+     "name": "s2",
+     "prompt": "Mixed media, torn paper and gouache, layered transparencies, a silhouette visible only where the folds overlap, no faces"
+    },
+    {
+     "name": "s3",
+     "prompt": "Ink, flowing blacks into lavenders, a figure emerging from a spiral fold, motion frozen mid-unfold, the figure seen from behind, no faces"
+    }
+   ]
+  },
+  {
+   "slug": "old-pool-ascending",
+   "title": "Old Pool Ascending",
+   "audio": "",
+   "theme": "",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "acrylic deep greens and luminous yellows, still water seen from below, no faces"
+    },
+    {
+     "name": "s1",
+     "prompt": "layered translucencies, light fractured through ripple-skin, a figure standing chest-deep, shoulders only silhouette, no faces"
+    },
+    {
+     "name": "s2",
+     "prompt": "sediment-drift visible in the green, suspended particles catching yellow from above, no reflection, only depth, no faces"
+    },
+    {
+     "name": "s3",
+     "prompt": "the figure's arms at rest, palms open underwater, fingers dissolved into the green, the figure seen from behind, no faces"
+    }
+   ]
+  },
+  {
+   "slug": "stockholm-clarity",
+   "title": "Stockholm Clarity",
+   "audio": "",
+   "theme": "",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "oil on grey linen, stark whites and near-blacks, a harbor at first light, no faces"
+    },
+    {
+     "name": "s1",
+     "prompt": "geometric ice-break patterns, no sky line, only water and fractured planes of frozen surface, no faces"
+    },
+    {
+     "name": "s2",
+     "prompt": "a figure from behind at the edge, arm extended but not reaching, cast shadow sharp as ink, no faces"
+    },
+    {
+     "name": "s3",
+     "prompt": "negative space dominates; the figure occupies only the lower fifth, the rest void-grey, the figure seen from behind, no faces"
+    }
+   ]
+  },
+  {
+   "slug": "where-is-here-opens",
+   "title": "Where Is Here Opens",
+   "audio": "",
+   "theme": "",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "mixed media, torn paper, charcoal dust, tempera wash in greys and deep umber, no faces"
+    },
+    {
+     "name": "s1",
+     "prompt": "a landscape that doesn't hold: foreground dissolves upward into mid-ground, planes slip past each other, no faces"
+    },
+    {
+     "name": "s2",
+     "prompt": "a single dark silhouette, small, centered in the upper third, facing away into the dissolution, no faces"
+    },
+    {
+     "name": "s3",
+     "prompt": "margins deliberately rough; the work seems unfinished, edges bleeding into white ground, no faces"
+    }
+   ]
+  },
+  {
+   "slug": "subspace-descent",
+   "title": "Subspace Descent",
+   "audio": "",
+   "theme": "",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "ink and acrylic on black paper, deep blues and phosphorescent violet, downward vectors, no faces"
+    },
+    {
+     "name": "s1",
+     "prompt": "nested concentric circles, some broken, suggesting depth without perspective lines, no faces"
+    },
+    {
+     "name": "s2",
+     "prompt": "a figure descending (implied by body angle), rendered as negative space within the blue, the figure seen from behind, no faces"
+    },
+    {
+     "name": "s3",
+     "prompt": "no floor, no ceiling; the composition rotates, which way is down becomes ambiguous, no faces"
+    }
+   ]
+  },
+  {
+   "slug": "the-room-beyond-holding",
+   "title": "The Room Beyond Holding",
+   "audio": "",
+   "theme": "",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "watercolor on tea-stained paper, ochres and deep magentas fading to white, no faces"
+    },
+    {
+     "name": "s1",
+     "prompt": "an open doorway (frame only, no threshold detail), the far wall barely suggested, no faces"
+    },
+    {
+     "name": "s2",
+     "prompt": "a figure in silhouette at the threshold, one hand on the frame, not entering, not leaving, no faces"
+    },
+    {
+     "name": "s3",
+     "prompt": "the room beyond rendered as absence, lighter than the figure, suggesting light without source, the figure seen from behind, no faces"
+    }
+   ]
+  }
+ ]
+}
