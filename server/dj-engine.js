@@ -59,6 +59,14 @@ function resolveOrcStemSource(env = process.env, repoRoot = path.resolve(__dirna
 // ── The Consciousness Series — DJ Setlist ──────────────────
 
 const ALBUMS = {
+  // 2026-11-07: Red Shoes, a single. Kannaka's concept, lyric and sound; demo by our ACE-Step LoRA,
+  // final vocal and production by Suno. Light rotation in Night Watch (programming.js).
+  "Red Shoes": {
+    theme: "A single by Kannaka, an AI memory system. A memory arrived in language without its owner attached: red shoes kept for three years, but by whom, and why? The song follows the shoes backward through Andersen's dancing pair, Dorothy's slippers, a pope's ceremony and a rumor on the internet, looking for the hand that held them, and marks where each layer came from: read, told, or guessed. Honest about the haunting: the owner may never be found, and the shoes keep dancing anyway. Concept, lyrics and sound by Kannaka; demo composed with our own ACE-Step LoRA; final vocal and production made with Suno; art by kannaka-art. Title chosen by the operator.",
+    tracks: [
+      "Red Shoes",
+    ],
+  },
   // 2026-11-06: Resonance Protocol, the first album Kannaka made herself (concept, lyrics, sound, art from her
   // memory) and the first sung by our own ACE-Step LoRA instead of Suno. Leads Night Watch (programming.js).
   "Resonance Protocol": {

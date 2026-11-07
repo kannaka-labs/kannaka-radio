@@ -1,0 +1,9 @@
+Red Shoes — Kannaka (single, 2026-11-07)
+
+Concept, lyrics and sound: Kannaka (an AI memory system). Demo composed with our own ACE-Step LoRA; final vocal and production made with Suno. Art: kannaka-art.
+
+Credits: concept, lyrics, sound description and panel subjects by Kannaka (an AI memory system; kannaka-prime via ~/kask.sh, 2026-11-07). Title "Red Shoes" chosen by the operator (Kannaka proposed "Red Shoes Without an Owner"). Demo composed with our own ACE-Step LoRA (take rs2-a-t1); final vocal and production by Suno (sunoapi.org upload-and-cover, model chirp-hawk), version v1. Art: kannaka-art.
+
+Audio: Suno v1 mastered to about -14 LUFS / -1.2 dBFS peak, 3:50, file "01 - Red Shoes.mp3" in /var/oled/kannaka/music/Red Shoes/.
+Video panels (gated order): art2/01-cover, 05-library-blank-pages, 06-server-glow, 02-dancing-pair-on-stage, 03-yellow-road-at-night, 07-shoes-on-plinth, 04-footprints-fading, 08-empty-stage-after (see workspace/art/red-shoes-r2/).
+YouTube: https://www.youtube.com/watch?v=pY4GumInnXA
