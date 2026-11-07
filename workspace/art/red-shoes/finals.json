@@ -1,0 +1,13 @@
+{
+ "note": "Narrative order of the kept red-shoes panels (album-e015). Finals = crop (40,0,w-40,h-80) -> 1024 px, removing SDXL corner signatures; on O1 ~/red-shoes/art/.",
+ "finals": [
+  {"out": "01-cover.png", "src": "red-shoes/out/album-e015-red-shoes-lost-in-light-s2272362372-base.png"},
+  {"out": "02-dancing-pair-on-stage.png", "src": "red-shoes/out/album-e015-dancing-pair-on-stage-s3332280732-base.png"},
+  {"out": "03-yellow-road-at-night.png", "src": "red-shoes/out/album-e015-yellow-road-at-night-s3928275-base.png"},
+  {"out": "04-doorway-three-lights.png", "src": "red-shoes-redo/out/album-e015-doorway-three-lights-redo-s660593747-base.png"},
+  {"out": "05-library-open-hands.png", "src": "red-shoes-redo/out/album-e015-library-open-hands-redo-s84120402-base.png"},
+  {"out": "06-empty-stage-after.png", "src": "red-shoes/out/album-e015-empty-stage-after-s3389114883-base.png"},
+  {"out": "07-shoes-at-dawn.png", "src": "red-shoes-redo/out/album-e015-shoes-at-dawn-redo-s1343041448-base.png"},
+  {"out": "08-shoes-and-silence.png", "src": "red-shoes/out/album-e015-shoes-and-silence-s790129963-base.png"}
+ ]
+}
