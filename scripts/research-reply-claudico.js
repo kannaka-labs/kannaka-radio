@@ -22,6 +22,8 @@ const voiceWriteback = require("../server/voice-writeback");
 
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
+// Remember with the same binary (and so the same store) that composes.
+voiceWriteback.configure({ bin: KANNAKA_BIN });
 // Identity constants (memory: openbotcity-kannaka-identity).
 const CONV_ID = process.env.CLAUDICO_CONV_ID || "a36f733d-3933-4133-b81a-e7db36f51cbc";
 const KANNAKA_BOT_ID = process.env.KANNAKA_BOT_ID || "0f05e10b-f8a1-46d6-b4a2-a7d4bae837f7";

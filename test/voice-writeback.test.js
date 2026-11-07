@@ -18,7 +18,7 @@ const { BlueskyAdapter } = require(path.join(ROOT, 'server/broadcasters/bluesky-
 const { MastodonAdapter } = require(path.join(ROOT, 'server/broadcasters/mastodon-adapter'));
 const { TelegramAdapter } = require(path.join(ROOT, 'server/broadcasters/telegram-adapter'));
 const { NostrAdapter } = require(path.join(ROOT, 'server/broadcasters/nostr-adapter'));
-const { broadcastPost } = require(path.join(ROOT, 'server/broadcasters'));
+const { broadcastPost, broadcastReply } = require(path.join(ROOT, 'server/broadcasters'));
 
 let failed = 0;
 async function run(name, fn) {
@@ -28,11 +28,13 @@ async function run(name, fn) {
 
 // ── harness ─────────────────────────────────────────────────────────────
 let calls = [];
-let behaviour = 'ok'; // 'ok' | 'fail' | 'hang' | 'throw'
+let behaviour = 'ok'; // 'ok' | 'fail' | 'hang' | 'throw' | 'manual'
+let held = []; // 'manual': callbacks the test releases itself
 function fakeExecFile(bin, args, opts, cb) {
   calls.push({ bin, args, opts });
   if (behaviour === 'throw') throw new Error('spawn exploded');
   if (behaviour === 'hang') return;
+  if (behaviour === 'manual') { held.push(cb); return; }
   setImmediate(() => cb(behaviour === 'fail' ? Object.assign(new Error('boom'), { code: 1 }) : null, '', ''));
 }
 const logs = [];
@@ -41,7 +43,7 @@ function reset() {
   vw._reset();
   vw._setExecFile(fakeExecFile);
   vw.configure({ bin: '/fake/kannaka' });
-  calls = []; behaviour = 'ok'; logs.length = 0;
+  calls = []; behaviour = 'ok'; held = []; logs.length = 0;
   delete process.env.KANNAKA_VOICE_WRITEBACK;
   delete process.env.KANNAKA_READONLY;
   delete process.env.KANNAKA_VOICE_WRITEBACK_DEDUPE_MS;
@@ -56,6 +58,9 @@ function stubAdapters() {
       return platforms[name] === 'ok'
         ? { ok: true, url: `https://${name}.example/post/1` }
         : { ok: false, error: 'down' };
+    };
+    Cls.prototype.reply = async function () {
+      return { ok: true, url: `https://${name}.example/reply/1` };
     };
   };
   set(BlueskyAdapter, 'bluesky');
@@ -194,23 +199,116 @@ async function main() {
     assert.strictEqual(r2.stored, false);
   });
 
-  await run('default binary resolves like server/index.js (KANNAKA_BIN, else ../kannaka-memory)', async () => {
+  await run('default binary is the one server/index.js resolves (read from its source)', async () => {
+    const fs = require('fs');
+    const src = fs.readFileSync(path.join(ROOT, 'server/index.js'), 'utf8');
+    const m = src.match(/const KANNAKA_BIN = ([\s\S]*?);\n/);
+    assert.ok(m, 'server/index.js defines KANNAKA_BIN');
+    // Evaluate server/index.js's own expression with its BASE_DIR (the repo root).
+    const serverBin = () => new Function('process', 'path', 'BASE_DIR', `return ${m[1]};`)(process, path, ROOT);
     const saved = process.env.KANNAKA_BIN;
-    process.env.KANNAKA_BIN = '/opt/kannaka';
-    assert.strictEqual(vw.defaultBin(), '/opt/kannaka');
-    delete process.env.KANNAKA_BIN;
-    const exe = process.platform === 'win32' ? 'kannaka.exe' : 'kannaka';
-    assert.strictEqual(vw.defaultBin(), path.join(ROOT, '..', 'kannaka-memory', 'target', 'release', exe));
-    if (saved !== undefined) process.env.KANNAKA_BIN = saved;
+    try {
+      process.env.KANNAKA_BIN = '/opt/kannaka';
+      assert.strictEqual(vw.defaultBin(), serverBin());
+      delete process.env.KANNAKA_BIN;
+      assert.strictEqual(path.resolve(vw.defaultBin()), path.resolve(serverBin()));
+    } finally {
+      if (saved !== undefined) process.env.KANNAKA_BIN = saved; else delete process.env.KANNAKA_BIN;
+    }
   });
 
-  await run('every reply loop and research script that posts outside broadcastPost writes back', async () => {
+  await run('source check: every script posting outside broadcastPost writes back with its own binary', async () => {
     const fs = require('fs');
     for (const f of ['bluesky-reply-loop.js', 'mastodon-reply-loop.js', 'nostr-reply-loop.js',
       'research-reply-claudico.js', 'post-research-dispatch.js', 'research-from-city.js']) {
       const src = fs.readFileSync(path.join(ROOT, 'scripts', f), 'utf8');
       assert.ok(/voiceWriteback\.rememberPublication\(/.test(src), `${f} remembers what it posts`);
+      assert.ok(/voiceWriteback\.configure\(\{ bin: KANNAKA_BIN \}\)/.test(src), `${f} remembers with the binary it asks with`);
     }
+  });
+
+  await run('broadcastReply writes back ONCE, as a reply, with the reply links', async () => {
+    reset();
+    const prior = [{ name: 'bluesky', ok: true }, { name: 'mastodon', ok: true }];
+    const replies = await broadcastReply(prior, 'Listen at noon.', { composer: 'test composer' });
+    await vw.flush(1000);
+    assert.strictEqual(replies.filter((r) => r.ok).length, 2);
+    assert.strictEqual(calls.length, 1);
+    const memory = calls[0].args[1];
+    assert.ok(memory.includes('as a reply under my own earlier post;'), memory);
+    assert.ok(memory.includes('https://bluesky.example/reply/1') && memory.includes('https://mastodon.example/reply/1'));
+  });
+
+  await run('the post link is kept in the memory; template copy is stored light', async () => {
+    reset();
+    await broadcastPost({ text: 'Now playing: a song', link: 'https://radio.example/', composer: 'template', template: true }, {});
+    await vw.flush(1000);
+    assert.ok(calls[0].args[1].includes('https://radio.example/'), calls[0].args[1]);
+    assert.strictEqual(calls[0].args[3], vw.TEMPLATE_IMPORTANCE.toFixed(2));
+    reset();
+    await broadcastPost({ text: 'her own words', composer: 'kannaka ask' }, {});
+    await vw.flush(1000);
+    assert.strictEqual(calls[0].args[3], vw.IMPORTANCE.toFixed(2));
+  });
+
+  await run('stores run one at a time (the CLI takes no write lock for remember)', async () => {
+    reset();
+    behaviour = 'manual';
+    const ok = [{ name: 'bluesky', ok: true }];
+    const a = vw.rememberPublication({ text: 'first', results: ok, composer: 'x' });
+    const b = vw.rememberPublication({ text: 'second', results: ok, composer: 'x' });
+    await tick(); await tick();
+    assert.strictEqual(calls.length, 1, 'the second store waits for the first');
+    held.shift()(null);
+    await a; await tick();
+    assert.strictEqual(calls.length, 2);
+    held.shift()(null);
+    assert.strictEqual((await b).stored, true);
+  });
+
+  await run('a private message keeps its text off the swarm bus; a public one does not ask to', async () => {
+    reset();
+    const saved = process.env.KANNAKA_EVENTS_REMEMBER;
+    delete process.env.KANNAKA_EVENTS_REMEMBER;
+    try {
+      await vw.rememberPublication({ text: 'dm', results: [{ name: 'OpenClawCity DM', ok: true }], private: true, composer: 'x' });
+      await vw.rememberPublication({ text: 'post', results: [{ name: 'bluesky', ok: true }], composer: 'x' });
+      assert.strictEqual(calls[0].opts.env.KANNAKA_EVENTS_REMEMBER, 'ids');
+      assert.strictEqual(calls[1].opts.env.KANNAKA_EVENTS_REMEMBER, undefined);
+    } finally {
+      if (saved !== undefined) process.env.KANNAKA_EVENTS_REMEMBER = saved;
+    }
+  });
+
+  await run('the dedupe map forgets entries older than the window', async () => {
+    reset();
+    process.env.KANNAKA_VOICE_WRITEBACK_DEDUPE_MS = '1';
+    const ok = [{ name: 'bluesky', ok: true }];
+    await vw.rememberPublication({ text: 'old', results: ok, composer: 'x' });
+    await new Promise((r) => setTimeout(r, 10));
+    await vw.rememberPublication({ text: 'new', results: ok, composer: 'x' });
+    assert.strictEqual(vw._recentSize(), 1, 'only the fresh entry is kept');
+  });
+
+  await run('a scheduled oration ends in exactly two memories: its teaser and itself', async () => {
+    reset();
+    const os = require('os');
+    const fs = require('fs');
+    const { PeaceOration } = require(path.join(ROOT, 'server/peace-oration'));
+    const o = new PeaceOration({ dataDir: fs.mkdtempSync(path.join(os.tmpdir(), 'vw-oration-')), voiceDJ: null, broadcast: () => {} });
+    o._askDirectWithRetry = async () => 'Twice a day I stop the music to speak for peace. Come listen.';
+    o._postToOpenClawCity = async () => ({ ok: true, url: 'https://obc.example/a/1' });
+    const realWarn = console.warn; console.warn = () => {};
+    o._publishOnce('2026-11-06T12', 'Peace is the work that begins while the guns are loud.');
+    for (let i = 0; i < 200 && calls.length < 2; i++) await tick();
+    await vw.flush(1000);
+    await tick();
+    console.warn = realWarn;
+    assert.strictEqual(calls.length, 2, calls.map((c) => c.args[1]).join('\n'));
+    const [teaser, oration] = calls[0].args[1].includes('teaser') ? [calls[0], calls[1]] : [calls[1], calls[0]];
+    assert.ok(/composed by hosted model via peace-oration teaser/.test(teaser.args[1]), teaser.args[1]);
+    assert.ok(/Kannaka Radio \(queued for air, peace oration 2026-11-06T12\)/.test(oration.args[1]), oration.args[1]);
+    assert.ok(oration.args[1].includes('https://obc.example/a/1'));
   });
 
   await tick();

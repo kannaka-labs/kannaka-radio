@@ -67,6 +67,8 @@ function getEnabledBroadcasters(rootDir) {
  *   media-only YouTube adapter ignore it.
  * @param {string} [msg.composer] — who wrote the words (e.g. "hosted model via
  *   peace-oration teaser"), for the provenance label in her memory.
+ * @param {boolean} [msg.template] — template copy, not her own words: stored
+ *   at a lower importance.
  * @param {boolean} [msg.writeBack] — false when the caller remembers the
  *   publication itself; otherwise every fanout with at least one success is
  *   written ONCE to her store (voice-writeback.js), fire-and-forget.
@@ -101,6 +103,7 @@ async function broadcastPost(msg, opts = {}) {
   if (msg.writeBack !== false) {
     voiceWriteback.rememberPublication({
       text: msg.text, results, composer: msg.composer || inferComposer(),
+      links: msg.link ? [msg.link] : [], template: !!msg.template,
     });
   }
   return results;

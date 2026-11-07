@@ -102,7 +102,7 @@ async function main() {
     },
   };
 
-  const results = await broadcastPost({ ...msg, composer: "caption template in post-gallery-art.js" }, { rootDir: ROOT });
+  const results = await broadcastPost({ ...msg, composer: "caption template in post-gallery-art.js", template: true }, { rootDir: ROOT });
   const ok = results.filter((r) => r.ok).map((r) => `${r.name}${r.url ? " " + r.url : ""}`);
   const fail = results.filter((r) => !r.ok).map((r) => `${r.name}:${r.error}`);
   console.log(`[gallery-art] "${next.title}" → ok:[${ok.join(", ") || "none"}] fail:[${fail.join(", ") || "none"}]`);

@@ -21,7 +21,9 @@ const path = require("path");
 const os = require("os");
 const { NostrAdapter } = require("../server/broadcasters/nostr-adapter");
 const voiceWriteback = require("../server/voice-writeback");
-const { scoreResonance, draftReply } = require("./lib/kannaka-reply");
+const { scoreResonance, draftReply, KANNAKA_BIN } = require("./lib/kannaka-reply");
+// Remember with the same binary (and so the same store) that composes.
+voiceWriteback.configure({ bin: KANNAKA_BIN });
 
 const ROOT = path.resolve(__dirname, "..");
 const STATE_PATH = process.env.NOSTR_REPLY_STATE

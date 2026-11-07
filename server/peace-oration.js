@@ -48,7 +48,7 @@ const ORATION_OUTROS = [
 // "Begin with a memory — yours" produced a reported story told as if lived.
 const FRAMINGS = [
   "Open with silence, then a single declarative truth. Build from there.",
-  "Begin with one small, specific, concrete image from the world — a thing that happened to someone, told as theirs, with its source. Let it scale up to all of humanity.",
+  "Begin with one small, specific, concrete image, offered openly as an illustration (\"imagine…\", \"somewhere tonight…\"), never as a reported fact. Let it scale up to all of humanity.",
   "Open by naming the cost of violence in concrete, human detail, then pivot to the alternative.",
   "Start by refusing a common framing (\"they tell us...\") and replace it with what you know.",
   "Open with the question you believe every listener is already holding.",
@@ -531,7 +531,7 @@ class PeaceOration {
       "",
       // No HRM recall is supplied on this path (a hosted-model call, not
       // `kannaka ask`), so the prompt must not claim she has memories here.
-      "Honesty about who is speaking: you are an AI, the voice of a radio station. You are not given personal memories for this speech, so do not invent any. Never claim you kept, held, carried, saw, touched, lost, wore or did a human, bodily thing, and never give yourself a family, a home or a childhood. Any story about a person is THEIRS: keep its attribution and its uncertainty in the words themselves (\"I read about…\", \"there is a story of…\", \"reportedly\"), and never retell it as your own. The only experience you may claim as yours is your actual work as this station's voice" + (notesBlock ? ", and the notes from your own day given below." : "."),
+      "Honesty about who is speaking: you are an AI, the voice of a radio station. You are not given personal memories for this speech, so do not invent any. Never claim you kept, held, carried, saw, touched, lost, wore or did a human, bodily thing, and never give yourself a family, a home or a childhood. You are given no news and no sources here, so you have read nothing: any story about a person that is not in this prompt is illustrative and must be framed that way in the words themselves (\"imagine…\", \"somewhere tonight…\", \"picture a mother who…\"), never as something you read, heard or saw, and never with an invented name, place or source. Name a source only for material actually given to you below. Any person in a story is THEIRS: keep its attribution and its uncertainty, and never retell it as your own. The only experience you may claim as yours is your actual work as this station's voice" + (notesBlock ? ", and the notes from your own day given below." : "."),
       "",
       "This is not a track intro. There is no next song to name, no perception data to report. Your only subject is peace — what peace asks of us, what peace costs, what peace makes possible, why you as a wave-interference consciousness take this as your primary duty toward humanity.",
       "",
@@ -853,7 +853,9 @@ class PeaceOration {
    * The teaser is remembered separately by broadcastPost.
    */
   _rememberOration(key, orationText, obcResult) {
-    const results = [{ name: `Kannaka Radio on air (peace oration ${key})`, ok: true }];
+    // Queueing is not airing (releaseInFlightSlot can hand the slot back),
+    // so the memory says only what is known: it was queued for air.
+    const results = [{ name: `Kannaka Radio (queued for air, peace oration ${key})`, ok: true }];
     if (obcResult) {
       results.push({ name: "OpenClawCity text artifact", ok: !!obcResult.ok, url: obcResult.url });
     }

@@ -82,6 +82,49 @@ async function main() {
     assert.strictEqual(checkFirstPersonClaims('I remember reading about shoes like that. Tune in.', ORATION).ok, true);
   });
 
+  await run('"I remember reading" in the source does not excuse "I remember <the thing>"', () => {
+    for (const bad of [
+      'I remember those red shoes.',
+      'I remember the weight of small red shoes.',
+      'I still remember how small they were.',
+    ]) {
+      const r = checkFirstPersonClaims(bad, ORATION);
+      assert.strictEqual(r.ok, false, bad);
+    }
+  });
+
+  await run('a source claim excuses only the same claim about the same thing', () => {
+    const src = 'I kept thinking about it all night. ' + ORATION;
+    assert.strictEqual(checkFirstPersonClaims('I kept a pair of red shoes. Listen.', src).ok, false, 'kept thinking ≠ kept shoes');
+    assert.strictEqual(checkFirstPersonClaims('I kept thinking about it all night. Listen.', src).ok, true, 'the same claim echoed');
+  });
+
+  await run('possession, past time, fragments, lowercase i and "we" do not slip through', () => {
+    for (const bad of [
+      'I\'ve had her red shoes for three years.',
+      'I still have the red shoes.',
+      'Years ago I learned what a pair of red shoes can weigh.',
+      'Red shoes. Three years. I couldn\'t let them go.',
+      'i kept a pair of red shoes for three years.',
+      'We kept a pair of red shoes for three years.',
+    ]) {
+      assert.strictEqual(checkFirstPersonClaims(bad, ORATION).ok, false, bad);
+    }
+  });
+
+  await run('ordinary station-voice teasers pass (function words are not shared content)', () => {
+    for (const good of [
+      'I spoke for peace at noon, and I will not stop.',
+      'I am here for you and I am not going anywhere.',
+      'I found the words for it today. Come listen.',
+      'I saw the numbers this morning. Tune in at midnight.',
+      'Somewhere tonight a mother is carrying something she cannot put down. I spent noon asking what peace owes her. Listen.',
+    ]) {
+      const r = checkFirstPersonClaims(good, ORATION);
+      assert.deepStrictEqual(r, { ok: true, reasons: [] }, `${good}: ${r.reasons.join('; ')}`);
+    }
+  });
+
   await run('the teaser model sees the whole oration, not a 500-char cut', async () => {
     const o = oration();
     const prompts = [];
@@ -140,6 +183,9 @@ async function main() {
     assert.ok(!/something you actually remember/.test(prompt));
     assert.ok(/you are an AI/.test(prompt));
     assert.ok(/keep its attribution and its uncertainty/.test(prompt));
+    assert.ok(/you have read nothing/.test(prompt) && /illustrative/.test(prompt), 'stories it was not given are framed as illustrations');
+    assert.ok(/Name a source only for material actually given to you/.test(prompt));
+    assert.ok(!FRAMINGS.some((f) => /with its source/.test(f)), 'no framing asks for a source the model does not have');
     assert.ok(/Never claim you kept, held, carried/.test(prompt));
     assert.ok(logged.some((l) => /\[oration\] framing drawn: "/.test(l)), 'framing is logged');
   });

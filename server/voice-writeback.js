@@ -46,11 +46,16 @@ function defaultBin() {
 }
 
 const IMPORTANCE = 0.5;
+// Template copy (now-playing, gallery captions: up to ~16 a day) is not her
+// own words; it goes in light so it does not crowd the store whose size is
+// already the recall-latency problem. Callers mark it with `template: true`.
+const TEMPLATE_IMPORTANCE = 0.2;
 // `kannaka remember` loads + saves the whole store and then opens a NATS
 // connection, so it gets memory-bridge's REMEMBER_TIMEOUT budget.
 const REMEMBER_TIMEOUT_MS = 60000;
-// Long-form text (a full oration) is cut here; a teaser never reaches it.
-const MAX_TEXT_CHARS = 2400;
+// Long-form text is cut here. A 400–650-word oration runs ~2400–3900 chars,
+// so it fits whole; argv carries this easily on Windows and Linux.
+const MAX_TEXT_CHARS = 6000;
 const MAX_LINKS = 6;
 const DEFAULT_DEDUPE_MS = 6 * 60 * 60 * 1000;
 
@@ -58,6 +63,10 @@ let _bin = null;
 let _execFile = childProcess.execFile;
 const _recent = new Map(); // normalized text -> ms stored
 const _pending = new Set();
+// `kannaka remember` loads and saves the whole store and the CLI takes no
+// write lock for it, so two at once can lose one. Our own stores run one at
+// a time (memoryBridge / reabsorb still write on their own).
+let _chain = Promise.resolve();
 
 function configure(opts = {}) {
   if (opts && typeof opts.bin === "string" && opts.bin) _bin = opts.bin;
@@ -74,6 +83,11 @@ function dedupeWindowMs() {
   return Number.isFinite(v) && v >= 0 ? v : DEFAULT_DEDUPE_MS;
 }
 
+function pruneRecent() {
+  const cutoff = Date.now() - dedupeWindowMs();
+  for (const [k, t] of _recent) if (t < cutoff) _recent.delete(k);
+}
+
 /** Why a publication would not be written, or null when it would. */
 function skipReason({ text, results } = {}) {
   if (process.env.KANNAKA_VOICE_WRITEBACK === "0") return "disabled (KANNAKA_VOICE_WRITEBACK=0)";
@@ -81,6 +95,7 @@ function skipReason({ text, results } = {}) {
   if (!normalize(text)) return "empty text";
   const ok = (results || []).filter((r) => r && r.ok && r.name !== "none");
   if (ok.length === 0) return "no surface succeeded";
+  pruneRecent();
   const at = _recent.get(normalize(text));
   if (at && Date.now() - at < dedupeWindowMs()) return "identical text already stored in this window";
   return null;
@@ -116,7 +131,10 @@ function buildMemoryText({ text, surfaces, composer, at, urls, private: isPrivat
  * @param {string}  p.text      — the words as published
  * @param {Array}   p.results   — per-surface results [{ name, ok, url? }]
  * @param {string}  p.composer
- * @param {boolean} [p.private]
+ * @param {boolean} [p.private]  — a DM: stored, but its text is kept off the
+ *   swarm bus (the remember event carries ids only)
+ * @param {boolean} [p.template] — template copy, stored at TEMPLATE_IMPORTANCE
+ * @param {string[]} [p.links]   — extra links the post carried (msg.link)
  * @param {string}  [p.context]
  * @returns {Promise<{stored: boolean, reason?: string, memory?: string}>}
  */
@@ -145,7 +163,7 @@ function _remember(p) {
     text: p.text,
     surfaces: ok.map((r) => r.name),
     composer: p.composer,
-    urls: ok.map((r) => r.url),
+    urls: [...new Set(ok.map((r) => r.url).concat(p.links || []).filter(Boolean))],
     private: !!p.private,
     context: p.context,
   });
@@ -154,10 +172,16 @@ function _remember(p) {
   // each other do not both write; released again if the store fails.
   _recent.set(key, Date.now());
   const bin = _bin || defaultBin();
-  return new Promise((resolve) => {
+  const importance = p.template ? TEMPLATE_IMPORTANCE : IMPORTANCE;
+  const env = { ...process.env, KANNAKA_QUIET: "1" };
+  // A CLI remember publishes its full text on NATS by default
+  // (kannaka-memory remember_events.rs, RememberLevel::default_for("cli")).
+  // A private message stays private: ids only on the bus.
+  if (p.private) env.KANNAKA_EVENTS_REMEMBER = "ids";
+  const run = () => new Promise((resolve) => {
     try {
-      _execFile(bin, ["remember", memory, "--importance", IMPORTANCE.toFixed(2)],
-        { timeout: REMEMBER_TIMEOUT_MS, env: { ...process.env, KANNAKA_QUIET: "1" } },
+      _execFile(bin, ["remember", memory, "--importance", importance.toFixed(2)],
+        { timeout: REMEMBER_TIMEOUT_MS, env },
         (err) => {
           if (err) {
             _recent.delete(key);
@@ -175,6 +199,9 @@ function _remember(p) {
       resolve({ stored: false, reason: e && e.message, memory });
     }
   });
+  const result = _chain.then(run);
+  _chain = result;
+  return result;
 }
 
 /**
@@ -193,10 +220,11 @@ function flush(timeoutMs = REMEMBER_TIMEOUT_MS + 5000) {
 
 // Test seams.
 function _setExecFile(fn) { _execFile = fn || childProcess.execFile; }
-function _reset() { _recent.clear(); _pending.clear(); _bin = null; _execFile = childProcess.execFile; }
+function _recentSize() { return _recent.size; }
+function _reset() { _recent.clear(); _pending.clear(); _bin = null; _execFile = childProcess.execFile; _chain = Promise.resolve(); }
 
 module.exports = {
   rememberPublication, buildMemoryText, skipReason, configure, flush,
-  defaultBin, IMPORTANCE, MAX_TEXT_CHARS,
-  _setExecFile, _reset,
+  defaultBin, IMPORTANCE, TEMPLATE_IMPORTANCE, MAX_TEXT_CHARS,
+  _setExecFile, _reset, _recentSize,
 };

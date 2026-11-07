@@ -30,6 +30,8 @@ require("./lib/run-log").stampConsole(); // date every line: one cron, one log f
 const ROOT = path.resolve(__dirname, "..");
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
+// Remember with the same binary (and so the same store) that composes.
+voiceWriteback.configure({ bin: KANNAKA_BIN });
 const RADIO_URL = process.env.RADIO_PUBLIC_URL || "https://radio.ninja-portal.com";
 // `kannaka dispatch` recalls over the whole medium; on O1 it takes ~2.5 min under load (144 s measured 2026-10-05).
 const DISPATCH_TIMEOUT_MS = 300000;

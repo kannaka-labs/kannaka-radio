@@ -22,7 +22,9 @@ const path = require("path");
 const os = require("os");
 const { MastodonAdapter } = require("../server/broadcasters/mastodon-adapter");
 const voiceWriteback = require("../server/voice-writeback");
-const { scoreResonance, draftReply, stripHtml } = require("./lib/kannaka-reply");
+const { scoreResonance, draftReply, KANNAKA_BIN, stripHtml } = require("./lib/kannaka-reply");
+// Remember with the same binary (and so the same store) that composes.
+voiceWriteback.configure({ bin: KANNAKA_BIN });
 
 const ROOT = path.resolve(__dirname, "..");
 const STATE_PATH = process.env.MASTODON_REPLY_STATE
