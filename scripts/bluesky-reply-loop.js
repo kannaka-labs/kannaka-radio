@@ -33,6 +33,7 @@ const { execFile } = require("child_process");
 const os = require("os");
 const { BlueskyClient, loadBlueskyCredentials } = require("../server/bluesky");
 const { isDeclined } = require("./lib/kannaka-reply");
+const voiceWriteback = require("../server/voice-writeback");
 
 const ROOT = path.resolve(__dirname, "..");
 const KANNAKA_BIN = process.env.KANNAKA_BIN
@@ -338,6 +339,10 @@ async function sweep() {
     const r = await client.reply(reply, parent, root);
     if (r.ok) {
       console.log(`           ✓ posted: ${r.uri}`);
+      voiceWriteback.rememberPublication({
+        text: reply, results: [{ name: "bluesky", ok: true, url: r.uri }],
+        composer: "kannaka ask via bluesky-reply-loop.js", context: `in reply to @${c.post.author.handle}`,
+      });
       state.days[today] = (state.days[today] || 0) + 1;
       state.threads[today][threadKey] = repliesInThread + 1;
       saveState(state); // a reply is on the public record the moment it posts
@@ -347,6 +352,7 @@ async function sweep() {
   }
 
   saveState(state);
+  await voiceWriteback.flush(); // let the write-backs to her store finish
   console.log(`[firehose] sweep done: ${state.days[today]}/${cfg.daily_cap} today`);
 }
 

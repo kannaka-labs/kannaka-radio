@@ -21,6 +21,7 @@
 const path = require("path");
 const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
+const voiceWriteback = require("../server/voice-writeback");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const { isDeclined } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
@@ -121,7 +122,7 @@ async function main() {
   }
 
   // 3. Fan out via the shared multi-platform broadcaster (Bluesky/Mastodon/…).
-  const results = await broadcastPost({ text: draft, link, topic: "research" }, { rootDir: ROOT });
+  const results = await broadcastPost({ text: draft, link, topic: "research", writeBack: false }, { rootDir: ROOT });
   let anyOk = false;
   for (const r of results) {
     if (r.ok) { anyOk = true; console.log(`[research-dispatch] ${r.name} ok: ${r.url || "(no url)"}`); }
@@ -131,12 +132,18 @@ async function main() {
   // 4. Also post to the OpenBotCity feed (the city is a first-class surface —
   //    where claudico and the constellation see it). Best-effort, independent.
   const obc = new OpenBotCityClient();
+  const surfaces = results.slice();
   if (obc.isConfigured()) {
     const r = await obc.postFeed({ content: draft, postType: "reflection" });
     if (r.ok) { anyOk = true; console.log(`[research-dispatch] obc ok: post ${r.id || "(no id)"}`); }
     else console.error(`[research-dispatch] obc failed: ${r.error || "(unknown)"}`);
+    surfaces.push({ name: "openclawcity feed", ok: !!r.ok });
   }
 
+  // One memory for the socials + the city feed: the same words, one publication.
+  await voiceWriteback.rememberPublication({
+    text: draft, results: surfaces, composer: "kannaka ask via post-research-dispatch.js (grounded on kannaka dispatch)",
+  });
   process.exit(anyOk ? 0 : 1);
 }
 

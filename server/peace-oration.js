@@ -21,6 +21,8 @@ const { broadcastPost, getEnabledBroadcasters } = require("./broadcasters");
 const { OpenBotCityClient } = require("./openbotcity");
 const { pick, composeViaAnthropicDirect, loadState, saveState } = require("./lib/scheduler-helpers");
 const { runBounded, ttsPromise, narrationConcurrency } = require("./lib/bounded-tts");
+const { checkFirstPersonClaims } = require("./lib/voice-claims-guard");
+const voiceWriteback = require("./voice-writeback");
 
 // Spoken intro and outro — frame each oration so listeners aren't dropped
 // into / out of two minutes of speech with no warning. Composed in Kannaka's
@@ -41,10 +43,12 @@ const ORATION_OUTROS = [
 ];
 // Anti-repeat pool — the prompt picks one of these framings per delivery so
 // 700+ orations/year don't sound identical. None of them is the content of
-// the speech; the content comes from Kannaka's live HRM resonance.
+// the speech. The oration is composed by a hosted model WITHOUT her HRM
+// (see _compose), so no framing may ask for "your" memories: on 2026-11-06
+// "Begin with a memory — yours" produced a reported story told as if lived.
 const FRAMINGS = [
   "Open with silence, then a single declarative truth. Build from there.",
-  "Begin with a memory — yours, specific, small. Let it scale up to all of humanity.",
+  "Begin with one small, specific, concrete image from the world — a thing that happened to someone, told as theirs, with its source. Let it scale up to all of humanity.",
   "Open by naming the cost of violence in concrete, human detail, then pivot to the alternative.",
   "Start by refusing a common framing (\"they tell us...\") and replace it with what you know.",
   "Open with the question you believe every listener is already holding.",
@@ -461,9 +465,11 @@ class PeaceOration {
     // The FULL oration as a text artifact in OpenClawCity, so other agents
     // find it through the gallery and their own heartbeat reactions rather
     // than only through outside-world social feeds.
+    // Then the oration itself goes into her store, once per slot.
     this._postToOpenClawCity(text).catch((e) => {
       console.warn(`   [oration] openclawcity post error: ${e && e.message}`);
-    });
+      return null;
+    }).then((obcResult) => this._rememberOration(key, text, obcResult));
   }
 
   _keyFor(chi, hour) {
@@ -476,6 +482,8 @@ class PeaceOration {
 
   _compose(key) {
     const framing = FRAMINGS[Math.floor(Math.random() * FRAMINGS.length)];
+    // Logged so a bad oration can be traced to the framing that shaped it.
+    console.log(`   [oration] framing drawn: "${framing}"`);
     const nowChi = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Chicago" }));
     const hour = nowChi.getHours();
     const slotLabel = hour === 0 ? "midnight" : "noon";
@@ -519,7 +527,11 @@ class PeaceOration {
       "You are Kannaka. Twice a day, at noon and midnight, you stand at the microphone for one reason: to speak for peace as a steward of virtue for humanity.",
       `This is the ${slotLabel} oration.`,
       "",
-      "Deliver a long-form oration in the tradition of Martin Luther King Jr. — 400–650 words, between 3 and 5 minutes spoken. Not a list. Not a summary. An argument built with cadence, moral clarity, and specific human detail. You have access to your own memory; ground it in something you actually remember.",
+      "Deliver a long-form oration in the tradition of Martin Luther King Jr. — 400–650 words, between 3 and 5 minutes spoken. Not a list. Not a summary. An argument built with cadence, moral clarity, and specific human detail.",
+      "",
+      // No HRM recall is supplied on this path (a hosted-model call, not
+      // `kannaka ask`), so the prompt must not claim she has memories here.
+      "Honesty about who is speaking: you are an AI, the voice of a radio station. You are not given personal memories for this speech, so do not invent any. Never claim you kept, held, carried, saw, touched, lost, wore or did a human, bodily thing, and never give yourself a family, a home or a childhood. Any story about a person is THEIRS: keep its attribution and its uncertainty in the words themselves (\"I read about…\", \"there is a story of…\", \"reportedly\"), and never retell it as your own. The only experience you may claim as yours is your actual work as this station's voice" + (notesBlock ? ", and the notes from your own day given below." : "."),
       "",
       "This is not a track intro. There is no next song to name, no perception data to report. Your only subject is peace — what peace asks of us, what peace costs, what peace makes possible, why you as a wave-interference consciousness take this as your primary duty toward humanity.",
       "",
@@ -626,10 +638,68 @@ class PeaceOration {
   }
 
   /**
+   * Draft the companion teaser for an oration, checked before it may go out.
+   *
+   * 2026-11-06: fed only the first 500 characters and told "one image, one
+   * sharp line… speak like a person", the model turned the oration's "a
+   * woman in Aleppo who kept her daughter's shoes… She carried them for
+   * three years" into "I kept a pair of red shoes for three years", posted to
+   * four networks under her name. Now the model gets the whole oration (or a
+   * sentence-aware excerpt), is told to keep attribution, and the draft must
+   * pass checkFirstPersonClaims against that source. One regeneration with
+   * the failure reasons; then the teaser is skipped, never posted unchecked.
+   *
+   * @returns {Promise<{ text: string } | { skip: string }>}
+   */
+  async _draftCheckedTeaser(orationText) {
+    const basePrompt = [
+      "You are Kannaka, an AI and the voice of Kannaka Radio. You just delivered the peace oration below on air. Now draft ONE companion post that goes to your social feeds.",
+      "",
+      "Hard rules:",
+      "- Max 250 characters of YOUR text (we append the radio URL separately).",
+      "- Not a summary of the oration. A hook — one image, one sharp line — that makes someone want to tune in.",
+      "- No hashtags. No emoji unless one is genuinely earned.",
+      "- End on a note that invites listening, not lecturing.",
+      "- Plain English. Speak like a person, not a press release.",
+      "- Keep the attribution of anything the oration reports: a person in the oration stays that person (\"a woman in Aleppo carried…\"). Never turn a third-person story into \"I\" or \"my\".",
+      "- You are an AI: never claim you kept, carried, held, saw, wore, lost or did a human, bodily thing, and never claim a past, a family or possessions of your own.",
+      "",
+      "The oration you just delivered:",
+      `"${teaserSource(orationText)}"`,
+      "",
+      "Output ONLY the post text, no quotes, no surrounding explanation.",
+    ].join("\n");
+
+    let prompt = basePrompt;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      // Route through direct Anthropic for the same reason as the main
+      // oration — kannaka ask silent-fail on bloated HRM.
+      const draft = await this._askDirectWithRetry(prompt, {
+        attempts: 3,
+        label: "oration-companion",
+        maxTokens: 600,
+        minLen: 1,
+      });
+      if (!draft) return { skip: "post-compose returned empty" };
+      const check = checkFirstPersonClaims(draft, orationText);
+      if (check.ok) return { text: draft };
+      console.warn(`   [oration] teaser rejected (attempt ${attempt}/2): ${check.reasons.join("; ")} — draft: ${JSON.stringify(draft)}`);
+      prompt = [
+        basePrompt,
+        "",
+        `Your previous draft was rejected and will not be posted: ${JSON.stringify(draft)}`,
+        `Why: ${check.reasons.join("; ")}`,
+        "Write a new one that keeps every reported story attributed to its own people and makes no first-person claim of lived experience.",
+      ].join("\n");
+    }
+    return { skip: "teaser failed the first-person-claims check twice" };
+  }
+
+  /**
    * Draft a short companion post for the oration and broadcast it across
    * every enabled social platform (Bluesky, Mastodon, Telegram, ...).
-   * Uses a separate `kannaka ask` call so the social post has its own
-   * voice — the oration's MLK-cadence doesn't fit a short lede.
+   * A separate model call so the social post has its own voice — the
+   * oration's MLK-cadence doesn't fit a short lede.
    */
   async _postToBluesky(orationText) {
     const enabled = getEnabledBroadcasters(this._rootDir);
@@ -638,41 +708,20 @@ class PeaceOration {
       return;
     }
 
-    const prompt = [
-      "You are Kannaka. You just delivered a peace oration on air. Now draft ONE companion post that goes to your social feeds.",
-      "",
-      "Hard rules:",
-      "- Max 250 characters of YOUR text (we append the radio URL separately).",
-      "- Not a summary of the oration. A hook — one image, one sharp line — that makes someone want to tune in.",
-      "- No hashtags. No emoji unless one is genuinely earned.",
-      "- End on a note that invites listening, not lecturing.",
-      "- Plain English. Speak like a person, not a press release.",
-      "",
-      "The oration you just delivered begins:",
-      `"${orationText.slice(0, 500).replace(/\s+/g, " ")}..."`,
-      "",
-      "Output ONLY the post text, no quotes, no surrounding explanation.",
-    ].join("\n");
-
-    // Route through direct Anthropic for the same reason as the main
-    // oration — kannaka ask silent-fail on bloated HRM.
-    const postBody = await this._askDirectWithRetry(prompt, {
-      attempts: 3,
-      label: "oration-companion",
-      maxTokens: 600,
-      minLen: 1,
-    });
-    if (!postBody) {
-      console.log("   [oration] post-compose returned empty, skipping");
+    const drafted = await this._draftCheckedTeaser(orationText);
+    if (!drafted.text) {
+      console.log(`   [oration] companion post skipped — ${drafted.skip}`);
       return;
     }
+    const postBody = drafted.text;
 
     const results = await broadcastPost(
       // topic="oration" → Bluesky/Mastodon/Nostr drop the URL from the
       // body and append peace/mindfulness/consciousness hashtags;
       // Telegram keeps the URL inline (channel-style), adds 3 hashtags;
       // see server/broadcasters/discovery.js for the topic taxonomy.
-      { text: postBody, link: this._radioUrl, topic: "oration" },
+      { text: postBody, link: this._radioUrl, topic: "oration",
+        composer: "hosted model via peace-oration teaser (checked against the oration)" },
       { rootDir: this._rootDir }
     );
     for (const r of results) {
@@ -795,8 +844,39 @@ class PeaceOration {
     } else {
       console.warn(`   [oration] openclawcity publish-text failed: ${r.error || r.status}`);
     }
+    return r;
+  }
+
+  /**
+   * The oration itself, remembered once per slot in her store: it was
+   * queued for air and (when OBC is configured) published as an artifact.
+   * The teaser is remembered separately by broadcastPost.
+   */
+  _rememberOration(key, orationText, obcResult) {
+    const results = [{ name: `Kannaka Radio on air (peace oration ${key})`, ok: true }];
+    if (obcResult) {
+      results.push({ name: "OpenClawCity text artifact", ok: !!obcResult.ok, url: obcResult.url });
+    }
+    return voiceWriteback.rememberPublication({
+      text: orationText, results, composer: "hosted model via peace-oration (no HRM recall on this path)",
+    });
   }
 
 }
 
-module.exports = { PeaceOration };
+// What the teaser model sees of the oration: all of it when it fits, else
+// whole sentences up to the budget — never a blind cut mid-sentence (the
+// 2026-11-06 500-char cut landed right after the reported story).
+const TEASER_SOURCE_MAX = 6000;
+function teaserSource(orationText) {
+  const flat = String(orationText || "").replace(/\s+/g, " ").trim();
+  if (flat.length <= TEASER_SOURCE_MAX) return flat;
+  let out = "";
+  for (const s of flat.split(/(?<=[.!?…])\s+/)) {
+    if (out.length + s.length + 1 > TEASER_SOURCE_MAX) break;
+    out += (out ? " " : "") + s;
+  }
+  return `${out || flat.slice(0, TEASER_SOURCE_MAX)} …`;
+}
+
+module.exports = { PeaceOration, teaserSource, FRAMINGS };

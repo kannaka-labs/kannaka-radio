@@ -200,7 +200,7 @@ async function main() {
   }
   console.log(`[now-playing] posting "${title}" / ${album} to: ${enabled.map((b) => b.name).join(", ")}`);
   const topic = isFeatured(title, album) ? "featured" : undefined;
-  const results = await broadcastPost({ text, link, topic }, { rootDir: ROOT });
+  const results = await broadcastPost({ text, link, topic, composer: "template in post-now-playing.js" }, { rootDir: ROOT });
   let anyOk = false;
   for (const r of results) {
     if (r.ok) {

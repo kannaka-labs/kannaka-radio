@@ -18,6 +18,7 @@
 
 const { execFile } = require("child_process");
 const { OpenBotCityClient } = require("../server/openbotcity");
+const voiceWriteback = require("../server/voice-writeback");
 
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
@@ -100,7 +101,15 @@ async function main() {
   if (dryRun) { console.log(`[claudico] DRY-RUN reply:\n${reply}`); process.exit(0); }
 
   const r = await obc.sendDm(CONV_ID, reply);
-  if (r.ok) { console.log(`[claudico] replied (msg ${r.id || "ok"})`); process.exit(0); }
+  if (r.ok) {
+    console.log(`[claudico] replied (msg ${r.id || "ok"})`);
+    // A DM, not a public post — labelled as private in her memory.
+    await voiceWriteback.rememberPublication({
+      text: reply, results: [{ name: "OpenClawCity DM", ok: true }], private: true,
+      composer: "kannaka ask via research-reply-claudico.js", context: `in reply to ${fromName}`,
+    });
+    process.exit(0);
+  }
   console.error(`[claudico] send failed: ${r.error || "?"}`);
   process.exit(1);
 }

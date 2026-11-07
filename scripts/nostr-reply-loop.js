@@ -20,6 +20,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const { NostrAdapter } = require("../server/broadcasters/nostr-adapter");
+const voiceWriteback = require("../server/voice-writeback");
 const { scoreResonance, draftReply } = require("./lib/kannaka-reply");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -96,13 +97,20 @@ async function main() {
 
     if (!live) { console.log("  [DRY RUN] not posting"); continue; }
     const r = await nostr.reply(reply, { id: m.id });
-    if (r.ok) { console.log(`  ✓ ${r.url}`); state.days[today] += 1; }
+    if (r.ok) {
+      console.log(`  ✓ ${r.url}`); state.days[today] += 1;
+      voiceWriteback.rememberPublication({
+        text: reply, results: [{ name: "nostr", ok: true, url: r.url }],
+        composer: "kannaka ask via nostr-reply-loop.js", context: `in reply to ${author}…`,
+      });
+    }
     else console.error(`  ✗ ${r.error}`);
   }
 
   // Advance the watermark past the newest event we saw (seen[] still guards the boundary).
   if (maxTs > 0) state.since = maxTs;
   saveState(state);
+  await voiceWriteback.flush(); // let the write-backs to her store finish
   console.log(`[nostr-reply] done: ${state.days[today]}/${cfg.daily_cap} today`);
 }
 

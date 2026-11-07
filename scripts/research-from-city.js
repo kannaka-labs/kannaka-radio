@@ -17,6 +17,7 @@
 const path = require("path");
 const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
+const voiceWriteback = require("../server/voice-writeback");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const { isDeclined } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
@@ -129,14 +130,20 @@ async function main() {
   const r = await obc.postFeed({ content: draft, postType: "reflection" });
   if (r.ok) { anyOk = true; console.log(`[city-research] obc ok: post ${r.id || "(no id)"}`); }
   else console.error(`[city-research] obc failed: ${r.error || "(unknown)"}`);
+  const surfaces = [{ name: "openclawcity feed", ok: !!r.ok }];
 
   if (getEnabledBroadcasters(ROOT).length > 0) {
-    const results = await broadcastPost({ text: draft, link: d.openalex_id || RADIO_URL, topic: "research" }, { rootDir: ROOT });
+    const results = await broadcastPost({ text: draft, link: d.openalex_id || RADIO_URL, topic: "research", writeBack: false }, { rootDir: ROOT });
+    surfaces.push(...results);
     for (const x of results) {
       if (x.ok) { anyOk = true; console.log(`[city-research] ${x.name} ok`); }
       else console.error(`[city-research] ${x.name} failed: ${x.error || "?"}`);
     }
   }
+  // One memory for the city feed + the socials: the same words, one publication.
+  await voiceWriteback.rememberPublication({
+    text: draft, results: surfaces, composer: "kannaka ask via research-from-city.js (grounded on kannaka dispatch)",
+  });
   process.exit(anyOk ? 0 : 1);
 }
 
