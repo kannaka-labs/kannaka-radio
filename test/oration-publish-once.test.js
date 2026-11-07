@@ -21,6 +21,10 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
+// _publishOnce now remembers the oration in her store (voice-writeback.js).
+// A test must never write to a real kannaka store, so the kill switch is on.
+process.env.KANNAKA_VOICE_WRITEBACK = '0';
+
 const { PeaceOration } = require('../server/peace-oration');
 
 let failures = 0;

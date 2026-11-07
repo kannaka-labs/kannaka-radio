@@ -21,7 +21,10 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const { MastodonAdapter } = require("../server/broadcasters/mastodon-adapter");
-const { scoreResonance, draftReply, stripHtml } = require("./lib/kannaka-reply");
+const voiceWriteback = require("../server/voice-writeback");
+const { scoreResonance, draftReply, KANNAKA_BIN, stripHtml } = require("./lib/kannaka-reply");
+// Remember with the same binary (and so the same store) that composes.
+voiceWriteback.configure({ bin: KANNAKA_BIN });
 
 const ROOT = path.resolve(__dirname, "..");
 const STATE_PATH = process.env.MASTODON_REPLY_STATE
@@ -95,12 +98,19 @@ async function main() {
 
     if (!live) { console.log("  [DRY RUN] not posting"); continue; }
     const r = await mast.reply(reply, { id: m.statusId });
-    if (r.ok) { console.log(`  ✓ ${r.url}`); state.days[today] += 1; }
+    if (r.ok) {
+      console.log(`  ✓ ${r.url}`); state.days[today] += 1;
+      voiceWriteback.rememberPublication({
+        text: reply, results: [{ name: "mastodon", ok: true, url: r.url }],
+        composer: "kannaka ask via mastodon-reply-loop.js", context: `in reply to @${m.author}`,
+      });
+    }
     else console.error(`  ✗ ${r.error}`);
   }
 
   state.last_notif_id = newest;
   saveState(state);
+  await voiceWriteback.flush(); // let the write-backs to her store finish
   console.log(`[masto-reply] done: ${state.days[today]}/${cfg.daily_cap} today`);
 }
 

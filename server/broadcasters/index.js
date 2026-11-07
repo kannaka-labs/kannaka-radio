@@ -16,11 +16,20 @@
 
 "use strict";
 
+const path = require("path");
 const { BlueskyAdapter } = require("./bluesky-adapter");
 const { MastodonAdapter } = require("./mastodon-adapter");
 const { TelegramAdapter } = require("./telegram-adapter");
 const { NostrAdapter } = require("./nostr-adapter");
 const { YouTubeAdapter } = require("./youtube-adapter");
+const voiceWriteback = require("../voice-writeback");
+
+// Who composed a post, when the caller did not say: the script that is
+// running. Server callers pass `composer` explicitly.
+function inferComposer() {
+  const main = process.argv[1] ? path.basename(process.argv[1]) : "";
+  return main ? `unlabelled caller (${main})` : "unlabelled caller";
+}
 
 /**
  * Build the list of adapters that have credentials configured.
@@ -56,6 +65,13 @@ function getEnabledBroadcasters(rootDir) {
  *   Nostr appends the URL + a NIP-92 imeta tag. A failed media upload never
  *   blocks the text post. Bluesky (pending client-lib blob support) and the
  *   media-only YouTube adapter ignore it.
+ * @param {string} [msg.composer] — who wrote the words (e.g. "hosted model via
+ *   peace-oration teaser"), for the provenance label in her memory.
+ * @param {boolean} [msg.template] — template copy, not her own words: stored
+ *   at a lower importance.
+ * @param {boolean} [msg.writeBack] — false when the caller remembers the
+ *   publication itself; otherwise every fanout with at least one success is
+ *   written ONCE to her store (voice-writeback.js), fire-and-forget.
  * @param {object} [opts]
  * @param {string} [opts.rootDir] — radio root for credential lookup.
  * @returns {Promise<Array<{name, ok, url?, error?}>>}
@@ -82,6 +98,14 @@ async function broadcastPost(msg, opts = {}) {
       }
     })
   );
+  // Her own words go into her own store, once per publication. Not awaited:
+  // the post has already gone out and nothing here may delay or fail it.
+  if (msg.writeBack !== false) {
+    voiceWriteback.rememberPublication({
+      text: msg.text, results, composer: msg.composer || inferComposer(),
+      links: msg.link ? [msg.link] : [], template: !!msg.template,
+    });
+  }
   return results;
 }
 
@@ -96,7 +120,7 @@ async function broadcastPost(msg, opts = {}) {
  *
  * @param {Array} priorResults — the array returned by broadcastPost (each {name, ok, ...handle}).
  * @param {string} text — the reply body (a URL is auto-linked per platform).
- * @param {object} [opts] — { rootDir }
+ * @param {object} [opts] — { rootDir, composer?, writeBack? } (see broadcastPost)
  * @returns {Promise<Array<{name, ok, url?, error?}>>}
  */
 async function broadcastReply(priorResults, text, opts = {}) {
@@ -107,7 +131,7 @@ async function broadcastReply(priorResults, text, opts = {}) {
     (r) => r && r.ok && r.name !== "youtube" && r.name !== "none"
   );
   if (targets.length === 0) return [];
-  return Promise.all(
+  const results = await Promise.all(
     targets.map(async (parent) => {
       const a = byName.get(parent.name);
       if (!a || typeof a.reply !== "function") {
@@ -121,6 +145,13 @@ async function broadcastReply(priorResults, text, opts = {}) {
       }
     })
   );
+  if (opts.writeBack !== false) {
+    voiceWriteback.rememberPublication({
+      text, results, composer: opts.composer || inferComposer(),
+      context: "as a reply under my own earlier post",
+    });
+  }
+  return results;
 }
 
 module.exports = { broadcastPost, broadcastReply, getEnabledBroadcasters };

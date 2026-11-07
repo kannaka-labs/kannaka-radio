@@ -25,6 +25,7 @@ const fs = require("fs");
 const path = require("path");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const { broadcastPost } = require("../server/broadcasters");
+const voiceWriteback = require("../server/voice-writeback");
 
 const ROOT = path.resolve(__dirname, "..");
 const STATE = path.join(process.env.KANNAKA_STATE_DIR || ROOT, ".gallery-art-posted.json");
@@ -101,7 +102,7 @@ async function main() {
     },
   };
 
-  const results = await broadcastPost(msg, { rootDir: ROOT });
+  const results = await broadcastPost({ ...msg, composer: "caption template in post-gallery-art.js", template: true }, { rootDir: ROOT });
   const ok = results.filter((r) => r.ok).map((r) => `${r.name}${r.url ? " " + r.url : ""}`);
   const fail = results.filter((r) => !r.ok).map((r) => `${r.name}:${r.error}`);
   console.log(`[gallery-art] "${next.title}" → ok:[${ok.join(", ") || "none"}] fail:[${fail.join(", ") || "none"}]`);
@@ -112,6 +113,7 @@ async function main() {
     posted.add(next.id);
     savePosted(posted);
   }
+  await voiceWriteback.flush(); // let the write-back to her store finish
   process.exit(0);
 }
 

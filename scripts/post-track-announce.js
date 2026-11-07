@@ -32,6 +32,7 @@ const os = require("os");
 const path = require("path");
 const { broadcastPost, broadcastReply, getEnabledBroadcasters } = require("../server/broadcasters");
 const { renderAudioMp4 } = require("../server/broadcasters/render-audio-mp4");
+const voiceWriteback = require("../server/voice-writeback");
 
 const ROOT = path.resolve(__dirname, "..");
 const RADIO_URL = process.env.RADIO_PUBLIC_URL || "https://radio.ninja-portal.com";
@@ -86,7 +87,7 @@ async function main() {
     }
   }
 
-  const results = await broadcastPost({ text, link, media }, { rootDir: ROOT });
+  const results = await broadcastPost({ text, link, media, composer: "operator-supplied reason via post-track-announce.js" }, { rootDir: ROOT });
   let anyOk = false;
   for (const r of results) {
     if (r.ok) {
@@ -110,7 +111,11 @@ async function main() {
   if (ytUrl) {
     const caption = arg("--video-caption") || "▶ Watch the video:";
     const replyText = `${caption} ${ytUrl}`.trim();
-    const replies = await broadcastReply(results, replyText, { rootDir: ROOT });
+    const replies = await broadcastReply(results, replyText, {
+      rootDir: ROOT,
+      // Only a video link under the announce, which is already remembered.
+      writeBack: false,
+    });
     for (const r of replies) {
       if (r.ok) console.log(`[track-announce] ${r.name} video-comment ok: ${r.url || "(posted)"}`);
       else console.error(`[track-announce] ${r.name} video-comment skipped: ${r.error}`);
@@ -122,6 +127,7 @@ async function main() {
     try { fs.unlinkSync(media.path); } catch (_) {}
   }
 
+  await voiceWriteback.flush(); // let the write-back to her store finish
   process.exit(anyOk ? 0 : 2);
 }
 

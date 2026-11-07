@@ -1702,7 +1702,7 @@ module.exports = function setupRoutes(deps) {
           const link = body && typeof body.link === "string" ? body.link : undefined;
           const { broadcastPost } = require("./broadcasters");
           const results = await broadcastPost(
-            { text: text.slice(0, 2000), link },
+            { text: text.slice(0, 2000), link, composer: "an oracle-token caller via /api/broadcast" },
             { rootDir: path.resolve(__dirname, "..") },
           );
           const okCount = results.filter((r) => r.ok).length;

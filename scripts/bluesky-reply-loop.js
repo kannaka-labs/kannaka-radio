@@ -33,10 +33,13 @@ const { execFile } = require("child_process");
 const os = require("os");
 const { BlueskyClient, loadBlueskyCredentials } = require("../server/bluesky");
 const { isDeclined } = require("./lib/kannaka-reply");
+const voiceWriteback = require("../server/voice-writeback");
 
 const ROOT = path.resolve(__dirname, "..");
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
+// Remember with the same binary (and so the same store) that composes.
+voiceWriteback.configure({ bin: KANNAKA_BIN });
 const RADIO_URL = process.env.RADIO_PUBLIC_URL || "https://radio.ninja-portal.com";
 
 // Bluesky caps a post at 300 graphemes. BlueskyClient.reply() trims anything longer
@@ -338,6 +341,10 @@ async function sweep() {
     const r = await client.reply(reply, parent, root);
     if (r.ok) {
       console.log(`           ✓ posted: ${r.uri}`);
+      voiceWriteback.rememberPublication({
+        text: reply, results: [{ name: "bluesky", ok: true, url: r.uri }],
+        composer: "kannaka ask via bluesky-reply-loop.js", context: `in reply to @${c.post.author.handle}`,
+      });
       state.days[today] = (state.days[today] || 0) + 1;
       state.threads[today][threadKey] = repliesInThread + 1;
       saveState(state); // a reply is on the public record the moment it posts
@@ -347,6 +354,7 @@ async function sweep() {
   }
 
   saveState(state);
+  await voiceWriteback.flush(); // let the write-backs to her store finish
   console.log(`[firehose] sweep done: ${state.days[today]}/${cfg.daily_cap} today`);
 }
 

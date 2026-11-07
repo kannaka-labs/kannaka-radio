@@ -114,6 +114,8 @@ const KANNAKA_BIN = process.env.KANNAKA_BIN ||
 // The same binary for the HRM bridge as for everything else here. (#289)
 const memoryBridge = require("../memory-bridge");
 memoryBridge.configure({ bin: KANNAKA_BIN });
+// And for remembering what she says publicly (voice-writeback.js).
+require("./voice-writeback").configure({ bin: KANNAKA_BIN });
 
 const SPA_PATH = path.join(BASE_DIR, "workspace", "index.html");
 const VOICE_DIR = path.join(BASE_DIR, "chunks", "voice");

@@ -16,10 +16,13 @@ const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
+const voiceWriteback = require("../server/voice-writeback");
 
 const ROOT = path.resolve(__dirname, "..");
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
+// Remember with the same binary (and so the same store) that composes.
+voiceWriteback.configure({ bin: KANNAKA_BIN });
 const RADIO_URL = process.env.RADIO_PUBLIC_URL || "https://radio.ninja-portal.com";
 
 async function main() {
@@ -71,7 +74,9 @@ async function main() {
     process.exit(1);
   }
 
-  const results = await broadcastPost({ text: draft, link: RADIO_URL }, { rootDir: ROOT });
+  const results = await broadcastPost(
+    { text: draft, link: RADIO_URL, composer: "kannaka ask via post-dream-bluesky.js" },
+    { rootDir: ROOT });
   let anyOk = false;
   for (const r of results) {
     if (r.ok) {
@@ -81,6 +86,7 @@ async function main() {
       console.error(`[dream-post] ${r.name} failed: ${r.error}`);
     }
   }
+  await voiceWriteback.flush(); // let the write-back to her store finish
   process.exit(anyOk ? 0 : 2);
 }
 

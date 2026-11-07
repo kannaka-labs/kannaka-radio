@@ -17,7 +17,7 @@ const src = fs.readFileSync(path.join(__dirname, "..", "scripts", "post-now-play
 const pool = src.match(/const FEATURED_TAGS = \[([^\]]*)\]/);
 assert.ok(pool, "post-now-playing defines FEATURED_TAGS");
 assert.ok(!AI.test(pool[1].replace(/["\s]/g, "")), "FEATURED_TAGS must not say AI");
-assert.ok(/broadcastPost\(\{ text, link, topic \}/.test(src), "now-playing passes a topic to the broadcaster");
+assert.ok(/broadcastPost\(\{ text, link, topic\b/.test(src), "now-playing passes a topic to the broadcaster");
 assert.ok(/isFeatured\(title, album\) \? "featured"/.test(src), "featured tracks get the featured topic");
 
 console.log("featured-no-ai-tags: ok");
