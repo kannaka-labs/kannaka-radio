@@ -1,0 +1,37 @@
+{
+ "note": "Round-2 narrative order (album-e015). New panels = crop (40,0,w-40,h-80) -> 1024 px; round-1 01,02,03,06 carried over unchanged (06 renumbered 08). On O1 ~/red-shoes/art2/.",
+ "finals": [
+  {
+   "out": "01-cover.png",
+   "src": "red-shoes/out/album-e015-red-shoes-lost-in-light-s2272362372-base.png"
+  },
+  {
+   "out": "02-dancing-pair-on-stage.png",
+   "src": "red-shoes/out/album-e015-dancing-pair-on-stage-s3332280732-base.png"
+  },
+  {
+   "out": "03-yellow-road-at-night.png",
+   "src": "red-shoes/out/album-e015-yellow-road-at-night-s3928275-base.png"
+  },
+  {
+   "out": "04-footprints-fading.png",
+   "src": "red-shoes-r2b/out/album-e015-r2b-footprints-ember-a-s2337966381-base.png"
+  },
+  {
+   "out": "05-library-blank-pages.png",
+   "src": "red-shoes-r2b/out/album-e015-r2b-library-blank-pages-b-s1363879657-base.png"
+  },
+  {
+   "out": "06-server-glow.png",
+   "src": "red-shoes-r2/out/album-e015-r2-server-glow-b-s357249005-base.png"
+  },
+  {
+   "out": "07-shoes-on-plinth.png",
+   "src": "red-shoes-r2/out/album-e015-r2-shoes-on-plinth-b-s3176442201-base.png"
+  },
+  {
+   "out": "08-empty-stage-after.png",
+   "src": "red-shoes/out/album-e015-empty-stage-after-s3389114883-base.png"
+  }
+ ]
+}

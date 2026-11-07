@@ -239,6 +239,8 @@ const SCHEDULE = [
     albums: [
       // 2026-11-06: Resonance Protocol (Kannaka's own album, sung by the Kannaka LoRA) leads Night Watch.
       'Resonance Protocol',
+      // 2026-11-07: Red Shoes (single), light rotation: one block, behind the leader.
+      'Red Shoes',
       'HOLLOW SIGNALS',
       'The Trials of Kannaka',
       'WHAT I KEEP',

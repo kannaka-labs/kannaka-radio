@@ -1,0 +1,104 @@
+{
+ "show": "album",
+ "episode": 15,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "r2b-footprints-ember-a",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like cold moonlight: top-down view of fresh smooth white snow at night, a single long line of small neat shoe prints pressed into the snow, each print holding a faint warm ruby glow like an ember, the glow weaker print by print until the last prints are plain white and then the trail stops, no figure, no people, empty field",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like cold moonlight: top-down view of fresh smooth white snow at night, a single long line of small neat shoe prints pressed into the snow, each print holding a faint warm ruby glow like an ember, the glow weaker print by print until the last prints are plain white and then the trail stops, no figure, no people, empty field, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "384904d9a303388e5a9ef70268d35dfd51f0aa5dd47bbe30dd7f5ebac7234fb4",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait, blood, bloodstain, red stains, red spatter, splatter, drips, smears, streaks, gore, wound, lettering, glyphs, pseudo-text, writing, script, numbers, calligraphy, legs, feet, ankles, foot in shoe, person wearing shoes, extra shoes, three shoes, single shoe, mismatched shoes, human figure, person, body, walker, silhouette, red snow, red liquid, puddles",
+   "seed": 2337966381,
+   "file": "album-e015-r2b-footprints-ember-a-s2337966381.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "r2b-footprints-ember-b",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like cold moonlight: top-down view of fresh smooth white snow at night, a single long line of small neat shoe prints pressed into the snow, each print holding a faint warm ruby glow like an ember, the glow weaker print by print until the last prints are plain white and then the trail stops, no figure, no people, empty field",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like cold moonlight: top-down view of fresh smooth white snow at night, a single long line of small neat shoe prints pressed into the snow, each print holding a faint warm ruby glow like an ember, the glow weaker print by print until the last prints are plain white and then the trail stops, no figure, no people, empty field, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "384904d9a303388e5a9ef70268d35dfd51f0aa5dd47bbe30dd7f5ebac7234fb4",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait, blood, bloodstain, red stains, red spatter, splatter, drips, smears, streaks, gore, wound, lettering, glyphs, pseudo-text, writing, script, numbers, calligraphy, legs, feet, ankles, foot in shoe, person wearing shoes, extra shoes, three shoes, single shoe, mismatched shoes, human figure, person, body, walker, silhouette, red snow, red liquid, puddles",
+   "seed": 137817019,
+   "file": "album-e015-r2b-footprints-ember-b-s137817019.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "r2b-library-blank-pages-a",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like window light: one pair of small empty red shoes resting together on a large open sketchbook of thick pure white empty paper on a dark wooden table, many more open sketchbooks of pure white empty paper scattered around it, every page completely empty and clean, plain dark covers, dust drifting in the light, no people",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like window light: one pair of small empty red shoes resting together on a large open sketchbook of thick pure white empty paper on a dark wooden table, many more open sketchbooks of pure white empty paper scattered around it, every page completely empty and clean, plain dark covers, dust drifting in the light, no people, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "c3da5307509e6ee5504c4092bcbd4f7f5dc4a54b2aac37b6055517d28208e986",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait, blood, bloodstain, red stains, red spatter, splatter, drips, smears, streaks, gore, wound, lettering, glyphs, pseudo-text, writing, script, numbers, calligraphy, legs, feet, ankles, foot in shoe, person wearing shoes, extra shoes, three shoes, single shoe, mismatched shoes, human figure, person, body, printed text, lines of type, paragraphs, columns of text, handwriting on pages, scribbles, text on spines",
+   "seed": 1730656949,
+   "file": "album-e015-r2b-library-blank-pages-a-s1730656949.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "r2b-library-blank-pages-b",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like window light: one pair of small empty red shoes resting together on a large open sketchbook of thick pure white empty paper on a dark wooden table, many more open sketchbooks of pure white empty paper scattered around it, every page completely empty and clean, plain dark covers, dust drifting in the light, no people",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like window light: one pair of small empty red shoes resting together on a large open sketchbook of thick pure white empty paper on a dark wooden table, many more open sketchbooks of pure white empty paper scattered around it, every page completely empty and clean, plain dark covers, dust drifting in the light, no people, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "c3da5307509e6ee5504c4092bcbd4f7f5dc4a54b2aac37b6055517d28208e986",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait, blood, bloodstain, red stains, red spatter, splatter, drips, smears, streaks, gore, wound, lettering, glyphs, pseudo-text, writing, script, numbers, calligraphy, legs, feet, ankles, foot in shoe, person wearing shoes, extra shoes, three shoes, single shoe, mismatched shoes, human figure, person, body, printed text, lines of type, paragraphs, columns of text, handwriting on pages, scribbles, text on spines",
+   "seed": 1363879657,
+   "file": "album-e015-r2b-library-blank-pages-b-s1363879657.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "r2b-crowd-from-behind-a",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like window light: low viewpoint from behind three tall dark silhouettes in long black coats and black boots, their backs to the viewer, bending forward with arms outstretched toward one pair of empty red shoes standing alone on a pale floor in front of them, fingers almost touching but not touching, heads bowed and hidden",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like window light: low viewpoint from behind three tall dark silhouettes in long black coats and black boots, their backs to the viewer, bending forward with arms outstretched toward one pair of empty red shoes standing alone on a pale floor in front of them, fingers almost touching but not touching, heads bowed and hidden, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "a1f57cb93958ad7dba45077346bb33fbfc3bb93b9e18690ed5bc8affa9c8b93b",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait, blood, bloodstain, red stains, red spatter, splatter, drips, smears, streaks, gore, wound, lettering, glyphs, pseudo-text, writing, script, numbers, calligraphy, legs, feet, ankles, foot in shoe, person wearing shoes, extra shoes, three shoes, single shoe, mismatched shoes, faces, visible face, profile, eyes, front view, red shoes on the figures, red boots, figures wearing red, touching the shoes, hands holding shoes",
+   "seed": 162937835,
+   "file": "album-e015-r2b-crowd-from-behind-a-s162937835.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "r2b-crowd-from-behind-b",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like window light: low viewpoint from behind three tall dark silhouettes in long black coats and black boots, their backs to the viewer, bending forward with arms outstretched toward one pair of empty red shoes standing alone on a pale floor in front of them, fingers almost touching but not touching, heads bowed and hidden",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain, Hopper-like window light: low viewpoint from behind three tall dark silhouettes in long black coats and black boots, their backs to the viewer, bending forward with arms outstretched toward one pair of empty red shoes standing alone on a pale floor in front of them, fingers almost touching but not touching, heads bowed and hidden, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "a1f57cb93958ad7dba45077346bb33fbfc3bb93b9e18690ed5bc8affa9c8b93b",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait, blood, bloodstain, red stains, red spatter, splatter, drips, smears, streaks, gore, wound, lettering, glyphs, pseudo-text, writing, script, numbers, calligraphy, legs, feet, ankles, foot in shoe, person wearing shoes, extra shoes, three shoes, single shoe, mismatched shoes, faces, visible face, profile, eyes, front view, red shoes on the figures, red boots, figures wearing red, touching the shoes, hands holding shoes",
+   "seed": 494797106,
+   "file": "album-e015-r2b-crowd-from-behind-b-s494797106.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "r2b-doorway-colour-shadows-a",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain: one pair of empty red shoes on a pale floor in an open doorway, three coloured spotlights shine on them from three sides, one warm amber, one cool blue, one flickering white, the shoes cast three separate coloured shadows fanned out in three directions across the pale floor, an amber shadow, a blue shadow and a grey shadow, theatrical colour shadow study, no people",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain: one pair of empty red shoes on a pale floor in an open doorway, three coloured spotlights shine on them from three sides, one warm amber, one cool blue, one flickering white, the shoes cast three separate coloured shadows fanned out in three directions across the pale floor, an amber shadow, a blue shadow and a grey shadow, theatrical colour shadow study, no people, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "5bce89875e4c8430e1049530e41573bd009f4f7237f984da660722c721366f4f",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait, blood, bloodstain, red stains, red spatter, splatter, drips, smears, streaks, gore, wound, lettering, glyphs, pseudo-text, writing, script, numbers, calligraphy, legs, feet, ankles, foot in shoe, person wearing shoes, extra shoes, three shoes, single shoe, mismatched shoes, human figure, person, body, silhouette in doorway, framed portrait, painting on wall",
+   "seed": 58255325,
+   "file": "album-e015-r2b-doorway-colour-shadows-a-s58255325.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "r2b-doorway-colour-shadows-b",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain: one pair of empty red shoes on a pale floor in an open doorway, three coloured spotlights shine on them from three sides, one warm amber, one cool blue, one flickering white, the shoes cast three separate coloured shadows fanned out in three directions across the pale floor, an amber shadow, a blue shadow and a grey shadow, theatrical colour shadow study, no people",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain: one pair of empty red shoes on a pale floor in an open doorway, three coloured spotlights shine on them from three sides, one warm amber, one cool blue, one flickering white, the shoes cast three separate coloured shadows fanned out in three directions across the pale floor, an amber shadow, a blue shadow and a grey shadow, theatrical colour shadow study, no people, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "5bce89875e4c8430e1049530e41573bd009f4f7237f984da660722c721366f4f",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait, blood, bloodstain, red stains, red spatter, splatter, drips, smears, streaks, gore, wound, lettering, glyphs, pseudo-text, writing, script, numbers, calligraphy, legs, feet, ankles, foot in shoe, person wearing shoes, extra shoes, three shoes, single shoe, mismatched shoes, human figure, person, body, silhouette in doorway, framed portrait, painting on wall",
+   "seed": 3008318056,
+   "file": "album-e015-r2b-doorway-colour-shadows-b-s3008318056.png"
+  }
+ ],
+ "negative_note": "round 2b: per-job negatives extend the album template negative"
+}

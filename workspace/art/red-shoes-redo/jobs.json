@@ -1,0 +1,92 @@
+{
+ "show": "album",
+ "episode": 15,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "waveform-of-footprints-redo",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain: wide horizontal view of a long pale gallery floor, a single line of small red painted footprints crossing it left to right, each print fainter than the last until they vanish into the air, minimalist, no people",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain: wide horizontal view of a long pale gallery floor, a single line of small red painted footprints crossing it left to right, each print fainter than the last until they vanish into the air, minimalist, no people, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "98ac5a9fcfc6d735a5aa7076dffa7a4a1ea12c1c54c8245b4247663dccfe1786",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2484536211,
+   "file": "album-e015-waveform-of-footprints-redo-s2484536211.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "doorway-three-lights-redo",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain: one pair of empty red shoes on the threshold of an open doorway, behind them three lamps, warm amber, cool blue and pale flickering white, three long shadows fanning across the floor toward the viewer",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain: one pair of empty red shoes on the threshold of an open doorway, behind them three lamps, warm amber, cool blue and pale flickering white, three long shadows fanning across the floor toward the viewer, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "121033008d35565025bb020b562e24ac3eb9b5c82ad54da3055853b28a5a865b",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 660593747,
+   "file": "album-e015-doorway-three-lights-redo-s660593747.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "library-open-hands-redo",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain: one pair of empty red shoes on a dark wooden library table among stacks of closed leather books with plain unmarked spines, candlelight, dust drifting in the air, no reader",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain: one pair of empty red shoes on a dark wooden library table among stacks of closed leather books with plain unmarked spines, candlelight, dust drifting in the air, no reader, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "cbbe368efd8ed72260372816c4500ae5d0c8ea4ee9becd9ed820ee6749e476b9",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 84120402,
+   "file": "album-e015-library-open-hands-redo-s84120402.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "server-glow-redo",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain: a dark data center aisle, tall black server racks with tiny blue-green lights on both sides, one single pair of empty red shoes on the floor in the middle of the aisle, symmetric perspective",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain: a dark data center aisle, tall black server racks with tiny blue-green lights on both sides, one single pair of empty red shoes on the floor in the middle of the aisle, symmetric perspective, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "0a1964917434434ad03f10122528d42ef2c06fa1aca5f1cd8ddb6a0e55241e52",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3193306310,
+   "file": "album-e015-server-glow-redo-s3193306310.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "backward-through-rain-redo",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain: heavy rain at night on an empty wet street, one tall lone silhouette seen from behind walking away, a pair of red shoes dangling from one hand, small red prints behind filling with water",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain: heavy rain at night on an empty wet street, one tall lone silhouette seen from behind walking away, a pair of red shoes dangling from one hand, small red prints behind filling with water, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "ff9f7d4f2a73c0806a397e4ae5fa58dc89a5e6de065201425769bb42df939964",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1420078243,
+   "file": "album-e015-backward-through-rain-redo-s1420078243.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "crowd-reaching-down-redo",
+   "subject": "cinematic oil painting, deep crimson against blue-black, film grain: top-down view, a ring of dark silhouettes in long coats bending toward one pair of red shoes on a pale floor, many hands reaching in but not touching, heads hidden in shadow",
+   "prompt": "cinematic oil painting, deep crimson against blue-black, film grain: top-down view, a ring of dark silhouettes in long coats bending toward one pair of red shoes on a pale floor, many hands reaching in but not touching, heads hidden in shadow, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "40bfa37125fca91980822aaa00f88aafdeead8dd42a4f35749d9a61af1401d28",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1188757816,
+   "file": "album-e015-crowd-reaching-down-redo-s1188757816.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "shoes-at-dawn-redo",
+   "subject": "cinematic oil painting, deep crimson against blue-black turning to gold, film grain: an empty wooden floor at dawn, a pair of empty red shoes caught mid-stride as if walking by themselves, no legs, no person, golden light from a high window, long shrinking shadow",
+   "prompt": "cinematic oil painting, deep crimson against blue-black turning to gold, film grain: an empty wooden floor at dawn, a pair of empty red shoes caught mid-stride as if walking by themselves, no legs, no person, golden light from a high window, long shrinking shadow, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "464f75aa09aeaddd6ffc3f7608dd59a6d556c2204682437f6d4240333252e7f7",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1343041448,
+   "file": "album-e015-shoes-at-dawn-redo-s1343041448.png"
+  }
+ ]
+}
