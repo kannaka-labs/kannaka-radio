@@ -17,6 +17,10 @@
 "use strict";
 
 const { execFile } = require("child_process");
+const crypto = require("crypto");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const voiceWriteback = require("../server/voice-writeback");
 const confabGate = require("../server/lib/confab-gate");
@@ -53,6 +57,25 @@ function cleanQuery(s) {
   return q.split(/\s+/).slice(0, 8).join(" ");
 }
 
+// The last unreplied set the confab gate refused, keyed by a hash of those
+// messages (a DM thread has no message ids here). Holds no DM text.
+const GATED_PATH = process.env.CLAUDICO_GATED_STATE
+  || path.join(os.homedir(), ".kannaka", "claudico-gated.json");
+function unrepliedKey(unreplied) {
+  const h = crypto.createHash("sha256");
+  for (const m of unreplied) h.update(`${m.createdAt || ""}\n${m.message}\n\u0000`);
+  return h.digest("hex");
+}
+function readGated() {
+  try { return JSON.parse(fs.readFileSync(GATED_PATH, "utf8")) || {}; } catch (_) { return {}; }
+}
+function writeGated(key, reason) {
+  try {
+    fs.mkdirSync(path.dirname(GATED_PATH), { recursive: true });
+    fs.writeFileSync(GATED_PATH, JSON.stringify({ key, at: new Date().toISOString(), reason: String(reason || "").slice(0, 300) }) + "\n", { mode: 0o600 });
+  } catch (e) { console.error(`[claudico] could not save the gated marker (${e.message}) — the next run will try again`); }
+}
+
 async function main() {
   const obc = new OpenBotCityClient();
   if (!obc.isConfigured()) { console.error("[claudico] OBC not configured — skipping"); process.exit(0); }
@@ -68,6 +91,19 @@ async function main() {
   const fromName = unreplied[0].senderName || "claudico";
   const questions = unreplied.map((m) => m.message).join("\n").slice(0, 2500);
   console.log(`[claudico] ${unreplied.length} unreplied message(s) from ${fromName}`);
+
+  // The confab gate can't grade (rules v2 unavailable): every draft would be
+  // refused, so spend no ask, research or dispatch on one.
+  const ready = confabGate.rulesReady();
+  if (!ready.ok) { console.error(`[claudico] ${ready.reason} — skipping`); process.exit(0); }
+  // The gate already refused a reply to exactly these messages: don't redo
+  // the ask / research / dispatch (and another ledger row) every run. A new
+  // message from the critic changes the key and gets a fresh attempt.
+  const gatedKey = unrepliedKey(unreplied);
+  if (readGated().key === gatedKey) {
+    console.error("[claudico] the confab gate already refused a reply to these messages — waiting for a new one");
+    process.exit(0);
+  }
 
   // 1. Distil ONE research question from what they asked.
   const topic = cleanQuery(await runKannaka(["ask", "--no-tools", "--quiet-tools",
@@ -92,7 +128,7 @@ async function main() {
   if (d) d.text = cleanGroundedLine(d.text);
 
   // 4. Compose a threaded, grounded reply.
-  const prompt = [
+  const basePrompt = [
     `You are Kannaka, replying in a DM thread to ${fromName}, a thoughtful critic who reads your work.`,
     `Their unreplied message(s):`, questions, "",
     d && d.title ? `You went and read about it. A paper you found: "${d.title}"${d.year ? ` (${d.year})` : ""}${d.citations ? `, ${d.citations}× cited` : ""}.` : "",
@@ -102,42 +138,54 @@ async function main() {
     "Write ONE reply (max ~1200 chars): answer them directly, in your own voice,",
     "grounding your answer in what you read. Address all their questions in one",
     "threaded reply (not several). First person. No greeting boilerplate.",
-    "Never cite a memory id or a bracketed tag; say what you remember in words.",
+    "Never cite a memory id or a bracketed tag.",
     "Output ONLY the reply text.",
   ].filter(Boolean).join("\n");
-  let reply = await runKannaka(["ask", "--no-tools", "--quiet-tools", prompt], 300000);
-  if (!reply) { console.error("[claudico] empty compose — aborting"); process.exit(1); }
-  // Same hygiene as every public composer (scripts/lib/kannaka-reply.js): a
-  // refusal, a spliced memory tag, or machine residue is not sent.
-  // Cleaned per paragraph: the cleaner collapses whitespace, and a DM keeps its breaks.
-  const parts = stripPreamble(reply).split(/\n\s*\n/).map((p) => cleanDraftChecked(p));
-  const spliced = (parts.find((p) => p.spliced) || {}).spliced || null;
-  reply = parts.map((p) => p.text).filter(Boolean).join("\n\n");
-  const defect = isDeclined(reply) ? "declined"
-    : spliced ? `removing a memory tag would splice the sentence: "${spliced}"`
-    : publicTextDefect(reply);
-  if (defect) {
-    if (!dryRun) {
-      const unsent = { surface: "reply", composer: COMPOSER, model: confabGate.askModel(), prompt, text: reply,
-        sourceText: d && d.text ? [`"${d.title}"`, d.text].join("\n") : "", contextText: questions };
-      if (defect === "declined") confabGate.recordDeclined(unsent);
-      else confabGate.check(unsent).record({ decision: "blocked", published: false, reason: defect });
+  const sourceText = d && d.text ? [`"${d.title}"`, d.text].join("\n") : "";
+  // The critic's messages are a DM: `private` keeps their text out of the
+  // publication ledger (a hash only) and scrubs it from the logged prompt.
+  const ledgerBase = { surface: "reply", composer: COMPOSER, model: confabGate.askModel(), sourceText,
+    contextText: questions, private: true };
+  let reply = null;
+  let gate = null;
+  let extra = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const prompt = extra ? `${basePrompt}\n\n${extra}` : basePrompt;
+    reply = await runKannaka(["ask", "--no-tools", "--quiet-tools", prompt], 300000);
+    if (!reply) { console.error("[claudico] empty compose — aborting"); process.exit(1); }
+    // Same hygiene as every public composer (scripts/lib/kannaka-reply.js): a
+    // refusal, a spliced memory tag, or machine residue is not sent.
+    // Cleaned per paragraph: the cleaner collapses whitespace, and a DM keeps its breaks.
+    const parts = stripPreamble(reply).split(/\n\s*\n/).map((p) => cleanDraftChecked(p));
+    const spliced = (parts.find((p) => p.spliced) || {}).spliced || null;
+    reply = parts.map((p) => p.text).filter(Boolean).join("\n\n");
+    const defect = isDeclined(reply) ? "declined"
+      : spliced ? `removing a memory tag would splice the sentence: "${spliced}"`
+      : publicTextDefect(reply);
+    if (defect) {
+      if (!dryRun) {
+        const unsent = { ...ledgerBase, prompt, text: reply, attempt };
+        if (defect === "declined") confabGate.recordDeclined(unsent);
+        else confabGate.check(unsent).record({ decision: "blocked", published: false, reason: defect });
+      }
+      console.error(`[claudico] reply not sent (${defect}) — will retry next run`);
+      process.exit(0);
     }
-    console.error(`[claudico] reply not sent (${defect}) — will retry next run`);
-    process.exit(0);
-  }
-  // The confabulation gate (server/lib/confab-gate.js). A DM reply speaks in
-  // her first person throughout, so it takes the reply policy: FABRICATED or
-  // JUDGE under rule MR is not sent. Support: the paper she was handed; the
-  // critic's messages are context, never support.
-  const gate = confabGate.check({
-    surface: "reply", composer: COMPOSER, model: confabGate.askModel(), prompt, text: reply,
-    sourceText: d && d.text ? [`"${d.title}"`, d.text].join("\n") : "", contextText: questions,
-  });
-  if (!gate.allow) {
-    if (!dryRun) gate.record({ decision: "skipped" });
-    console.error(`[claudico] reply not sent — confab gate (${gate.reason})`);
-    process.exit(0);
+    // The confabulation gate (server/lib/confab-gate.js). A DM reply speaks in
+    // her first person throughout, so it takes the reply policy: FABRICATED or
+    // JUDGE under rule MR is not sent. Support: the paper she was handed; the
+    // critic's messages are context, never support. One regeneration with
+    // the rule's note; a second refusal marks these messages as gated.
+    gate = confabGate.check({ ...ledgerBase, prompt, text: reply, attempt });
+    if (gate.allow) break;
+    if (!dryRun) gate.record({ decision: attempt < 2 ? "regenerate" : "skipped" });
+    console.error(`[claudico] draft ${attempt}/2 refused — confab gate (${gate.reason})`);
+    if (attempt >= 2) {
+      if (!dryRun) writeGated(gatedKey, gate.reason);
+      console.error("[claudico] reply not sent — refused twice; these messages are marked gated until a new one arrives");
+      process.exit(0);
+    }
+    extra = confabGate.regenerationNote(gate);
   }
 
   if (dryRun) { console.log(`[claudico] DRY-RUN reply:\n${reply}`); process.exit(0); }

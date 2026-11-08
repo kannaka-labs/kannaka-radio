@@ -39,6 +39,13 @@
  *   capture         "full" (call site gave prompt/support) | "output-only"
  *                   (voice-writeback's catch-all: no prompt, no support)
  *   truncated       field names that were cut to their cap
+ *   private         true for a DM surface (claudico, a Mastodon direct or
+ *                   followers-only mention): context_text is stored as
+ *                   { sha256, chars } and the DM text inside prompt / system /
+ *                   source_text is replaced by "[DM: sha256 <12 hex>…, N
+ *                   chars]". Any export of this ledger (the #2 dataset, a
+ *                   backup that leaves the box) MUST drop private rows; the
+ *                   rates only count them.
  *
  * Contract: append() never throws and never delays a post (synchronous
  * append of one line, a few KB). A failure is logged and returned, never
@@ -131,6 +138,22 @@ function cap(text, n, name, truncated) {
 
 function sha256(s) { return crypto.createHash("sha256").update(String(s == null ? "" : s), "utf8").digest("hex"); }
 
+// A DM's text never lands in the ledger: the whole text, its first 600
+// characters (draftReply quotes that much) and each line of 8+ characters are
+// replaced wherever they occur, longest first.
+function dmPlaceholder(dm) { return `[DM: sha256 ${sha256(dm).slice(0, 12)}…, ${String(dm).length} chars]`; }
+function scrubPrivate(text, dm) {
+  if (text == null || !dm) return text;
+  const d = String(dm);
+  const parts = [d, d.slice(0, 600), ...d.split(/\r?\n/).map((l) => l.trim())]
+    .filter((s) => s && s.length >= 8);
+  let out = String(text);
+  for (const s of [...new Set(parts)].sort((a, b) => b.length - a.length)) {
+    if (out.includes(s)) out = out.split(s).join(dmPlaceholder(d));
+  }
+  return out;
+}
+
 /** The row as it is written: capped, redacted, hashed. */
 function buildRow(p = {}) {
   const truncated = [];
@@ -140,6 +163,10 @@ function buildRow(p = {}) {
     name: r && r.name, ok: !!(r && r.ok), ...(r && r.url ? { url: String(r.url) } : {}),
   })) : [];
   const published = typeof p.published === "boolean" ? p.published : results.some((r) => r.ok && r.name !== "none");
+  const isPrivate = !!p.private;
+  const ctxRaw = p.context_text != null ? p.context_text : p.contextText;
+  const dm = isPrivate && ctxRaw != null ? String(ctxRaw) : null;
+  const scrub = (s) => (dm ? scrubPrivate(s, dm) : s);
   return {
     v: 1,
     id: p.id || crypto.randomBytes(8).toString("hex"),
@@ -148,11 +175,12 @@ function buildRow(p = {}) {
     surfaces: Array.isArray(p.surfaces) ? p.surfaces.map(String) : results.map((r) => r.name).filter(Boolean),
     composer: p.composer || null,
     model: p.model || null,
-    prompt: cap(p.prompt, FIELD_CAP, "prompt", truncated),
-    system: cap(p.system, FIELD_CAP, "system", truncated),
+    prompt: cap(scrub(p.prompt), FIELD_CAP, "prompt", truncated),
+    system: cap(scrub(p.system), FIELD_CAP, "system", truncated),
     recall_rows: rows.slice(0, MAX_ROWS).map((r) => cap(r && typeof r === "object" ? r.content : r, ROW_CAP, "recall_rows", truncated)),
-    source_text: cap(p.source_text != null ? p.source_text : p.sourceText, FIELD_CAP, "source_text", truncated),
-    context_text: cap(p.context_text != null ? p.context_text : p.contextText, FIELD_CAP, "context_text", truncated),
+    source_text: cap(scrub(p.source_text != null ? p.source_text : p.sourceText), FIELD_CAP, "source_text", truncated),
+    context_text: dm != null ? { sha256: sha256(dm), chars: dm.length }
+      : cap(ctxRaw, FIELD_CAP, "context_text", truncated),
     output: cap(p.output, FIELD_CAP, "output", truncated),
     output_sha256: p.output == null ? null : sha256(p.output),
     verdicts: p.verdicts || {},
@@ -163,6 +191,7 @@ function buildRow(p = {}) {
     attempt: Number.isInteger(p.attempt) ? p.attempt : 1,
     capture: p.capture || "full",
     ...(truncated.length ? { truncated: [...new Set(truncated)] } : {}),
+    ...(isPrivate ? { private: true } : {}),
     host: os.hostname(),
     pid: process.pid,
   };
@@ -225,8 +254,34 @@ function append(p) {
     try { fs.chmodSync(file, 0o600); } catch (_) { /* best effort (Windows) */ }
     return { ok: true, id: row.id, row };
   } catch (e) {
+    const code = e && e.code;
+    if (code === "EACCES" || code === "EPERM") {
+      // Loud: a ledger the radio cannot append to (e.g. created first by a
+      // root job) silently loses every row after it.
+      console.error(`   [publication-ledger] LEDGER NOT WRITABLE (${code}) at ${ledgerPath()} — rows are being lost; fix the owner/mode (opc, 0600)`);
+    }
     log(`row NOT written (${e && e.message}) — surface ${p && p.surface}, decision ${row && row.decision}`);
     return { ok: false, error: e && e.message, row };
+  }
+}
+
+/**
+ * Create the ledger now (mode 0600) if it is missing, and check it can be
+ * appended to. Called once at radio startup, so the file is the radio
+ * user's, never a root cron job's. Never throws.
+ * @returns {{ ok: boolean, path: string, error?: string }}
+ */
+function ensureWritable() {
+  const file = ledgerPath();
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const fd = fs.openSync(file, "a", 0o600);
+    fs.closeSync(fd);
+    try { fs.chmodSync(file, 0o600); } catch (_) { /* best effort (Windows) */ }
+    return { ok: true, path: file };
+  } catch (e) {
+    console.error(`   [publication-ledger] LEDGER NOT WRITABLE (${e && e.code}) at ${file}: ${e && e.message} — every gated draft will lose its row until this is fixed`);
+    return { ok: false, path: file, error: e && e.message };
   }
 }
 
@@ -241,7 +296,12 @@ function ledgerFiles(file = ledgerPath()) {
 /** Rows with sinceMs <= ts < untilMs, from every file. Torn lines are skipped. */
 function readRows({ sinceMs = 0, untilMs = Infinity, file } = {}) {
   const rows = [];
-  for (const f of ledgerFiles(file || ledgerPath())) {
+  const live = file || ledgerPath();
+  for (const f of ledgerFiles(live)) {
+    // A rotated file last written before the window holds no row in it.
+    if (f !== live) {
+      try { if (fs.statSync(f).mtimeMs < sinceMs) continue; } catch (_) { continue; }
+    }
     let raw = "";
     try { raw = fs.readFileSync(f, "utf8"); } catch (_) { continue; }
     for (const line of raw.split("\n")) {
@@ -260,5 +320,5 @@ function _setPath(p) { _path = p || null; }
 
 module.exports = {
   append, buildRow, readRows, ledgerPath, ledgerFiles, redact, radioDataDir, sha256,
-  FIELD_CAP, _setPath,
+  ensureWritable, scrubPrivate, FIELD_CAP, _setPath,
 };

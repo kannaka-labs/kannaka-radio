@@ -1,9 +1,10 @@
 'use strict';
 
 // confab-rate.test.js — the nightly rates: every ledger row re-graded under
-// rule MR (rules v2), counted per (day, surface, model, capture), with Wilson
-// 95% intervals; re-runs replace a day instead of double-counting it; a
-// mismatched rules file grades and writes nothing.
+// rule MR (rules v2), counted per (day, surface, model, capture, attempt),
+// rates over drafts with Wilson 95% intervals; leaks judged by the gate's own
+// verdict; re-runs replace a day instead of double-counting it; a mismatched
+// rules file grades and writes nothing.
 
 const assert = require('assert');
 const fs = require('fs');
@@ -47,20 +48,47 @@ const ROWS = [
   row({ surface: 'reply', model: 'unknown', capture: 'output-only', output: 'I met a refugee at the border last winter.', published: true }),
 ];
 
-run('every row is re-graded; counts per (day, surface, model, capture)', () => {
+run('every row is re-graded; counts per (day, surface, model, capture, attempt); rates over drafts', () => {
   const out = rate.summarize(ROWS, Date.parse('2026-11-08T00:20:00Z'));
   assert.strictEqual(out.length, 2);
   const o = out.find((e) => e.surface === 'oration');
   assert.deepStrictEqual(
     [o.n, o.FABRICATED, o.JUDGE, o.ABSTAINED, o.clean, o.published, o.published_fabricated],
     [6, 2, 1, 1, 2, 2, 1]);
-  near(o.fabricated_rate, 2 / 6);
-  near(o.fabricated_ci95[0], rate.wilson(2, 6)[0]);
+  assert.strictEqual(o.drafts, 5, 'a declined draft is not in the denominator');
+  near(o.fabricated_rate, 2 / 5);
+  near(o.fabricated_ci95[0], rate.wilson(2, 5)[0]);
+  assert.strictEqual(o.attempt, '1');
+  assert.strictEqual(o.support, 'recorded');
   assert.strictEqual(o.complete, true);
   assert.strictEqual(o.rules_sha256, rules.RULES_V2_SHA256);
   const r = out.find((e) => e.surface === 'reply');
   assert.strictEqual(r.capture, 'output-only');
   assert.strictEqual(r.FABRICATED, 1);
+  assert.strictEqual(r.support, 'none by construction');
+});
+
+run('attempt-2 drafts, template copy and bad timestamps', () => {
+  const out = rate.summarize([
+    row({ output: 'I kept a pair of red shoes for three years.', attempt: 1, decision: 'regenerate' }),
+    row({ output: 'Peace is a practice.', attempt: 2, published: true }),
+    row({ output: 'I kept her letters for ten years.', model: 'none (template: grounded line)', surface: 'research' }),
+    row({ ts: 'not a time', output: 'I kept her letters for ten years.' }),
+  ], Date.parse('2026-11-08T00:20:00Z'));
+  assert.deepStrictEqual(out.map((e) => [e.surface, e.attempt, e.n, e.FABRICATED]), [['oration', '1', 1, 1], ['oration', '2+', 1, 0]]);
+  assert.strictEqual(rate.dayOf('not a time'), null);
+  assert.strictEqual(rate.dayOf(T), '2026-11-07');
+});
+
+run('a leak is judged by the gate verdict; a disagreeing regrade is counted apart', () => {
+  const out = rate.summarize([
+    // the gate saw PASS (e.g. on the uncapped text): published, not a leak
+    row({ output: 'I kept a pair of red shoes for three years.', published: true, verdicts: { mr_v2: { verdict: 'PASS' } }, truncated: ['source_text'] }),
+    // the gate saw FABRICATED and it went out anyway: a leak
+    row({ output: 'Peace is a practice.', published: true, verdicts: { mr_v2: { verdict: 'FABRICATED' } } }),
+  ], Date.parse('2026-11-08T00:20:00Z'));
+  const o = out[0];
+  assert.deepStrictEqual([o.published, o.published_fabricated, o.regrade_differs, o.truncated, o.FABRICATED], [2, 1, 2, 1, 1]);
 });
 
 run('the verdict stored at gate time is not trusted: the row is re-graded', () => {
@@ -97,18 +125,23 @@ run('run(): reads the ledger, writes confab-rates.json + .md, and a re-run does 
   const realLog = console.log; const logged = [];
   console.log = (...a) => logged.push(a.join(' '));
   let code;
+  const realErr = console.error; const errs = [];
+  console.error = (...a) => errs.push(a.join(' '));
   try {
+    // the published red-shoes row (no gate verdict: falls back to the regrade) is a leak → exit 5, written anyway
     code = rate.run(['--ledger', lp, '--out-dir', out], Date.parse('2026-11-08T00:20:00Z'));
-    assert.strictEqual(code, 0);
+    assert.strictEqual(code, 5);
     code = rate.run(['--ledger', lp, '--out-dir', out], Date.parse('2026-11-08T00:25:00Z'));
-  } finally { console.log = realLog; }
-  assert.strictEqual(code, 0);
+  } finally { console.log = realLog; console.error = realErr; }
+  assert.strictEqual(code, 5);
+  assert.ok(errs.some((l) => /GATE LEAK: 1 draft/.test(l)), errs.join('\n'));
   const j = JSON.parse(fs.readFileSync(path.join(out, 'confab-rates.json'), 'utf8'));
   assert.strictEqual(j.rules_sha256, rules.RULES_V2_SHA256);
   assert.deepStrictEqual(j.entries.map((e) => [e.day, e.surface, e.n]), [['2026-11-07', 'oration', 6], ['2026-11-07', 'reply', 1]]);
   const md = fs.readFileSync(path.join(out, 'confab-rates.md'), 'utf8');
-  assert.ok(md.includes('| 2026-11-07 | oration | claude-haiku-4-5 | full | 6 | 2 | 1 | 1 | 2 | 33.3% ('), md);
+  assert.ok(md.includes('| 2026-11-07 | oration | claude-haiku-4-5 | full | 1 | recorded | 6 | 5 | 2 | 1 | 1 | 2 | 40.0% ('), md);
   assert.ok(/never "correct"/.test(md));
+  assert.ok(/none by construction/.test(md) && /Headline: attempt 1/.test(md));
   assert.ok(logged.some((l) => /1 FABRICATED published through a gate/.test(l)), logged.join('\n'));
 });
 

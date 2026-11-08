@@ -365,6 +365,13 @@ class PeaceOration {
       }
       return { ok: true, pieces };
     });
+    // The gate can't grade (rules v2 unavailable): every piece would be
+    // refused, so spend no hosted-model call on a doomed narration.
+    const ready = confabGate.rulesReady();
+    if (!ready.ok) {
+      console.warn(`   [narration] "${albumName}": ${ready.reason} — not composing`);
+      return Promise.resolve({ ok: false, reason: "confab_rules_unavailable" });
+    }
     return attempt(1);
   }
 
@@ -456,6 +463,11 @@ class PeaceOration {
         ].join("\n"));
       });
     };
+    const ready = confabGate.rulesReady();
+    if (!ready.ok) {
+      console.warn(`   [showcase] "${albumName}": ${ready.reason} — not composing`);
+      return Promise.resolve({ ok: false, reason: "confab_rules_unavailable" });
+    }
     return attempt(1, null)
       .then((text) => {
         if (text === false) return { ok: false, reason: "claims_check_failed" };
@@ -658,6 +670,14 @@ class PeaceOration {
    * @returns {Promise<string|null>}
    */
   async _composeChecked(key, out = {}) {
+    // The gate can't grade (rules v2 unavailable): every draft would be
+    // refused, so spend no hosted-model call. "Compose failed" → the slot
+    // is retried on the next tick, which re-checks without a call.
+    const ready = confabGate.rulesReady();
+    if (!ready.ok) {
+      console.warn(`   [oration] ${ready.reason} — not composing`);
+      return null;
+    }
     let extra = null;
     for (let attempt = 1; attempt <= 2; attempt++) {
       const got = {};

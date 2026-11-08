@@ -256,23 +256,26 @@ function draftReply(parentText, author, platform, maxChars = 250, info = {}) {
  * (ABSTAINED in the nightly rates); a draft another check refused is logged
  * as blocked with that reason.
  *
+ * `private: true` (a DM or followers-only mention): the ledger row keeps only
+ * a hash of the parent text and scrubs it from the prompt.
+ *
  * @returns {object|null} the gate handle for a draft (null when there is none)
  */
-function gateReply({ reply, info = {}, parentText, composer, live }) {
+function gateReply({ reply, info = {}, parentText, composer, live, private: isPrivate = false }) {
   // Lazy: the shared helpers above stay loadable without the server tree.
   const confabGate = require("../../server/lib/confab-gate");
   const model = confabGate.askModel();
   if (!reply) {
     if (!live) return null;
     if (info.declined) {
-      confabGate.recordDeclined({ surface: "reply", composer, model, prompt: info.prompt, contextText: parentText, text: info.raw });
+      confabGate.recordDeclined({ surface: "reply", composer, model, prompt: info.prompt, contextText: parentText, text: info.raw, private: isPrivate });
     } else if (info.raw) {
-      confabGate.check({ surface: "reply", composer, model, prompt: info.prompt, text: info.raw, contextText: parentText })
+      confabGate.check({ surface: "reply", composer, model, prompt: info.prompt, text: info.raw, contextText: parentText, private: isPrivate })
         .record({ decision: "blocked", published: false, reason: info.reason || "draft refused by a pre-post check" });
     }
     return null;
   }
-  const g = confabGate.check({ surface: "reply", composer, model, prompt: info.prompt, text: reply, contextText: parentText });
+  const g = confabGate.check({ surface: "reply", composer, model, prompt: info.prompt, text: reply, contextText: parentText, private: isPrivate });
   if (!g.allow && live) g.record({ decision: "skipped" });
   return g;
 }

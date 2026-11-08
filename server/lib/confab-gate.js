@@ -96,7 +96,19 @@ function decide(p = {}) {
 function regenerationNote(g) {
   return `Rule MR (made-up recollection) graded the draft ${g.verdict}: ${g.detail}. ` +
     "Do not claim to remember, keep, carry, meet, see or be told anything, and claim no past of years: " +
-    "nothing you were given here says you lived it. Frame any story as someone else's, or as an illustration (\"imagine…\").";
+    "nothing you were given here says you lived it. Do not lean on an inclusive \"we\" for lived acts either " +
+    "(\"we have seen…\", \"we have lost…\", \"we have watched…\", \"we were told…\"): those are held as undecided and the draft will not air. " +
+    "Frame any story as someone else's, or as an illustration (\"imagine…\").";
+}
+
+/**
+ * Whether rule MR can grade at all. A caller that would compose a draft only
+ * to have the gate refuse it (rules v2 unavailable) checks this first and
+ * spends no model call.
+ */
+function rulesReady() {
+  const st = rules.rulesStatus();
+  return { ok: st.ok, reason: st.ok ? null : `confab gate closed: rules v2 unavailable (${st.reason})` };
 }
 
 /** The model the `kannaka ask` CLI is configured with (it does not report it). */
@@ -114,7 +126,10 @@ function askModel() {
  * Gate a draft and get back a one-shot ledger writer for it.
  *
  *   const g = confabGate.check({ surface, composer, model, prompt, text,
- *                                 recallRows, sourceText, contextText });
+ *                                 recallRows, sourceText, contextText, private });
+ *
+ * `private: true` marks a DM surface: the ledger keeps only a hash of
+ * contextText (the DM) and scrubs it from the prompt (publication-ledger.js).
  *   if (!g.allow) { g.record({ decision: "skipped" }); return; }
  *   ...post...
  *   g.record({ results });          // published = any surface ok
@@ -144,6 +159,7 @@ function check(p = {}) {
       recall_rows: p.recallRows || [],
       source_text: p.sourceText || null,
       context_text: p.contextText || null,
+      private: !!p.private,
       output: p.text,
       verdicts: {
         ...(p.guard ? { claims_guard: { ok: !!p.guard.ok, reasons: p.guard.reasons || [] } } : {}),
@@ -170,11 +186,11 @@ function check(p = {}) {
 function recordDeclined(p = {}) {
   return ledger.append({
     surface: p.surface, composer: p.composer, model: p.model, prompt: p.prompt,
-    context_text: p.contextText || null, source_text: p.sourceText || null,
+    context_text: p.contextText || null, source_text: p.sourceText || null, private: !!p.private,
     recall_rows: p.recallRows || [], output: p.text == null ? null : p.text,
     decision: "declined", published: false, reason: p.reason || "model declined",
     verdicts: {},
   });
 }
 
-module.exports = { check, decide, recordDeclined, regenerationNote, askModel, policyFor, POLICY };
+module.exports = { check, decide, recordDeclined, regenerationNote, rulesReady, askModel, policyFor, POLICY };

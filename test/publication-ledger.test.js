@@ -147,6 +147,57 @@ run('append never throws: an unwritable path is logged and reported', () => {
   assert.ok(logged.some((l) => /row NOT written/.test(l)));
 });
 
+run('a DM row keeps only a hash of the DM and scrubs it from the prompt', () => {
+  const p = fresh();
+  const dm = 'I buried my father in March and I have not told anyone.\nCan you say something about grief?';
+  const prompt = `You are Kannaka, replying in a DM.\nTheir unreplied message(s):\n${dm}\n\nWrite ONE reply.`;
+  const r = ledger.append({ surface: 'reply', prompt, context_text: dm, output: 'Grief keeps its own time.', private: true });
+  assert.ok(r.ok);
+  const row = lines(p)[0];
+  assert.strictEqual(row.private, true);
+  assert.deepStrictEqual(row.context_text, { sha256: ledger.sha256(dm), chars: dm.length });
+  const raw = fs.readFileSync(p, 'utf8');
+  assert.ok(!raw.includes('buried my father'), 'no DM text anywhere in the row');
+  assert.ok(!raw.includes('something about grief'), 'no DM line anywhere in the row');
+  assert.ok(/\[DM: sha256 [0-9a-f]{12}…, \d+ chars\]/.test(row.prompt), row.prompt);
+  assert.ok(row.prompt.includes('Write ONE reply.'));
+  // draftReply quotes only the first 600 characters: that prefix is scrubbed too
+  const long = 'x'.repeat(700);
+  assert.ok(!ledger.scrubPrivate(`"${long.slice(0, 600)}"`, long).includes('xxxxxxxx'));
+  // a public row is unchanged
+  ledger.append({ surface: 'reply', prompt: 'p', context_text: 'a public post', output: 'o' });
+  assert.strictEqual(lines(p)[1].context_text, 'a public post');
+  assert.strictEqual(lines(p)[1].private, undefined);
+});
+
+run('ensureWritable creates the ledger (0600 where supported) and reports a failure loudly', () => {
+  const p = fresh();
+  assert.ok(!fs.existsSync(p));
+  assert.strictEqual(ledger.ensureWritable().ok, true);
+  assert.ok(fs.existsSync(p));
+  if (process.platform !== 'win32') assert.strictEqual(fs.statSync(p).mode & 0o777, 0o600);
+  // a path under a regular file cannot be created
+  const blocker = path.join(tmp, 'blocker');
+  fs.writeFileSync(blocker, 'x');
+  ledger._setPath(path.join(blocker, 'sub', 'publication-ledger.jsonl'));
+  const realErr = console.error; const errs = [];
+  console.error = (...a) => errs.push(a.join(' '));
+  try { assert.strictEqual(ledger.ensureWritable().ok, false); } finally { console.error = realErr; }
+  assert.ok(errs.some((e) => /LEDGER NOT WRITABLE/.test(e)), errs.join('\n'));
+});
+
+run('readRows skips a rotated file last written before the window', () => {
+  const p = fresh();
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(`${p}.1`, JSON.stringify({ ts: '2026-11-07T12:00:00.000Z', output: 'rotated, last written 11-01' }) + '\n');
+  const old = new Date('2026-11-01T00:00:00Z');
+  fs.utimesSync(`${p}.1`, old, old);
+  fs.writeFileSync(p, JSON.stringify({ ts: '2026-11-07T13:00:00.000Z', output: 'live' }) + '\n');
+  const rows = ledger.readRows({ sinceMs: Date.parse('2026-11-07T00:00:00Z'), untilMs: Date.parse('2026-11-08T00:00:00Z') });
+  assert.deepStrictEqual(rows.map((r) => r.output), ['live']);
+  assert.strictEqual(ledger.readRows({}).length, 2, 'no window: every file is read');
+});
+
 ledger._setPath(null);
 if (failed) { console.error(`${failed} failed`); process.exit(1); }
 console.log('all passed');

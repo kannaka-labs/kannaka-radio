@@ -162,6 +162,15 @@ verify_radio() {
         const sz=require("fs").statSync(f).size;
         console.log("  smoke OK: engine="+eng+" "+sz+"b");
       });' ) || return 1
+  # The confab gate fails closed: a rules file that does not hash to the
+  # frozen value silently stops orations, showcase intros and replies. Fail
+  # the deploy (and roll back) instead. Skipped on a commit without the gate.
+  if [ -f "$RADIO_DIR/server/lib/confab-rules-v2.js" ]; then
+    ( cd "$RADIO_DIR" && node -e '
+      const st=require("./server/lib/confab-rules-v2").rulesStatus();
+      if(!st.ok){console.error("  CONFAB RULES v2 UNAVAILABLE:",st.reason);process.exit(1);}
+      console.log("  confab rules v2 OK: "+st.sha256.slice(0,12)+"…");' ) || return 1
+  fi
   return 0
 }
 

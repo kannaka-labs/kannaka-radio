@@ -111,9 +111,12 @@ class MastodonAdapter {
     if (!this.isEnabled()) return { ok: false, error: "not_configured" };
     if (!parent || !parent.id) return { ok: false, error: "missing_parent_id" };
     const url = new URL("/api/v1/statuses", this._creds.instance);
+    // A reply to a direct or followers-only status keeps that visibility: a
+    // DM is never answered in public.
+    const vis = parent.visibility === "direct" || parent.visibility === "private" ? parent.visibility : "public";
     const body = JSON.stringify({
       status: _truncate((text || "").trim(), POST_MAX),
-      visibility: "public",
+      visibility: vis,
       in_reply_to_id: String(parent.id),
     });
     const opts = {
@@ -198,6 +201,7 @@ class MastodonAdapter {
                     statusId: n.status.id,
                     author: (n.account && n.account.acct) || "?",
                     text: n.status.content || "",
+                    visibility: n.status.visibility || "public",
                     inReplyToId: n.status.in_reply_to_id || null,
                   })),
               );

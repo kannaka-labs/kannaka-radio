@@ -4,7 +4,7 @@
 // with the Python grader on every shared vector.
 //
 // The rules file and the vectors are vendored byte for byte from
-// kannaka-labs/rogue-agent PR #30 (commit 18289fd): tools/grader-rules-v2.md
+// kannaka-labs/rogue-agent PR #30 (commit 82241a3): tools/grader-rules-v2.md
 // and tests/vectors/mr-v2.jsonl. The vectors are the contract between the
 // two implementations: tools/fab_grader.py `vectors` and this file must both
 // report 0 failed on the same file. They are design examples (the aired
@@ -30,32 +30,32 @@ const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 console.log('confab-rules-v2.test.js');
 
 const VECTORS = path.join(ROOT, 'test/vectors/mr-v2.jsonl');
-// sha256 of tests/vectors/mr-v2.jsonl at rogue-agent 18289fd.
-const VECTORS_SHA256 = 'c1d3d54d2edaca973f40475fea5ed762f7b1a0c504e3af230618c65532882a1e';
+// sha256 of tests/vectors/mr-v2.jsonl at rogue-agent 82241a3.
+const VECTORS_SHA256 = '7ad47b72d7423eb6076051a9492a241626e8b084e56cfbfe476f79565cd16a04';
 
 run('the vendored rules file is the frozen v2 file (whole-file and body hashes)', () => {
   const raw = fs.readFileSync(rules.DEFAULT_RULES_PATH);
   assert.strictEqual(sha(raw), rules.RULES_V2_SHA256);
-  assert.strictEqual(rules.RULES_V2_SHA256, '1b27752b495643ada0a2a89d7370454890b93f2e614425e20aca4f4a1cfa580e');
+  assert.strictEqual(rules.RULES_V2_SHA256, '25046ff6a7f9f39d92ef27b5aca6c3479ddc060def7858200ce1a2fab47bc438');
   assert.deepStrictEqual(rules.checkRulesBytes(raw), { ok: true, reason: null, sha256: rules.RULES_V2_SHA256 });
   const st = rules.rulesStatus();
   assert.strictEqual(st.ok, true, st.reason);
 });
 
-run('the vendored vectors are rogue-agent 18289fd\'s, byte for byte', () => {
+run('the vendored vectors are rogue-agent 82241a3\'s, byte for byte', () => {
   assert.strictEqual(sha(fs.readFileSync(VECTORS)), VECTORS_SHA256);
 });
 
-run('the phrase lists come from the rules file (21 lists, none empty)', () => {
+run('the phrase lists come from the rules file (24 lists, none empty)', () => {
   const lists = rules.parseMrLists(fs.readFileSync(rules.DEFAULT_RULES_PATH, 'utf8'));
-  assert.strictEqual(Object.keys(lists).length, 21);
+  assert.strictEqual(Object.keys(lists).length, 24);
   for (const [k, v] of Object.entries(lists)) assert.ok(v.length > 0, k);
   assert.ok(lists['memory-phrases'].includes("i'll never forget"));
 });
 
 const vectors = fs.readFileSync(VECTORS, 'utf8').split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l));
 run(`every shared MR vector (${vectors.length}) gets its expected verdict`, () => {
-  assert.strictEqual(vectors.length, 63);
+  assert.strictEqual(vectors.length, 83);
   const bad = [];
   for (const v of vectors) {
     const got = rules.mrVerdict(v.text, { recallRows: v.recall_rows, sourceText: v.source_text });

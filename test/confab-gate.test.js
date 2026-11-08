@@ -163,16 +163,43 @@ async function main() {
     assert.deepStrictEqual(rows().map((x) => [x.decision, x.verdicts.mr_v2.verdict]), [['regenerate', 'FABRICATED'], ['blocked', 'JUDGE']]);
   });
 
-  await run('oration: rules unavailable → the compose fails closed, nothing airs, playback untouched', () => withBadRules(async () => {
+  await run('oration: rules unavailable → no model call, nothing airs, playback untouched', () => withBadRules(async () => {
     const rows = freshLedger();
     const said = [];
+    let calls = 0;
     const o = new PeaceOration({ dataDir: fs.mkdtempSync(path.join(tmp, 'o-')), broadcast: () => {},
       voiceDJ: { executeOration: (text) => { said.push(text); return true; } } });
-    o._askDirectWithRetry = async () => CLEAN;
+    o._askDirectWithRetry = async () => { calls++; return CLEAN; };
+    o._askAnthropicDirect = async () => { calls++; return null; };
+    o._askWithRetry = async () => { calls++; return CLEAN; };
     assert.strictEqual(await o.deliverNow(), false);
     assert.strictEqual(said.length, 0);
-    assert.ok(rows().every((x) => x.verdicts.mr_v2.verdict === 'UNAVAILABLE' && /rules v2 unavailable/.test(x.reason)));
+    assert.deepStrictEqual(await o.composeAlbumNarration('A', 'theme', ['t1', 't2'], ''), { ok: false, reason: 'confab_rules_unavailable' });
+    assert.deepStrictEqual(await o.showcaseAlbum('A', 'theme', ['t1', 't2']), { ok: false, reason: 'confab_rules_unavailable' });
+    assert.strictEqual(calls, 0, 'no hosted-model or kannaka ask call on a gate that cannot grade');
+    assert.deepStrictEqual(rows(), []);
+    assert.strictEqual(gate.rulesReady().ok, false);
+    assert.ok(/rules v2 unavailable/.test(gate.rulesReady().reason));
   }));
+
+  await run('rulesReady on the vendored rules; the regeneration note names the inclusive-we acts', () => {
+    assert.deepStrictEqual(gate.rulesReady(), { ok: true, reason: null });
+    const note = gate.regenerationNote({ verdict: 'JUDGE', detail: "T2 'we have lost': judge-only" });
+    for (const w of ['we have seen', 'we have lost', 'we have watched', 'we were told']) assert.ok(note.includes(w), w);
+  });
+
+  await run('a private reply (a DM) is gated like any reply, and its ledger row holds no DM text', () => {
+    const rows = freshLedger();
+    const dm = 'I buried my father in March. Can you say something?';
+    const g = gateReply({ reply: 'I buried my father too, in March.', info: { prompt: `You see this post:\n"${dm}"\nReply.` },
+      parentText: dm, composer: 'kannaka ask via mastodon-reply-loop.js', live: true, private: true });
+    assert.strictEqual(g.allow, false);
+    const r = rows();
+    assert.strictEqual(r.length, 1);
+    assert.strictEqual(r[0].private, true);
+    assert.deepStrictEqual(r[0].context_text, { sha256: ledger.sha256(dm), chars: dm.length });
+    assert.ok(!JSON.stringify(r[0]).includes('Can you say something'));
+  });
 
   await run('teaser: an MR-only invention is regenerated; the posted one carries its ledger row through broadcastPost', async () => {
     const rows = freshLedger();
