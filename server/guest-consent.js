@@ -25,6 +25,11 @@
  * The consent file is read at schedule time, every time, so flipping a
  * guest on or off needs no restart and no deploy.
  *
+ * A guest's own withdrawal (server/guest-withdrawal.js, #443) is a second,
+ * append-only log the guest writes through a link or an e-mail: its latest
+ * row for a guest being "withdraw" holds that guest's every file, whatever
+ * the consent file says, and an unreadable log holds every guest.
+ *
  * Gated folders are also kept out of the library index (utils.getFiles), so
  * no listener request, vote, Deep Cuts set or album lookup can reach them,
  * and /audio/ refuses a gated file until its guest has consented.
@@ -32,6 +37,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const withdrawal = require('./guest-withdrawal');
 
 /** Show folders whose every file is gated. */
 const GUEST_FOLDERS = Object.freeze(['Guest Reading', 'Guest Showcase']);
@@ -46,6 +52,7 @@ function defaultPaths(baseDir, env = process.env) {
   return {
     consentFile: env.GUEST_CONSENT_FILE || path.join(ws, 'guest-consent.json'),
     ledgerFile: env.GUEST_AIRINGS_FILE || path.join(ws, 'guest-airings.json'),
+    withdrawalsFile: withdrawal.defaultPaths(baseDir, env).withdrawalsFile,
   };
 }
 
@@ -124,12 +131,18 @@ function placeholderSidecars(dir, fileName) {
  * @param {number} [o.airedCount] times it has already aired
  * @param {number} [o.chicagoHour] 0–23; omitted → hour rules not checked
  * @param {boolean} [o.ignoreAirings] a resume of an airing already counted
+ * @param {object} [o.withdrawals] holdState() of the withdrawal log; omitted → not checked
  */
 function clearance(sidecar, consent, o = {}) {
   const reasons = [];
   if (!sidecar) return { ok: false, reasons: ['no guest sidecar (<stem>.guest.json)'] };
   const entry = (consent && consent.guests && consent.guests[sidecar.guest]) || null;
   if (!entry || entry.consent !== true) reasons.push(`no consent from "${sidecar.guest}"`);
+  if (o.withdrawals) {
+    if (o.withdrawals.unreadable) reasons.push('withdrawal log unreadable');
+    const at = o.withdrawals.withdrawnAt(sidecar.guest);
+    if (at) reasons.push(`withdrawn by "${sidecar.guest}" at ${at}`);
+  }
   const resolved = new Set(entry && Array.isArray(entry.resolved) ? entry.resolved : []);
   // Fail closed on a malformed sidecar: `requires` must be a list (an empty
   // one is fine), and a cap that is present must be a whole number.
@@ -161,7 +174,7 @@ function clearance(sidecar, consent, o = {}) {
  * The I/O half for one show folder: a gate function for PodcastScheduler and
  * the airing recorder. Reads the consent file and the ledger on every call.
  */
-function createGate({ musicDir, folder, consentFile, ledgerFile, log = console }) {
+function createGate({ musicDir, folder, consentFile, ledgerFile, withdrawalsFile, log = console }) {
   const getDir = () => path.join(typeof musicDir === 'function' ? musicDir() : musicDir, folder);
   const lastLogged = new Map();
   function check(fileName, o = {}) {
@@ -173,6 +186,7 @@ function createGate({ musicDir, folder, consentFile, ledgerFile, log = console }
       airedCount: ledger === null ? null : (Array.isArray(airings) ? airings.length : 0),
       chicagoHour: o.chicagoHour,
       ignoreAirings: o.ignoreAirings,
+      withdrawals: withdrawalsFile ? withdrawal.holdState(withdrawalsFile, log) : undefined,
     });
     // A staged spoken line still holding a placeholder ("[[CREDIT]]") would
     // be read out literally; it holds the file like any unmet condition.
@@ -209,19 +223,27 @@ function createGate({ musicDir, folder, consentFile, ledgerFile, log = console }
       return false;
     }
   }
-  return { check, recordAiring, folder };
+  /** The guest a file belongs to (its sidecar's `guest`), or null. */
+  function guestOf(fileName) {
+    const sc = readSidecar(getDir(), path.basename(String(fileName)));
+    return sc ? sc.guest : null;
+  }
+  return { check, recordAiring, guestOf, folder };
 }
 
 /**
  * For /audio/: has this gated file's guest consented, with everything it
- * requires resolved? Hours and airing caps are not applied here — a player
- * fetching the file a minute into the hour must still get it.
+ * requires resolved, and not withdrawn by them? Hours and airing caps are
+ * not applied here — a player fetching the file a minute into the hour must
+ * still get it.
  */
-function servable(musicDir, rel, consentFile) {
+function servable(musicDir, rel, consentFile, withdrawalsFile) {
   if (!isGuestPath(rel)) return true;
   const norm = String(rel).replace(/\\/g, '/').replace(/^\/+/, '');
   const dir = path.join(musicDir, path.dirname(norm));
-  const res = clearance(readSidecar(dir, path.basename(norm)), readConsent(consentFile), {});
+  const res = clearance(readSidecar(dir, path.basename(norm)), readConsent(consentFile), {
+    withdrawals: withdrawalsFile ? withdrawal.holdState(withdrawalsFile) : undefined,
+  });
   return res.ok;
 }
 

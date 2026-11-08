@@ -1396,6 +1396,25 @@ const showcaseScheduler = new PodcastScheduler({
 showcaseScheduler.start();
 deps.showcaseScheduler = showcaseScheduler;
 
+// ── Guest withdrawal (#443) — a guest takes their work off the air ─
+// server/guest-withdrawal.js. The gates above already hold a withdrawn
+// guest at the next decision; this takes them off what is queued or on air
+// NOW. Rows come from the link route (deps.onGuestWithdrawn, immediate) or
+// from scripts/guest-withdraw.js run by the inbox (the log watcher, within
+// ~5 s). icecastSource is resolved at call time (assigned further down).
+const guestWithdrawal = require("./guest-withdrawal");
+const GUEST_WD_PATHS = guestWithdrawal.defaultPaths(BASE_DIR);
+function applyGuestWithdrawal(guest) {
+  for (const s of [readingScheduler, showcaseScheduler]) {
+    try { s.withdrawGuest(guest, { icecastSource }); }
+    catch (e) { console.warn(`[guest-withdrawal] ${s._show.label}: ${e && e.message}`); }
+  }
+  guestWithdrawal.flushOutbox(GUEST_WD_PATHS.outboxFile, adMailer).catch(() => {});
+}
+deps.onGuestWithdrawn = applyGuestWithdrawal;
+deps.guestMailer = adMailer;
+guestWithdrawal.watchWithdrawals(GUEST_PATHS.withdrawalsFile, applyGuestWithdrawal);
+
 // ── Programming schedule — time-of-day album rotation ────
 const { ProgrammingSchedule, DAILY_SHOWCASES } = require("./programming");
 const programming = new ProgrammingSchedule({

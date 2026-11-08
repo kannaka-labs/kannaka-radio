@@ -63,6 +63,12 @@ workspace/on-air-digest-buffer.jsonl*
 workspace/publication-ledger.jsonl*
 workspace/confab-rates.json
 workspace/confab-rates.md
+# Guest consent and withdrawal (server/guest-consent.js, guest-withdrawal.js):
+# guests' contact addresses, who withdrew and when. Personal data, never source.
+workspace/guest-consent.json*
+workspace/guest-airings.json*
+workspace/guest-withdrawals.jsonl*
+workspace/guest-withdraw-outbox.jsonl*
 # Durable play history (Deep Cuts). Same reason: runtime state, and it is
 # per-station — a committed copy would tell another box that tracks it has
 # never aired were already played.
