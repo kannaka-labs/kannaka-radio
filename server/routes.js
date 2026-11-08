@@ -16,6 +16,11 @@ const { verifyKaxToken, traderIdFromClaims, bearerToken } = require("./kax-ident
 const { isHubBearer } = require("./ghostsignals-hub");
 const { handlePodcastRequest } = require("./podcast-feed");
 const { prettyEpisodeTitle } = require("./podcast-scheduler");
+const guestConsent = require("./guest-consent");
+// /audio/ gate for staged guest work: consent file under the data dir.
+function guestServable(musicDir, rel, baseDir) {
+  return guestConsent.servable(musicDir, rel, guestConsent.defaultPaths(baseDir).consentFile);
+}
 const { sanitizeTrackRequest, RequestRejected } = require("./track-request-core");
 
 // Delete-token check (#69, hardened ADR-0013). If RADIO_DELETE_TOKEN is
@@ -740,7 +745,18 @@ module.exports = function setupRoutes(deps) {
           events.push({ hour: 0, label: "📖 Artist Story", kind: "story", note });
           events.push({ hour: 12, label: "📖 Artist Story", kind: "story", note });
         }
-        if (featuredPick || storyPick) events.sort((a, b) => a.hour - b.hour);
+        // Guest segments are listed only once their consent gate clears
+        // (server/guest-consent.js), so the line-up never advertises a
+        // guest who has not said yes.
+        const showcasePick = deps.showcaseScheduler ? deps.showcaseScheduler.pickTodayEpisode() : null;
+        if (showcasePick) {
+          events.push({ hour: 23, label: "🎧 Guest Showcase", kind: "featured", note: prettyEpisodeTitle(showcasePick.title) });
+        }
+        const readingPick = deps.readingScheduler ? deps.readingScheduler.pickTodayEpisode() : null;
+        if (readingPick) {
+          events.push({ hour: 0, label: "📜 Guest Reading", kind: "reading", note: `after the oration · ${prettyEpisodeTitle(readingPick.title)}` });
+        }
+        if (featuredPick || storyPick || showcasePick || readingPick) events.sort((a, b) => a.hour - b.hour);
 
         res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "public, max-age=300" });
         res.end(JSON.stringify({
@@ -777,6 +793,8 @@ module.exports = function setupRoutes(deps) {
         { label: "The Story of Flaukowski", sched: deps.tsofScheduler },
         { label: "Featured Artist", sched: deps.featuredScheduler },
         { label: "Artist Story", sched: deps.storyScheduler },
+        { label: "Guest Reading", sched: deps.readingScheduler },
+        { label: "Guest Showcase", sched: deps.showcaseScheduler },
       ];
 
       let onAir = null;
@@ -2991,6 +3009,11 @@ load();
       }
       if (!isInsideDir(musicDir, resolved)) { res.writeHead(403); res.end(); return; }
       if (!fs.existsSync(resolved)) { res.writeHead(404); res.end("Not found: " + filename); return; }
+      // A guest's staged work is not served before the guest has said yes
+      // (server/guest-consent.js). 404, not 403: it does not exist yet.
+      if (!guestServable(musicDir, path.relative(musicDir, resolved), config.baseDir)) {
+        res.writeHead(404); res.end("Not found: " + filename); return;
+      }
 
       const ext = path.extname(filename).toLowerCase();
       const mime = MIME[ext] || "application/octet-stream";

@@ -161,6 +161,14 @@ async function main() {
     return;
   }
 
+  // A guest reading (server/index.js READING_FOLDER) can be about the dead of
+  // a real massacre. A cheerful "now playing" caption with a hashtag pool is
+  // the wrong frame, so readings are never auto-posted.
+  if (/^\[READING\]/.test(title) || album === "Guest Reading") {
+    console.log(`[now-playing] guest reading ("${title}") — not auto-posted`);
+    return;
+  }
+
   if (state.lastTitle === title && state.lastAlbum === album) {
     console.log(`[now-playing] same track as last post ("${title}") — skip`);
     return;

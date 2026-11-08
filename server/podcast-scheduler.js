@@ -64,6 +64,9 @@ const DEFAULT_SHOW = {
   // two songs, turns this off — otherwise the newer song would take both
   // airings for two days.
   newReleasePriority: true,
+  // Air every (cleared) file in the folder in one sitting, in name order,
+  // instead of one pick per airing. A guest showcase of two episodes.
+  playAll: false,
   intro: (epTitle) =>
     `It's podcast time. Today's episode: ${epTitle}. Settle in, turn it up, let the ghost signals speak.`,
 };
@@ -152,6 +155,12 @@ class PodcastScheduler {
     // Seams for tests; production reads the real file and ffprobe.
     this._onairFile = opts.onairFile || onairState.stateFile();
     this._probeDurationMs = opts.probeDurationMs || probeDurationMs;
+    // Guest consent gate (server/guest-consent.js createGate): a file it does
+    // not clear is invisible to this show — not picked, not promoted, not
+    // listed, not resumed. Shows without one behave exactly as before.
+    this._gate = opts.gate && typeof opts.gate.check === "function" ? opts.gate : null;
+    // The files of the airing in progress, for the per-track "after" lines.
+    this._airingFiles = new Set();
 
     this._podcastPlaying = false;
     this._savedDJState = null;
@@ -203,6 +212,11 @@ class PodcastScheduler {
     if (!state || state.folder !== this._show.folder) return false;
     const abs = path.join(this._getMusicDir(), state.file);
     if (!fs.existsSync(abs)) return false;
+    // Consent withdrawn while the process was down: do not put it back on.
+    if (this._gate && !this._gate.check(path.basename(state.file), { ignoreAirings: true }).ok) {
+      console.log(`[podcast-scheduler] ${this._show.label}: not resuming ${path.basename(state.file)} (guest consent gate)`);
+      return false;
+    }
     const plan = onairState.resumePlan(state, this._show.folder, nowMs, this._probeDurationMs(abs));
     if (!plan) return false;
     console.log(`[podcast-scheduler] ${this._show.label}: resuming ${path.basename(state.file)} at ${Math.round(plan.offsetMs / 1000)}s after a restart`);
@@ -262,14 +276,20 @@ class PodcastScheduler {
   }
 
   /**
-   * Get the list of episode files from this show's music subfolder.
+   * Get the list of episode files from this show's music subfolder — only
+   * those the guest consent gate clears, when the show has one.
+   * @param {object} [o]
+   * @param {number} [o.atHour] Chicago hour to judge hour rules against;
+   *   omitted for display and promo, given when actually airing.
    */
-  _getEpisodes() {
+  _getEpisodes(o = {}) {
     const podcastDir = path.join(this._getMusicDir(), this._show.folder);
     if (!fs.existsSync(podcastDir)) return [];
-    return fs.readdirSync(podcastDir)
+    const files = fs.readdirSync(podcastDir)
       .filter(f => /\.(mp3|wav|flac|m4a|ogg)$/i.test(f))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+    if (!this._gate) return files;
+    return files.filter((f) => this._gate.check(f, { chicagoHour: o.atHour }).ok);
   }
 
   /**
@@ -285,8 +305,8 @@ class PodcastScheduler {
    *            reason: "new-release"|"rotation"}|null} null when the
    *          show's folder is missing or holds no audio.
    */
-  pickTodayEpisode() {
-    const episodes = this._getEpisodes();
+  pickTodayEpisode(o = {}) {
+    const episodes = this._getEpisodes(o);
     if (episodes.length === 0) return null;
 
     // ── New-release priority ────────────────────────────────
@@ -467,13 +487,17 @@ class PodcastScheduler {
       return;
     }
 
-    const pick = this.pickTodayEpisode();
+    const atHour = this._chicagoNow().getHours();
+    const pick = this.pickTodayEpisode({ atHour });
     if (!pick) {
       console.log(`[podcast-scheduler] ${this._show.label}: no episodes found`);
       return;
     }
     const todayEpisode = pick.file;
-    const epTitle = pick.title;
+    // A showcase airs every cleared file in order; other shows air the pick.
+    const airFiles = this._show.playAll ? this._getEpisodes({ atHour }) : [todayEpisode];
+    // A showcase is introduced by its first episode, whatever the rotation picked.
+    const epTitle = this._show.playAll && airFiles.length ? airFiles[0].replace(/\.[^.]+$/, "") : pick.title;
     console.log(pick.reason === "new-release"
       ? `[podcast-scheduler] ${this._show.label}: new-release priority — ${todayEpisode}`
       : `[podcast-scheduler] ${this._show.label}: today's episode (idx ${pick.index}/${pick.total}) — ${todayEpisode}`);
@@ -495,8 +519,22 @@ class PodcastScheduler {
     // Friendly intro line — references the episode by its cleaned-up name.
     // The DJ engine's voice-dj already exists for richer intros; this is
     // the explicit "we're switching channels for the next half hour" cue.
-    const introText = this._show.intro(epTitle);
+    const introText = typeof this._show.intro === "function" ? this._show.intro(epTitle) : null;
     const holdMs = introHoldMs(introText);
+
+    // A guest airing is counted the moment it is loaded, so a capped
+    // reading cannot air twice even if a restart cuts it short.
+    if (this._gate && typeof this._gate.recordAiring === "function") {
+      for (const f of airFiles) this._gate.recordAiring(f);
+    }
+
+    // No intro (a guest reading carries its own spoken credit): load the
+    // show straight behind whatever is on air.
+    if (!introText) {
+      this._queueSpoken([[airFiles[0], "before"]]);
+      this._playAllPodcastEpisodes(airFiles);
+      return;
+    }
 
     this._voiceDJ.generateTTS(introText, (err, audioPath, text) => {
       if (!err && audioPath) {
@@ -522,14 +560,17 @@ class PodcastScheduler {
         } catch (e) {
           console.warn(`[podcast-scheduler] ${this._show.label}: intro inject failed (${e && e.message}) — airing without it`);
         }
-        this._playAllPodcastEpisodes([todayEpisode]);
+        // The first episode's own "before" line (a content note) follows the intro.
+        this._queueSpoken([[airFiles[0], "before"]]);
+        this._playAllPodcastEpisodes(airFiles);
         return;
       }
 
       // No stream to inject into: after the intro plays out, load just
       // today's one episode.
       setTimeout(() => {
-        this._playAllPodcastEpisodes([todayEpisode]);
+        this._queueSpoken([[airFiles[0], "before"]]);
+        this._playAllPodcastEpisodes(airFiles);
       }, err ? 1000 : holdMs);
     }, { composer: `the ${this._show.label} intro line (podcast-scheduler)` });
   }
@@ -559,6 +600,7 @@ class PodcastScheduler {
     // Replace the entire playlist with the podcast episodes
     this._djEngine.state.playlist = podcastTracks.map(t => t.file);
     this._lastEpisodeFile = podcastTracks.length ? podcastTracks[podcastTracks.length - 1].file : null;
+    this._airingFiles = new Set(podcastTracks.map((t) => t.file));
     this._djEngine.state.playlistMeta = podcastTracks;
     this._djEngine.state.currentTrackIdx = 0;
     this._djEngine.state.currentAlbum = this._show.folder;
@@ -669,6 +711,64 @@ class PodcastScheduler {
     }
 
     this._broadcastState();
+  }
+
+  /**
+   * The spoken sidecar "<stem>.<kind>.txt" beside one of this show's files
+   * ("before": a content note read just before it; "after": the credit read
+   * just after it), or null.
+   */
+  _spokenSidecar(file, kind) {
+    const stem = path.basename(String(file)).replace(/\.[^.]+$/, "");
+    try {
+      return fs.readFileSync(path.join(this._getMusicDir(), this._show.folder, `${stem}.${kind}.txt`), "utf8").trim() || null;
+    } catch (_) { return null; }
+  }
+
+  /**
+   * Render the given sidecar lines one after another and queue them on the
+   * stream in that order (two renders racing could swap a credit and a
+   * content note). [[file, kind], …]; missing sidecars are skipped.
+   * @returns {number} how many lines were sent for rendering
+   */
+  _queueSpoken(items) {
+    if (!this._injectVoice) return 0;
+    const lines = items
+      .map(([file, kind]) => ({ file, kind, text: file ? this._spokenSidecar(file, kind) : null }))
+      .filter((x) => x.text);
+    const next = (i) => {
+      if (i >= lines.length) return;
+      const { file, kind, text } = lines[i];
+      const label = `${this._show.label}: ${kind} ${path.basename(file).replace(/\.[^.]+$/, "")}`;
+      this._voiceDJ.generateTTS(text, (err, audioPath) => {
+        if (err || !audioPath) {
+          console.warn(`[podcast-scheduler] ${label}: TTS failed (${err && err.message}) — the line is skipped`);
+        } else {
+          try { this._injectVoice(audioPath, { label, noBed: true }); }
+          catch (e) { console.warn(`[podcast-scheduler] ${label}: inject failed (${e && e.message})`); }
+        }
+        next(i + 1);
+      }, { composer: `the ${this._show.label} ${kind}-line sidecar (podcast-scheduler)` });
+    };
+    next(0);
+    return lines.length;
+  }
+
+  /**
+   * The stream calls this as each track starts. When the track is one of
+   * this airing's files, its "<stem>.after.txt" (a closing credit) and the
+   * NEXT file's "<stem>.before.txt" (a content note) are spoken and queued,
+   * so they air in the gap after this track. A note lives with the episode
+   * it warns about, so it still airs if an earlier episode is held back.
+   * Needs the stream (injectVoice).
+   * @returns {boolean} true when a line was sent for rendering
+   */
+  onTrackStart(track) {
+    if (!this._podcastPlaying || !track || !track.isPodcastScheduled || !this._injectVoice) return false;
+    if (!this._airingFiles.has(track.file)) return false;
+    const order = [...this._airingFiles];
+    const nextFile = order[order.indexOf(track.file) + 1] || null;
+    return this._queueSpoken([[track.file, "after"], [nextFile, "before"]]) > 0;
   }
 
   /** True while this show airs and `file` is its last episode. */

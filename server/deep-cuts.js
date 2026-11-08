@@ -27,6 +27,9 @@ const path = require('path');
 const CHANNEL_OWNED = new Set([
   'Ghost Signals Podcast',
   'The Story of Flaukowski',
+  // Consent-gated guest work (server/guest-consent.js): never filler.
+  'Guest Reading',
+  'Guest Showcase',
   'commercials',
   'radio-ads',
   'generated',
