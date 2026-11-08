@@ -17,9 +17,11 @@ const { isHubBearer } = require("./ghostsignals-hub");
 const { handlePodcastRequest } = require("./podcast-feed");
 const { prettyEpisodeTitle } = require("./podcast-scheduler");
 const guestConsent = require("./guest-consent");
+const guestWithdrawal = require("./guest-withdrawal");
 // /audio/ gate for staged guest work: consent file under the data dir.
 function guestServable(musicDir, rel, baseDir) {
-  return guestConsent.servable(musicDir, rel, guestConsent.defaultPaths(baseDir).consentFile);
+  const p = guestConsent.defaultPaths(baseDir);
+  return guestConsent.servable(musicDir, rel, p.consentFile, p.withdrawalsFile);
 }
 const { sanitizeTrackRequest, RequestRejected } = require("./track-request-core");
 
@@ -273,6 +275,140 @@ module.exports = function setupRoutes(deps) {
   // Expose handleTrackRequest for WS message handling
   deps._handleTrackRequest = handleTrackRequest;
 
+  // ── Guest withdrawal (#443, server/guest-withdrawal.js) ──────────────
+  // GET /guest/withdraw?g=&t=   confirm page; changes nothing (mail scanners
+  //                             prefetch links)
+  // POST /guest/withdraw        g, t in the body → withdraw, confirm
+  // GET /api/guest-withdrawals  the public, redacted, hash-chained log
+  // The token is checked FIRST and a valid one is never throttled: behind
+  // nginx every caller shares the proxy's address, so a limit that counted
+  // valid requests would let a stranger lock the real guest out. Only failed
+  // attempts count, per socket address. An unknown guest and a wrong token
+  // get the same 403.
+  const wdFailures = new Map(); // socket address → [ms, …]
+  const WD_FAIL_MAX = 20;
+  const WD_FAIL_WINDOW_MS = 10 * 60_000;
+  const wdFailedRecently = (addr) => {
+    const now = Date.now();
+    const list = (wdFailures.get(addr) || []).filter((t) => now - t < WD_FAIL_WINDOW_MS);
+    wdFailures.set(addr, list);
+    return list.length >= WD_FAIL_MAX;
+  };
+  const wdNoteFailure = (addr) => {
+    const list = wdFailures.get(addr) || [];
+    list.push(Date.now());
+    wdFailures.set(addr, list);
+    if (wdFailures.size > 5000) wdFailures.clear();
+  };
+  const HTML_ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" };
+  const escHtml = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => HTML_ESC[c]);
+  const wdHeaders = (type) => ({
+    "Content-Type": type,
+    "Cache-Control": "no-store",
+    "Referrer-Policy": "no-referrer",
+    "X-Robots-Tag": "noindex",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+  });
+  const wdPage = (res, status, title, bodyHtml) => {
+    res.writeHead(status, wdHeaders("text/html; charset=utf-8"));
+    res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">`
+      + `<title>${escHtml(title)}</title><style>body{font:16px/1.5 system-ui,sans-serif;max-width:34rem;margin:2rem auto;padding:0 16px;background:#fff;color:#111}`
+      + `button{font:inherit;padding:.6rem 1.2rem;cursor:pointer}code{word-break:break-all}</style></head><body><h1>${escHtml(title)}</h1>${bodyHtml}</body></html>`);
+  };
+  const wdFallback = () => process.env.GUEST_WITHDRAW_EMAIL || guestWithdrawal.DEFAULT_FALLBACK_EMAIL;
+  const wdFallbackHtml = () => `<p>You can always withdraw by e-mail instead: write to <a href="mailto:${escHtml(wdFallback())}?subject=withdraw">${escHtml(wdFallback())}</a> with the subject <b>withdraw</b>, from the address the station has for you.</p>`;
+  const wdPaths = () => ({
+    ...guestConsent.defaultPaths(config && config.baseDir),
+    ...guestWithdrawal.defaultPaths(config && config.baseDir),
+  });
+
+  function handleGuestWithdrawal(req, res, parsed) {
+    const P = wdPaths();
+    if (parsed.pathname === "/api/guest-withdrawals") {
+      if (req.method !== "GET") { res.writeHead(405, wdHeaders("application/json")); res.end(JSON.stringify({ ok: false, error: "GET only" })); return; }
+      const view = guestWithdrawal.publicView(P.withdrawalsFile);
+      const body = {
+        ok: view.ok,
+        about: "Withdrawals by guests of Kannaka Radio (the latest row per guest decides). Guests appear only as publicId; each row's hash covers at, kind, channel, verified, publicId and prev. See docs/guest-withdrawal.md.",
+        rows: view.rows,
+        malformedLines: view.malformedLines,
+        chainBreaks: view.chainBreaks,
+        confirmations: guestWithdrawal.outboxHealth(P.outboxFile),
+        linksEnabled: !!process.env.GUEST_WITHDRAW_SECRET,
+        emailAddress: wdFallback(),
+      };
+      res.writeHead(200, wdHeaders("application/json"));
+      res.end(JSON.stringify(body));
+      return;
+    }
+    if (req.method !== "GET" && req.method !== "POST") {
+      res.writeHead(405, wdHeaders("text/plain; charset=utf-8")); res.end("GET or POST"); return;
+    }
+    const secret = process.env.GUEST_WITHDRAW_SECRET || "";
+    const addr = (req.socket && req.socket.remoteAddress) || "?";
+    const decide = (guest, token) => {
+      const c = guestWithdrawal.checkLink({ consentFile: P.consentFile, secret, guest, token });
+      if (c.ok) return c;
+      if (c.status === 503) {
+        wdPage(res, 503, "Withdrawal links are not switched on yet", `<p>This link cannot be checked right now.</p>${wdFallbackHtml()}`);
+        return null;
+      }
+      const limited = wdFailedRecently(addr);
+      wdNoteFailure(addr);
+      wdPage(res, limited ? 429 : 403, "This withdrawal link is not valid",
+        `<p>The link may be mistyped, or it was replaced by a newer one.</p>${wdFallbackHtml()}`);
+      return null;
+    };
+    if (req.method === "GET") {
+      const guest = parsed.searchParams.get("g") || "";
+      const token = parsed.searchParams.get("t") || "";
+      const c = decide(guest, token);
+      if (!c) return;
+      // Deliberately no title, no contact, no note: a link that leaks shows
+      // nothing about the guest.
+      wdPage(res, 200, "Withdraw from Kannaka Radio",
+        `<p>Press the button to withdraw your piece(s) from Kannaka Radio. Nothing of yours will be scheduled, listed or served again, and anything of yours on air right now is cut.</p>`
+        + `<form method="post" action="/guest/withdraw"><input type="hidden" name="g" value="${escHtml(guest)}"><input type="hidden" name="t" value="${escHtml(token)}">`
+        + `<button type="submit">Withdraw my work</button></form>`
+        + `<p>A confirmation goes to the contact address the station has for you.</p>`);
+      return;
+    }
+    readBodyLimited(req, res, 4096, (raw) => {
+      let guest = "", token = "";
+      try {
+        if (/^\s*\{/.test(raw)) { const j = JSON.parse(raw); guest = String(j.g || ""); token = String(j.t || ""); }
+        else { const q = new URLSearchParams(raw); guest = q.get("g") || ""; token = q.get("t") || ""; }
+      } catch (_) { guest = ""; token = ""; }
+      const c = decide(guest, token);
+      if (!c) return;
+      let r;
+      try {
+        r = guestWithdrawal.withdraw(P.withdrawalsFile, { guest, channel: "link", verified: true, from: "withdrawal link", secret });
+      } catch (e) {
+        console.warn(`[guest-withdrawal] could not record ${guest}: ${e && e.message}`);
+        wdPage(res, 500, "Not recorded", `<p>The station could not record your withdrawal.</p>${wdFallbackHtml()}`);
+        return;
+      }
+      if (r.created) {
+        // Live, before the reply: the log watcher would catch it within seconds anyway.
+        if (typeof deps.onGuestWithdrawn === "function") {
+          try { deps.onGuestWithdrawn(guest, r.row); } catch (e) { console.warn(`[guest-withdrawal] apply ${guest}: ${e && e.message}`); }
+        }
+        try {
+          guestWithdrawal.queueConfirmation(P.outboxFile, { guest, record: c.record, row: r.row, channel: "link",
+            siteOrigin: process.env.RADIO_PUBLIC_URL, fallbackEmail: wdFallback() });
+        } catch (e) { console.warn(`[guest-withdrawal] confirmation for ${guest} not queued: ${e && e.message}`); }
+        if (deps.guestMailer) guestWithdrawal.flushOutbox(P.outboxFile, deps.guestMailer).catch(() => {});
+        console.warn(`[guest-withdrawal] ${guest} withdrew by link at ${r.row.at}`);
+      }
+      const row = r.row;
+      wdPage(res, 200, r.created ? "Withdrawn" : "Already withdrawn",
+        `<p>${r.created ? "Your withdrawal is recorded" : "Your work was already withdrawn"} (at <time>${escHtml(row.at)}</time>). Nothing of yours airs, is listed or is served from now on.</p>`
+        + `<p>You can check it in the public log, <a href="/api/guest-withdrawals">/api/guest-withdrawals</a>: your row has hash <code>${escHtml(guestWithdrawal.rowHash(row))}</code>${row.publicId ? ` and publicId <code>${escHtml(row.publicId)}</code>` : ""}.</p>`
+        + `<p>Past airings cannot be undone, and a short on-air summary already in Kannaka's memory stays. To come back on air later, write to ${escHtml(wdFallback())}.</p>`);
+    });
+  }
+
   return async function handleRequest(req, res) {
     const parsed = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
@@ -290,6 +426,13 @@ module.exports = function setupRoutes(deps) {
     // The bare /agent route falls through to the Greenroom HTML below.
     if (parsed.pathname.startsWith("/agent/")) {
       if (await handleAgentRequest(req, res, parsed)) return;
+    }
+
+    // Guest withdrawal (#443): a guest takes their work off the air with the
+    // link the station sent them, no operator in the loop.
+    if (parsed.pathname === "/guest/withdraw" || parsed.pathname === "/api/guest-withdrawals") {
+      handleGuestWithdrawal(req, res, parsed);
+      return;
     }
 
     // Art directory listing

@@ -136,6 +136,59 @@ class IcecastSource {
     // loop would otherwise busy-cycle through advanceTrack() calls. We
     // count consecutive skips and back off if it gets out of hand.
     this._consecutiveSkips = 0;
+    // The file streaming right now, with the means to end it early (cutCurrent).
+    this._activeStream = null;
+    // A voice item taken off the queue but not yet streaming (a bed mix may
+    // still be running); dropQueued can still stop it.
+    this._drainingItem = null;
+  }
+
+  /**
+   * End whatever is streaming now, at once: a guest withdrew it (#443).
+   * Unlike the stuck-track watchdog this does NOT kill ffmpeg — that costs
+   * a 15 s reconnect, drops the mount for listeners and, while ffmpeg is
+   * down, resolves every queued voice item as if it had aired. It unpipes
+   * the file and settles its stream with { cut: true }; the few seconds
+   * already in ffmpeg's -re buffer still play out. A cut track is advanced
+   * with aired:false and never reaches onTrackAired; a cut voice item never
+   * reaches onVoiceAired. Returns what was cut, or null.
+   * @param {function} [pred] ({ kind, file, track, meta }) → bool; omitted cuts anything
+   */
+  cutCurrent(reason, pred) {
+    const a = this._activeStream;
+    if (!a) return null;
+    const info = { kind: a.kind, file: a.file, track: a.track || null, meta: a.meta || null };
+    if (typeof pred === "function" && !pred(info)) return null;
+    if (!a.cut()) return null;
+    console.warn(`   ✂ /stream CUT ${info.kind}: ${path.basename(info.file)}${reason ? ` (${reason})` : ""}`);
+    return info;
+  }
+
+  /**
+   * Take every queued voice item whose meta matches `pred` off the queue
+   * before it airs. Its onDone gets an Error("withdrawn") and onVoiceAired
+   * never fires for it. Returns how many were dropped.
+   */
+  dropQueued(pred, reason = "withdrawn") {
+    if (typeof pred !== "function") return 0;
+    let n = 0;
+    const keep = [];
+    for (const item of this._voiceQueue) {
+      let hit = false;
+      try { hit = !!pred(item.meta || {}); } catch (_) { hit = false; }
+      if (!hit) { keep.push(item); continue; }
+      n++;
+      if (item.onDone) { try { item.onDone(new Error(reason)); } catch (_) {} }
+    }
+    this._voiceQueue = keep;
+    const d = this._drainingItem;
+    if (d && !d.dropped) {
+      let hit = false;
+      try { hit = !!pred(d.meta || {}); } catch (_) { hit = false; }
+      if (hit) { d.dropped = reason; n++; }
+    }
+    if (n) console.warn(`   ✂ /stream dropped ${n} queued voice item(s) (${reason})`);
+    return n;
   }
 
   /**
@@ -406,7 +459,9 @@ class IcecastSource {
       let aired = true;
       try {
         // A show resumed after a restart carries how far in to start.
-        await this._streamFileToFfmpeg(playable, track.resumeAtMs || 0);
+        const r = await this._streamFileToFfmpeg(playable, track.resumeAtMs || 0, { kind: "track", track });
+        // Cut short (a guest withdrew it): not aired, never "said on air".
+        if (r && r.cut) aired = false;
       } catch (e) {
         aired = false;
         console.warn(`[icecast-source] stream error on ${track.file}: ${e.message}`);
@@ -423,8 +478,15 @@ class IcecastSource {
       // the radio show's natural pacing. ADR-0004 Phase 3.
       while (this._voiceQueue.length > 0 && this._running) {
         const v = this._voiceQueue.shift();
+        this._drainingItem = v;
         // A bed mix still running (sound-library) finishes before the item airs.
         if (v.pending) { try { await v.pending; } catch (_) {} }
+        this._drainingItem = null;
+        // Withdrawn while its bed was mixing (dropQueued).
+        if (v.dropped) {
+          if (v.onDone) { try { v.onDone(new Error(v.dropped)); } catch (_) {} }
+          continue;
+        }
         if (!fs.existsSync(v.path)) {
           if (v.onDone) { try { v.onDone(new Error("audio path missing")); } catch (_) {} }
           continue;
@@ -457,7 +519,10 @@ class IcecastSource {
         this._currentVoice = v;
         this._currentVoiceStartedAt = Date.now();
         try { this._onVoiceStart(this.onAirVoice()); } catch (_) {}
-        try { await this._streamFileToFfmpeg(v.path); }
+        try {
+          const vr = await this._streamFileToFfmpeg(v.path, 0, { kind: "voice", meta: v.meta || {} });
+          if (vr && vr.cut) voiceErr = new Error("cut");
+        }
         catch (e) {
           voiceErr = e;
           console.warn(`[icecast-source] voice ${v.path}: ${e.message}`);
@@ -578,7 +643,7 @@ class IcecastSource {
     });
   }
 
-  async _streamFileToFfmpeg(absPath, startAtMs = 0) {
+  async _streamFileToFfmpeg(absPath, startAtMs = 0, what = {}) {
     if (!this._ffmpeg || !this._ffmpeg.stdin || this._ffmpeg.killed) return;
     // Probe duration BEFORE we start streaming so we can pace the resolve.
     // Without this, short files (~100KB commercials, ~50KB voice intros)
@@ -641,6 +706,26 @@ class IcecastSource {
       const r = fs.createReadStream(absPath, start > 0 ? { start } : undefined);
       r.pipe(ff.stdin, { end: false });
       let settled = false;
+      let tailTimer = null;
+      let resolved = false;
+      const done = (v) => {
+        if (resolved) return;
+        resolved = true;
+        if (this._activeStream === active) this._activeStream = null;
+        resolve(v);
+      };
+      // cutCurrent(): stop feeding this file and settle now, ffmpeg untouched.
+      const active = {
+        kind: what.kind || "track", file: absPath, track: what.track || null, meta: what.meta || null,
+        cut: () => {
+          if (resolved) return false;
+          if (tailTimer) { clearTimeout(tailTimer); tailTimer = null; }
+          if (!settled) { settled = true; cleanup(); }
+          done({ cut: true });
+          return true;
+        },
+      };
+      this._activeStream = active;
       // Hard watchdog: if neither finishGraceful nor finishImmediate has
       // fired by 2× expected + 30s, force-advance. Covers the "stuck
       // track" pattern kannaka-staff saw twice today (720s on a 30s
@@ -682,8 +767,8 @@ class IcecastSource {
         // Log every finish so we can correlate cut-offs against duration.
         const flag = probeFailed ? " (probe-failed, estimated)" : "";
         console.log(`[icecast-source] finish ${path.basename(absPath)} elapsed=${elapsed}ms expected=${expectedMs}ms wait=${Math.max(0, remaining)}ms${flag}`);
-        if (remaining > 0) setTimeout(resolve, remaining);
-        else resolve();
+        if (remaining > 0) tailTimer = setTimeout(() => done(), remaining);
+        else done();
       };
       // Crash path: ffmpeg died or stdin errored. Don't wait — resolve so
       // the respawn handler can rebuild and the loop can move on.
@@ -691,7 +776,7 @@ class IcecastSource {
         if (settled) return;
         settled = true;
         cleanup();
-        resolve();
+        done();
       };
       r.on("end", finishGraceful);
       r.on("close", finishGraceful);

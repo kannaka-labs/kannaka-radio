@@ -161,6 +161,8 @@ class PodcastScheduler {
     this._gate = opts.gate && typeof opts.gate.check === "function" ? opts.gate : null;
     // The files of the airing in progress, for the per-track "after" lines.
     this._airingFiles = new Set();
+    // Guest show: library-relative file → the guest it belongs to (#443).
+    this._airingGuests = new Map();
     // Pre-rendered spoken lines of the guest airing in progress (null: none).
     this._spokenAudio = null;
     // How long a guest airing may wait for its spoken lines before it is held.
@@ -633,9 +635,12 @@ class PodcastScheduler {
 
       // Queue the opening words before the show is loaded: the stream plays
       // queued voice when the current song ends, then advances into the show.
+      // Every voice item this airing queues names its guests, so a guest who
+      // withdraws can have them taken off the queue (withdrawGuest).
+      const guestsOf = (fs_) => [...new Set(fs_.map((f) => this._guestOf(f)).filter(Boolean))];
       try {
         if (audio.intro) {
-          this._injectVoice(audio.intro, { label: `${label} intro` });
+          this._injectVoice(audio.intro, { label: `${label} intro`, guestAiring: { show: label, guests: guestsOf(kept) } });
           this._broadcast({
             type: "dj_talk_segment",
             text: introText,
@@ -646,7 +651,10 @@ class PodcastScheduler {
           });
         }
         const firstNote = audio[`before:${kept[0]}`];
-        if (firstNote) this._injectVoice(firstNote, { label: `${label}: before ${stemOf(kept[0])}`, noBed: true });
+        if (firstNote) {
+          this._injectVoice(firstNote, { label: `${label}: before ${stemOf(kept[0])}`, noBed: true,
+            guestAiring: { show: label, guests: guestsOf([kept[0]]) } });
+        }
       } catch (e) {
         return abort(`a spoken line could not be queued (${e && e.message})`);
       }
@@ -731,6 +739,13 @@ class PodcastScheduler {
     this._djEngine.state.playlist = podcastTracks.map(t => t.file);
     this._lastEpisodeFile = podcastTracks.length ? podcastTracks[podcastTracks.length - 1].file : null;
     this._airingFiles = new Set(podcastTracks.map((t) => t.file));
+    this._airingGuests = new Map();
+    if (this._gate) {
+      for (const t of podcastTracks) {
+        const g = this._guestOf(t.file);
+        if (g) this._airingGuests.set(t.file, g);
+      }
+    }
     // A guest airing's pre-rendered spoken lines (null: render on the fly).
     this._spokenAudio = opts.spoken || null;
     this._djEngine.state.playlistMeta = podcastTracks;
@@ -877,7 +892,10 @@ class PodcastScheduler {
         if (err || !audioPath) {
           console.warn(`[podcast-scheduler] ${label}: TTS failed (${err && err.message}) — the line is skipped`);
         } else {
-          try { this._injectVoice(audioPath, { label, noBed: true }); }
+          const g = this._airingGuests.get(file);
+          const meta = { label, noBed: true };
+          if (this._gate) meta.guestAiring = { show: this._show.label, guests: g ? [g] : [] };
+          try { this._injectVoice(audioPath, meta); }
           catch (e) { console.warn(`[podcast-scheduler] ${label}: inject failed (${e && e.message})`); }
         }
         next(i + 1);
@@ -907,7 +925,12 @@ class PodcastScheduler {
       const put = (file, kind) => {
         const e = file && this._spokenAudio.get(file);
         if (!e || !e[kind]) return;
-        try { this._injectVoice(e[kind], { label: `${this._show.label}: ${kind} ${e.stem}`, noBed: true }); n++; }
+        const g = this._airingGuests.get(file);
+        try {
+          this._injectVoice(e[kind], { label: `${this._show.label}: ${kind} ${e.stem}`, noBed: true,
+            guestAiring: { show: this._show.label, guests: g ? [g] : [] } });
+          n++;
+        }
         catch (err) { console.warn(`[podcast-scheduler] ${this._show.label}: ${kind} ${e.stem} inject failed (${err && err.message})`); }
       };
       put(track.file, "after");
@@ -916,6 +939,86 @@ class PodcastScheduler {
     }
     // A show resumed after a restart has nothing pre-rendered: best effort.
     return this._queueSpoken([[track.file, "after"], [nextFile, "before"]]) > 0;
+  }
+
+  /** The guest a file of this show belongs to (sidecar), or null. */
+  _guestOf(file) {
+    if (!this._gate || typeof this._gate.guestOf !== "function") return null;
+    try { return this._gate.guestOf(path.basename(String(file))) || null; } catch (_) { return null; }
+  }
+
+  /**
+   * A guest withdrew (#443): take them off the air now, in this order —
+   *   1. their queued voice (intro, content note, closing credit) is dropped
+   *      from the stream's queue, so nothing of theirs airs after a cut;
+   *   2. their files leave this airing's playlist; if nothing else is left
+   *      the show ends and the saved album returns;
+   *   3. their file (or their voice item) on /stream right now is cut.
+   * The next track then follows through the engine's mid-stream-swap path,
+   * so the cut piece is advanced with aired:false and never counted as
+   * heard. Without the stream (KANNAKA_ICECAST_SOURCE off) the state
+   * broadcast moves the web player on, and /audio/ already refuses the file.
+   * Idempotent: a second call finds nothing. Returns what it did.
+   */
+  withdrawGuest(guest, { icecastSource = null, reason = "withdrawn by its author" } = {}) {
+    const res = { dropped: 0, removed: [], cut: null, ended: false };
+    if (!this._gate || !guest) return res;
+    const label = this._show.label;
+    const mine = (m) => !!(m && m.guestAiring && m.guestAiring.show === label
+      && Array.isArray(m.guestAiring.guests) && m.guestAiring.guests.includes(guest));
+    if (icecastSource && typeof icecastSource.dropQueued === "function") {
+      res.dropped = icecastSource.dropQueued(mine, "withdrawn");
+    }
+    if (!this._podcastPlaying) return res;
+
+    const isTheirs = (file) => this._airingGuests.get(file) === guest;
+    const st = this._djEngine.state;
+    const meta = Array.isArray(st.playlistMeta) ? st.playlistMeta : [];
+    const idx = st.currentTrackIdx || 0;
+    const theirs = meta.filter((t) => t && t.isPodcastScheduled && isTheirs(t.file));
+    if (theirs.length) {
+      res.removed = theirs.map((t) => t.file);
+      for (const t of theirs) { if (this._spokenAudio) this._spokenAudio.delete(t.file); }
+      const cur = meta[idx];
+      // What is left of the airing: the current track if it is someone
+      // else's, then every later file that is not theirs.
+      const rest = meta.slice(idx + 1).filter((t) => t && !isTheirs(t.file));
+      const kept = (cur && !isTheirs(cur.file) ? [cur] : []).concat(rest);
+      if (!kept.some((t) => t && t.isPodcastScheduled)) {
+        res.ended = true;
+        this._onPodcastEnd();
+        // No saved album to go back to (it was null): never leave the
+        // withdrawn file as the engine's current track, or the wrap would
+        // play it again. An empty playlist is silence until the programming
+        // clock loads an album — the safe side.
+        const s2 = this._djEngine.state;
+        const now = s2.playlistMeta && s2.playlistMeta[s2.currentTrackIdx];
+        if (now && isTheirs(now.file)) {
+          console.warn(`[podcast-scheduler] ${label}: no saved album to return to after a withdrawal; playlist emptied`);
+          s2.playlist = [];
+          s2.playlistMeta = [];
+          s2.currentTrackIdx = 0;
+        }
+      } else {
+        const n = kept.length;
+        st.playlistMeta = kept.map((t, i) => Object.assign({}, t, { trackNum: i + 1, totalTracks: n }));
+        st.playlist = st.playlistMeta.map((t) => t.file);
+        st.currentTrackIdx = 0;
+        this._airingFiles = new Set(st.playlist.filter((f) => this._airingFiles.has(f)));
+        this._lastEpisodeFile = st.playlist[st.playlist.length - 1] || null;
+      }
+      for (const f of res.removed) this._airingGuests.delete(f);
+    }
+    if (icecastSource && typeof icecastSource.cutCurrent === "function") {
+      res.cut = icecastSource.cutCurrent(reason, (a) => (a.kind === "track"
+        ? !!(a.track && a.track.isPodcastScheduled && res.removed.includes(a.track.file))
+        : mine(a.meta)));
+    }
+    if (res.removed.length || res.cut) {
+      console.warn(`[podcast-scheduler] ${label}: "${guest}" withdrew — removed ${res.removed.length} file(s), dropped ${res.dropped} voice item(s)${res.cut ? `, cut the ${res.cut.kind} on air` : ""}${res.ended ? ", show ended" : ""}`);
+      try { this._broadcastState(); } catch (_) {}
+    }
+    return res;
   }
 
   /** True while this show airs and `file` is its last episode. */

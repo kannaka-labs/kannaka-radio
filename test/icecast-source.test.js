@@ -165,7 +165,7 @@ console.log('\nicecast-source.test.js');
   await test('the voice drain marks the item on air and fires onVoiceStart BEFORE streaming it', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'server', 'icecast-source.js'), 'utf8');
     const i = src.indexOf('this._currentVoice = v;');
-    const j = src.indexOf('await this._streamFileToFfmpeg(v.path)', i);
+    const j = src.indexOf('await this._streamFileToFfmpeg(v.path', i);
     assert.ok(i > 0 && j > i, 'voice drain found');
     const between = src.slice(i, j);
     assert.ok(/this\._currentVoiceStartedAt = Date\.now\(\)/.test(between), 'start time stamped before the stream');
