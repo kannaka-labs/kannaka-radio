@@ -531,7 +531,7 @@ class PodcastScheduler {
       setTimeout(() => {
         this._playAllPodcastEpisodes([todayEpisode]);
       }, err ? 1000 : holdMs);
-    });
+    }, { composer: `the ${this._show.label} intro line (podcast-scheduler)` });
   }
 
   /**

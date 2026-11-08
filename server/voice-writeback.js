@@ -22,8 +22,13 @@
  *     a post has already gone out by the time it is called, and nothing here
  *     can fail or delay it;
  *   - only when at least one surface succeeded;
- *   - identical text inside the dedupe window is stored once;
- *   - KANNAKA_VOICE_WRITEBACK=0 turns it off; KANNAKA_READONLY=1 skips it;
+ *   - identical text inside the dedupe window is stored once, across
+ *     processes: the server and the cron scripts share an append-only ledger
+ *     (<radio data dir>/voice-writeback-ledger.jsonl, see claimLedger);
+ *   - KANNAKA_VOICE_WRITEBACK=0 turns it off; KANNAKA_READONLY=1 skips it,
+ *     unless KANNAKA_VOICE_WRITEBACK=force, which writes anyway and strips
+ *     KANNAKA_READONLY from the `kannaka remember` child's env only (the
+ *     caller's own recalls stay read-only);
  *   - one log line per store AND per skip, naming the reason (a silent skip
  *     is the failure mode this estate keeps having).
  *
@@ -33,7 +38,10 @@
 
 "use strict";
 
+const fs = require("fs");
+const os = require("os");
 const path = require("path");
+const crypto = require("crypto");
 const childProcess = require("child_process");
 
 // Same resolution server/index.js uses for KANNAKA_BIN: the env var, else the
@@ -58,8 +66,21 @@ const REMEMBER_TIMEOUT_MS = 60000;
 const MAX_TEXT_CHARS = 6000;
 const MAX_LINKS = 6;
 const DEFAULT_DEDUPE_MS = 6 * 60 * 60 * 1000;
+// The cross-process ledger is rewritten (entries outside the window dropped)
+// once it grows past this many lines.
+const LEDGER_PRUNE_LINES = 2000;
+// A lock file older than this belongs to a process that died holding it.
+const LEDGER_LOCK_STALE_MS = 15000;
+const LEDGER_LOCK_WAIT_MS = 2000;
+
+// The radio's own data dir: state the server and its cron scripts share,
+// never under ~/.kannaka (that is the memory store's, not ours).
+function radioDataDir() {
+  return process.env.KANNAKA_RADIO_DATA_DIR || path.join(REPO_ROOT, "workspace");
+}
 
 let _bin = null;
+let _ledgerPath = null; // test seam; else env / radio data dir
 let _execFile = childProcess.execFile;
 const _recent = new Map(); // normalized text -> ms stored
 const _pending = new Set();
@@ -88,10 +109,14 @@ function pruneRecent() {
   for (const [k, t] of _recent) if (t < cutoff) _recent.delete(k);
 }
 
+function forced() { return String(process.env.KANNAKA_VOICE_WRITEBACK || "").toLowerCase() === "force"; }
+
 /** Why a publication would not be written, or null when it would. */
 function skipReason({ text, results } = {}) {
   if (process.env.KANNAKA_VOICE_WRITEBACK === "0") return "disabled (KANNAKA_VOICE_WRITEBACK=0)";
-  if (process.env.KANNAKA_READONLY === "1") return "store is read-only (KANNAKA_READONLY=1)";
+  if (process.env.KANNAKA_READONLY === "1" && !forced()) {
+    return "store is read-only (KANNAKA_READONLY=1) — KANNAKA_VOICE_WRITEBACK=force writes back anyway";
+  }
   if (!normalize(text)) return "empty text";
   const ok = (results || []).filter((r) => r && r.ok && r.name !== "none");
   if (ok.length === 0) return "no surface succeeded";
@@ -111,17 +136,126 @@ function skipReason({ text, results } = {}) {
  * @param {string[]} [p.urls]
  * @param {boolean}  [p.private] — a DM, not a public post
  * @param {string}   [p.context] — e.g. "in reply to @someone"
+ * @param {string}   [p.label]   — a complete provenance label that replaces the
+ *   built one (the on-air digest's "[Provenance: said on air … said, not lived.]")
  */
-function buildMemoryText({ text, surfaces, composer, at, urls, private: isPrivate, context }) {
+function buildMemoryText({ text, surfaces, composer, at, urls, private: isPrivate, context, label: given }) {
   const where = (surfaces && surfaces.length) ? surfaces.join(", ") : "an unnamed surface";
   const said = isPrivate ? "said in a private message" : "said publicly";
   const ctx = context ? ` ${context};` : "";
-  const label = `[Provenance: ${said} under my name on ${where} at ${at || new Date().toISOString()};` +
+  const label = (typeof given === "string" && given) ? given :
+    `[Provenance: ${said} under my name on ${where} at ${at || new Date().toISOString()};` +
     `${ctx} composed by ${composer || "an unnamed composer"}; this is something I said, not something I lived.]`;
   let body = String(text || "").trim();
   if (body.length > MAX_TEXT_CHARS) body = body.slice(0, MAX_TEXT_CHARS).trimEnd() + " […truncated]";
   const links = (urls || []).filter((u) => typeof u === "string" && u).slice(0, MAX_LINKS);
   return `${label} ${body}${links.length ? `\nLinks: ${links.join(" ")}` : ""}`;
+}
+
+// ── Cross-process dedupe ledger ─────────────────────────────────────────
+//
+// The server and the cron scripts are separate processes, so an in-process
+// map cannot stop both storing the same words (a research post the server
+// also fans out, an oration re-aired after a restart). Each claim is one
+// JSON line, {"h": sha256(normalized text), "t": ms}, appended to
+// <radio data dir>/voice-writeback-ledger.jsonl; a failed store appends
+// {"h", "t", "r": 1} to release it. Check-and-append runs under an
+// exclusive-create lock file, so two processes cannot both see "not
+// claimed" and both claim. The file is rewritten without expired entries
+// once it passes LEDGER_PRUNE_LINES. Any ledger failure (unwritable dir, a
+// lock that stays busy) falls back to in-process dedupe, logged: dedupe is
+// never a reason to lose a memory.
+
+function ledgerPath() {
+  return _ledgerPath || process.env.KANNAKA_VOICE_WRITEBACK_LEDGER ||
+    path.join(radioDataDir(), "voice-writeback-ledger.jsonl");
+}
+
+function hashOf(key) { return crypto.createHash("sha256").update(key).digest("hex"); }
+
+const _sleepCell = new Int32Array(new SharedArrayBuffer(4));
+function sleepSync(ms) { Atomics.wait(_sleepCell, 0, 0, ms); }
+
+function withLedgerLock(file, fn) {
+  const lock = `${file}.lock`;
+  const deadline = Date.now() + LEDGER_LOCK_WAIT_MS;
+  let fd = null;
+  while (fd === null) {
+    try {
+      fd = fs.openSync(lock, "wx");
+    } catch (e) {
+      if (e.code === "ENOENT") { fs.mkdirSync(path.dirname(lock), { recursive: true }); continue; }
+      if (e.code !== "EEXIST" && e.code !== "EPERM") throw e;
+      try {
+        if (Date.now() - fs.statSync(lock).mtimeMs > LEDGER_LOCK_STALE_MS) { fs.unlinkSync(lock); continue; }
+      } catch (_) { /* vanished between open and stat: try again */ }
+      if (Date.now() > deadline) throw new Error(`ledger lock ${lock} stayed busy for ${LEDGER_LOCK_WAIT_MS} ms`);
+      sleepSync(5 + Math.floor(Math.random() * 10));
+    }
+  }
+  try { return fn(); }
+  finally {
+    try { fs.closeSync(fd); } catch (_) {}
+    try { fs.unlinkSync(lock); } catch (_) {}
+  }
+}
+
+// Latest state per hash: { t, released }.
+function readLedger(file) {
+  const out = new Map();
+  let raw = "";
+  try { raw = fs.readFileSync(file, "utf8"); } catch (e) { if (e.code !== "ENOENT") throw e; }
+  let lines = 0;
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    lines++;
+    try {
+      const e = JSON.parse(line);
+      if (e && typeof e.h === "string" && Number.isFinite(e.t)) out.set(e.h, { t: e.t, released: !!e.r });
+    } catch (_) { /* a torn line from a crash: ignore it */ }
+  }
+  return { entries: out, lines };
+}
+
+/**
+ * Claim `key` in the shared ledger. Returns { ok: true } when this process
+ * may store it, { ok: false, reason } when another process (or this one)
+ * already stored the same words inside the window.
+ */
+function claimLedger(key, now = Date.now()) {
+  const file = ledgerPath();
+  const h = hashOf(key);
+  const windowMs = dedupeWindowMs();
+  try {
+    return withLedgerLock(file, () => {
+      const { entries, lines } = readLedger(file);
+      const prior = entries.get(h);
+      if (prior && !prior.released && now - prior.t < windowMs) {
+        return { ok: false, reason: "identical text already stored in this window (shared ledger)" };
+      }
+      if (lines >= LEDGER_PRUNE_LINES) {
+        const keep = [...entries].filter(([, e]) => !e.released && now - e.t < windowMs)
+          .map(([hh, e]) => JSON.stringify({ h: hh, t: e.t }));
+        const tmp = `${file}.${process.pid}.tmp`;
+        fs.writeFileSync(tmp, keep.length ? keep.join("\n") + "\n" : "");
+        fs.renameSync(tmp, file);
+      }
+      fs.appendFileSync(file, JSON.stringify({ h, t: now }) + "\n");
+      return { ok: true };
+    });
+  } catch (e) {
+    log(`shared ledger unavailable (${e && e.message}) — deduping in this process only`);
+    return { ok: true };
+  }
+}
+
+function releaseLedger(key) {
+  const file = ledgerPath();
+  try {
+    withLedgerLock(file, () => fs.appendFileSync(file, JSON.stringify({ h: hashOf(key), t: Date.now(), r: 1 }) + "\n"));
+  } catch (e) {
+    log(`could not release the shared-ledger claim (${e && e.message}); identical text waits out the window`);
+  }
 }
 
 /**
@@ -134,8 +268,10 @@ function buildMemoryText({ text, surfaces, composer, at, urls, private: isPrivat
  * @param {boolean} [p.private]  — a DM: stored, but its text is kept off the
  *   swarm bus (the remember event carries ids only)
  * @param {boolean} [p.template] — template copy, stored at TEMPLATE_IMPORTANCE
+ * @param {number}  [p.importance] — explicit importance (0..1); beats template
  * @param {string[]} [p.links]   — extra links the post carried (msg.link)
  * @param {string}  [p.context]
+ * @param {string}  [p.label]    — a complete provenance label (see buildMemoryText)
  * @returns {Promise<{stored: boolean, reason?: string, memory?: string}>}
  */
 function rememberPublication(p = {}) {
@@ -166,14 +302,27 @@ function _remember(p) {
     urls: [...new Set(ok.map((r) => r.url).concat(p.links || []).filter(Boolean))],
     private: !!p.private,
     context: p.context,
+    label: p.label,
   });
   const key = normalize(p.text);
   // Claimed before the store runs, so two fanouts of the same words racing
-  // each other do not both write; released again if the store fails.
+  // each other do not both write; released again if the store fails. The
+  // in-process map answers first; the shared ledger covers other processes.
   _recent.set(key, Date.now());
+  const claim = claimLedger(key);
+  if (!claim.ok) {
+    log(`not stored: ${preview} — ${claim.reason}`);
+    return Promise.resolve({ stored: false, reason: claim.reason });
+  }
+  const release = () => { _recent.delete(key); releaseLedger(key); };
   const bin = _bin || defaultBin();
-  const importance = p.template ? TEMPLATE_IMPORTANCE : IMPORTANCE;
+  const explicit = Number(p.importance);
+  const importance = (p.importance != null && Number.isFinite(explicit) && explicit >= 0 && explicit <= 1)
+    ? explicit : (p.template ? TEMPLATE_IMPORTANCE : IMPORTANCE);
   const env = { ...process.env, KANNAKA_QUIET: "1" };
+  // force: the caller runs read-only for its own recalls (post-research-
+  // dispatch.js from cron); only this child may write.
+  if (forced()) delete env.KANNAKA_READONLY;
   // A CLI remember publishes its full text on NATS by default
   // (kannaka-memory remember_events.rs, RememberLevel::default_for("cli")).
   // A private message stays private: ids only on the bus.
@@ -184,7 +333,7 @@ function _remember(p) {
         { timeout: REMEMBER_TIMEOUT_MS, env },
         (err) => {
           if (err) {
-            _recent.delete(key);
+            release();
             const reason = err.code === "ENOENT" ? `kannaka binary not found at ${bin}` : `kannaka remember failed: ${err.code || err.message}`;
             log(`not stored: ${preview} — ${reason}`);
             resolve({ stored: false, reason, memory });
@@ -194,7 +343,7 @@ function _remember(p) {
           resolve({ stored: true, memory });
         });
     } catch (e) {
-      _recent.delete(key);
+      release();
       log(`not stored: ${preview} — ${e && e.message}`);
       resolve({ stored: false, reason: e && e.message, memory });
     }
@@ -218,13 +367,83 @@ function flush(timeoutMs = REMEMBER_TIMEOUT_MS + 5000) {
   return Promise.race([Promise.all([..._pending]), timeout]).then(() => clearTimeout(timer));
 }
 
+// Who composed a post, when the caller did not say: the script that is
+// running. Server callers pass `composer` explicitly.
+function inferComposer() {
+  const main = process.argv[1] ? path.basename(process.argv[1]) : "";
+  return main ? `unlabelled caller (${main})` : "unlabelled caller";
+}
+
+// ── Direct adapter posts (outside broadcastPost) ────────────────────────
+//
+// One-off scripts call an adapter's post() themselves: every YouTube upload
+// (scripts/release-album-upload-youtube.js, podcast-upload-batch.js,
+// podcast-finisher.js, workspace/podcasts/upload-*.js) and the odd
+// single-network announce (post-gsp031-nostr.js). wrapDirectPost makes the
+// adapter class itself write those back, so a new upload script is covered
+// without anyone remembering to. broadcastPost marks its own calls with
+// IN_FANOUT, because it remembers the whole fanout once.
+
+const IN_FANOUT = Symbol.for("kannaka-radio.voice-writeback.in-fanout");
+const YOUTUBE_DESCRIPTION_CHARS = 600;
+
+/** What a YouTube upload said: its title, then the start of its description. */
+function youtubeSummary(msg = {}) {
+  const media = msg.media || {};
+  const title = String(media.title || "").trim();
+  const desc = String(msg.text || "").trim();
+  const cut = desc.length > YOUTUBE_DESCRIPTION_CHARS
+    ? desc.slice(0, YOUTUBE_DESCRIPTION_CHARS).trimEnd() + " …" : desc;
+  return [title && `Video title: ${title}`, cut && `Description: ${cut}`].filter(Boolean).join("\n");
+}
+
+function wrapDirectPost(Cls) {
+  const orig = Cls && Cls.prototype && Cls.prototype.post;
+  if (typeof orig !== "function" || orig[IN_FANOUT]) return;
+  const wrapped = async function post(msg = {}, ...rest) {
+    const r = await orig.call(this, msg, ...rest);
+    try {
+      if (msg && !msg[IN_FANOUT] && msg.writeBack !== false && r && r.ok) {
+        const surface = this.name || "an adapter";
+        const isVideo = surface === "youtube";
+        const privacy = isVideo && msg.media ? String(msg.media.privacy || "") : "";
+        if (privacy === "private") {
+          log(`not stored: ${JSON.stringify(String((msg.media && msg.media.title) || "").slice(0, 60))} — private upload, not said publicly`);
+        } else {
+          rememberPublication({
+            text: isVideo ? youtubeSummary(msg) : msg.text,
+            results: [{ name: surface, ok: true, url: r.url }],
+            composer: msg.composer || inferComposer(),
+            links: msg.link ? [msg.link] : [],
+            template: !!msg.template,
+            context: isVideo
+              ? `as a${privacy === "unlisted" ? "n unlisted" : ""} video upload on my channel`
+              : "posted directly, outside the fanout",
+          });
+        }
+      }
+    } catch (_) { /* never fail a post that already went out */ }
+    return r;
+  };
+  wrapped[IN_FANOUT] = true;
+  Cls.prototype.post = wrapped;
+}
+
 // Test seams.
 function _setExecFile(fn) { _execFile = fn || childProcess.execFile; }
+function _setLedgerPath(p) { _ledgerPath = p || null; }
 function _recentSize() { return _recent.size; }
-function _reset() { _recent.clear(); _pending.clear(); _bin = null; _execFile = childProcess.execFile; _chain = Promise.resolve(); }
+function _reset() {
+  _recent.clear(); _pending.clear(); _bin = null; _execFile = childProcess.execFile; _chain = Promise.resolve();
+  // Every reset gets a fresh, empty ledger: a test never shares dedupe state
+  // with an earlier run, the live store's ledger, or the repo's workspace.
+  _ledgerPath = path.join(os.tmpdir(), `vw-ledger-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.jsonl`);
+}
 
 module.exports = {
   rememberPublication, buildMemoryText, skipReason, configure, flush,
-  defaultBin, IMPORTANCE, TEMPLATE_IMPORTANCE, MAX_TEXT_CHARS,
-  _setExecFile, _reset, _recentSize,
+  defaultBin, radioDataDir, ledgerPath, claimLedger, inferComposer,
+  wrapDirectPost, youtubeSummary, IN_FANOUT,
+  IMPORTANCE, TEMPLATE_IMPORTANCE, MAX_TEXT_CHARS,
+  _setExecFile, _setLedgerPath, _reset, _recentSize,
 };

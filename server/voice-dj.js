@@ -10,6 +10,9 @@ const http = require("http");
 const { execFile } = require("child_process");
 const { ALBUMS } = require("./dj-engine");
 const voiceEngine = require("./voice-engine");
+// What the station says reaches her store as an on-air digest: TTS output is
+// registered here with its text, and recorded once it actually airs.
+const onAirDigest = require("./on-air-digest");
 
 // Stream label for a long-form segment, by persona. executeOration carries the
 // oration, the news bulletin and the gossip column alike; before this every one
@@ -464,6 +467,7 @@ class VoiceDJ {
       console.warn(`[dj] recorded intro copy failed: ${e.message}`);
       return null;
     }
+    onAirDigest.registerSpeech(out, { text, persona: 'dj', composer: 'a recorded intro (pre-written, beside the track)' });
     return { file: track.file, text, audioPath: out };
   }
 
@@ -548,11 +552,15 @@ class VoiceDJ {
 
       // Also process through kannaka-ear (the ghost hears herself)
       execFile(this._kannakabin, ["hear", audioPath], { timeout: 30000 }, () => {});
-    });
+    }, { composer: 'voice-dj intro template' });
   }
 
-  generateTTS(text, callback) {
-    this._generateTTS(text, callback);
+  /**
+   * @param {object} [opts] — { persona?, composer? }: composer names who wrote
+   *   the words, for the on-air digest when this audio airs.
+   */
+  generateTTS(text, callback, opts) {
+    this._generateTTS(text, callback, opts || {});
   }
 
   /**
@@ -588,12 +596,13 @@ class VoiceDJ {
       // Give the pre-gen path a long budget — tracks are 3–5 min and
       // Oracle aarch64 takes ~30–60s per ask (HRM load + API round-trip).
       let text = null;
+      let composer = 'kannaka ask via voice-dj track intro';
       if (this._llmEnabled()) {
         const prompt = this._buildIntroPrompt(nextTrack, prevTrack);
         const recall = this._pickIntroRecallQuery(nextTrack);
         text = await this._askKannaka(prompt, 300000, recall);
       }
-      if (!text) text = this._generateIntroText(nextTrack, prevTrack);
+      if (!text) { text = this._generateIntroText(nextTrack, prevTrack); composer = 'voice-dj intro template'; }
       // Track what we said so the NEXT prompt can tell Kannaka not to
       // repeat it. We record at prepare-time rather than cache-consume-time
       // so the anti-repeat context is already fresh when we kick off the
@@ -612,7 +621,7 @@ class VoiceDJ {
           this._preparedIntro = { file: nextTrack.file, text, audioPath };
           console.log(`   \u{1F399} DJ prepared: "${text.substring(0, 60)}..." (next: ${nextTrack.title})`);
           resolve();
-        });
+        }, { composer });
       });
     } finally {
       if (this._preparingForFile === nextTrack.file) this._preparingForFile = null;
@@ -782,16 +791,29 @@ class VoiceDJ {
         console.log(`   \u{1F3A4} Oration ended — resuming programming${reason ? ` (${reason})` : ""}`);
         if (onDone) onDone();
       };
+      // A long-form piece is its own on-air memory when it airs (on-air-
+      // digest.js). The peace oration passes airMemory:false: it remembers
+      // itself once per slot (peace-oration.js _rememberOration).
+      const speech = {
+        whole: true,
+        title: (opts && opts.title) || orationLabel(persona),
+        composer: (opts && opts.composer) || `voice-dj executeOration (${persona})`,
+        skip: !!(opts && opts.airMemory === false),
+      };
       let injected = false;
       try {
         const ics = this._getIcecastSource && this._getIcecastSource();
         if (ics && typeof ics.injectAudio === 'function') {
-          ics.injectAudio(audioPath, { label: orationLabel(persona), kind: persona }, (err) => {
+          ics.injectAudio(audioPath, { label: orationLabel(persona), kind: persona, speech }, (err) => {
             release(err ? `inject error: ${err.message}` : null);
           });
           injected = true;
         }
       } catch (_) {}
+      // No stream: it played on the web player only, now.
+      if (!injected && !speech.skip) {
+        onAirDigest.say({ text: spokenText || text, speaker: onAirDigest.speakerFor(persona), ...speech });
+      }
       // The oration is now in the /stream voice queue, ahead of anything
       // queued after this point. A caller that wants a segment to air right
       // behind it (the artist story after the peace oration) hooks here,
@@ -1880,6 +1902,7 @@ class VoiceDJ {
       }
       console.log(`   \u{1F5E3} TTS (${engine}/${persona}) generated: ${path.basename(finalPath)}`);
       this._recordTts(true, { persona, engine });
+      onAirDigest.registerSpeech(finalPath, { text, persona, composer: opts.composer });
       callback(null, finalPath, text);
     });
   }

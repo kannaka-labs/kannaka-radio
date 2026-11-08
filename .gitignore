@@ -54,6 +54,10 @@ workspace/news-broadcast-state.json
 workspace/gossip-broadcast-state.json
 workspace/showcase-state.json
 workspace/recently-played.json
+# Voice write-back runtime state: the cross-process dedupe ledger (and its
+# lock) and the on-air digest's buffer of lines not yet written.
+workspace/voice-writeback-ledger.jsonl*
+workspace/on-air-digest-buffer.jsonl*
 # Durable play history (Deep Cuts). Same reason: runtime state, and it is
 # per-station — a committed copy would tell another box that tracks it has
 # never aired were already played.

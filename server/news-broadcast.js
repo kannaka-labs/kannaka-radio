@@ -592,7 +592,7 @@ class NewsBroadcast {
     // (that overlap race was #29).
     return this._voiceDJ.executeOration(wrapped, () => {
       console.log("\uD83D\uDCF0 News broadcast complete");
-    }, { persona: "news" });
+    }, { persona: "news", title: "news broadcast", composer: "kannaka ask via news-broadcast (composeResilient)" });
   }
 }
 

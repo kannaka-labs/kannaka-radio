@@ -115,7 +115,17 @@ const KANNAKA_BIN = process.env.KANNAKA_BIN ||
 const memoryBridge = require("../memory-bridge");
 memoryBridge.configure({ bin: KANNAKA_BIN });
 // And for remembering what she says publicly (voice-writeback.js).
-require("./voice-writeback").configure({ bin: KANNAKA_BIN });
+const voiceWriteback = require("./voice-writeback");
+voiceWriteback.configure({ bin: KANNAKA_BIN });
+// And what the station says on air: one digest memory an hour, long-form
+// pieces one each (on-air-digest.js). The buffer lives in the radio's data
+// dir so lines survive a restart.
+const onAirDigestMod = require("./on-air-digest");
+const onAirDigest = new onAirDigestMod.OnAirDigest({
+  file: path.join(voiceWriteback.radioDataDir(), "on-air-digest-buffer.jsonl"),
+});
+onAirDigestMod.setDefault(onAirDigest);
+onAirDigest.start();
 
 const SPA_PATH = path.join(BASE_DIR, "workspace", "index.html");
 const VOICE_DIR = path.join(BASE_DIR, "chunks", "voice");
@@ -130,6 +140,9 @@ let wss = null;
 
 function broadcast(msg) {
   if (!wss) return;
+  // DJ lines that only the web player hears (no /stream inject) go to the
+  // on-air digest here; streamed ones are recorded when they air.
+  if (msg && typeof msg === "object") onAirDigest.fromBroadcast(msg);
   const str = typeof msg === "string" ? msg : JSON.stringify(msg);
   wss.clients.forEach(c => { if (c.readyState === WebSocket.OPEN) c.send(str); });
 }
@@ -1440,6 +1453,9 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
     // title follows for players that read the in-band metadata. No hook on
     // voice end: the engine advances right after the queue drains, and that
     // track change broadcasts the next song.
+    // What finished streaming goes to the on-air digest (on-air-digest.js).
+    onVoiceAired: (voice) => onAirDigest.aired(voice),
+    onTrackAired: (track) => onAirDigest.trackAired(track, MUSIC_DIR),
     onVoiceStart: (voice) => {
       broadcastState();
       try { require("./icecast-metadata").updateMetadata({ title: voice.label, album: voice.album || "Kannaka Radio" }); } catch (_) {}
@@ -1472,6 +1488,7 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
             if (icecastSource && typeof icecastSource.injectAudio === "function") {
               icecastSource.injectAudio(audioPath, {
                 label: `Showcase: ${album} narration`,
+                speech: { composer: "hosted model via album-showcase narration (peace-oration.js composeAlbumNarration)" },
               });
               console.log(`   \u{1F39E} [showcase] narration queued (~${piece.text.split(/\s+/).length} words) on ${album}`);
             }
@@ -1662,6 +1679,12 @@ async function shutdown() {
       console.warn(`[shutdown] voice drain failed: ${e && e.message}`);
     }
   }
+
+  // What was said on air since the last digest: one bounded try. Anything
+  // not stored stays in the buffer file and is written after the restart.
+  onAirDigest.stop();
+  try { await onAirDigest.flushForShutdown(3000); }
+  catch (e) { console.warn(`[shutdown] on-air digest flush failed: ${e && e.message}`); }
 
   perception_.stopPerceptionLoop();
   flux.stopPeriodicPublish();

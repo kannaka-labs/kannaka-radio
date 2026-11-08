@@ -257,7 +257,7 @@ class GossipBroadcast {
     return this._voiceDJ.executeOration(
       wrapped,
       () => { console.log("\u{1F48B} Gossip column complete"); },
-      { persona: "gossip" },
+      { persona: "gossip", title: "gossip column", composer: "kannaka ask via gossip-broadcast (composeResilient)" },
     );
   }
 }

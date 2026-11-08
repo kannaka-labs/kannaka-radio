@@ -150,6 +150,21 @@ function objectWords(text, from) {
   return contentWords(text.slice(from).split(/[.!?…;]/)[0].split(/\s+/).slice(0, 6).join(" "));
 }
 
+// Reported speech is the speaker's, not hers: a quote right after a
+// reporting verb ("she said: *So I don't forget the size of what I lost.*",
+// the 2026-11-06 oration) or right before one ("“I kept them,” she said").
+// An unclosed quote ends at its sentence. Checking the full orations, not
+// just teasers, made this matter (2026-11-07).
+const REPORTING = "(?:said|says|told(?:\\s+(?:me|us|him|her|them))?|asked|wrote|answered|replied|whispered|explained)";
+const QUOTE_AFTER_RE = new RegExp(`\\b${REPORTING}\\s*[:,]?\\s*["“*]([^"”*.!?]{1,400}[.!?]?)`, "gi");
+const QUOTE_BEFORE_RE = new RegExp(`["“]([^"”]{1,400})["”],?\\s+(?:she|he|they|[A-Z][a-z]+)\\s+${REPORTING}\\b`, "g");
+function withoutReportedSpeech(t) {
+  const blank = (m, q) => m.replace(q, " ".repeat(q.length));
+  return t.replace(QUOTE_AFTER_RE, blank).replace(QUOTE_BEFORE_RE, blank);
+}
+// "I have no childhood", "I never carried anything": a denial, not a claim.
+const NEGATED_RE = /\b(?:no|not|never|nothing)\b|n['’]t\b/i;
+
 /**
  * Every first-person experiential claim in `text`: { key, obj, phrase,
  * excusable }. A source claim excuses a draft claim only with the same key
@@ -157,16 +172,19 @@ function objectWords(text, from) {
  */
 function firstPersonClaims(text) {
   const claims = [];
-  const t = String(text || "").replace(/\s+/g, " ");
+  const t = withoutReportedSpeech(String(text || "").replace(/\s+/g, " "));
   const push = (key, phrase, obj, excusable = true) =>
     claims.push({ key, obj: obj || new Set(), phrase: phrase.trim(), excusable });
   for (const m of t.matchAll(VERB_RE)) {
+    if (NEGATED_RE.test(m[0])) continue;
     push(`verb:${m[1].toLowerCase().replace(/\s+/g, " ")}`, m[0], objectWords(t, m.index + m[0].length));
   }
   for (const m of t.matchAll(PERCEPT_RE)) {
+    if (NEGATED_RE.test(m[0])) continue;
     push(`verb:${m[1].toLowerCase()}`, m[0], contentWords(`${m[2]} ${m[3]}`));
   }
   for (const m of t.matchAll(HAVE_RE)) {
+    if (NEGATED_RE.test(m[0])) continue;
     push(`have:${m[2].toLowerCase()}`, m[0], contentWords(`${m[1]} ${m[2]}`));
   }
   for (const m of t.matchAll(REMEMBER_RE)) push("remember", m[0], null, false);

@@ -202,7 +202,7 @@ async function main() {
   await run('default binary is the one server/index.js resolves (read from its source)', async () => {
     const fs = require('fs');
     const src = fs.readFileSync(path.join(ROOT, 'server/index.js'), 'utf8');
-    const m = src.match(/const KANNAKA_BIN = ([\s\S]*?);\n/);
+    const m = src.match(/const KANNAKA_BIN = ([\s\S]*?);\r?\n/);
     assert.ok(m, 'server/index.js defines KANNAKA_BIN');
     // Evaluate server/index.js's own expression with its BASE_DIR (the repo root).
     const serverBin = () => new Function('process', 'path', 'BASE_DIR', `return ${m[1]};`)(process, path, ROOT);

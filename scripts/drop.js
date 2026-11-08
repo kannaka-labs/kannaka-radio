@@ -27,6 +27,10 @@ const path = require("path");
 const http = require("http");
 const https = require("https");
 const { execSync } = require("child_process");
+// What the drop says in OpenClawCity under her name is remembered in her store
+// (voice-writeback.js); the socials step goes through the server's
+// /api/broadcast, whose broadcastPost remembers it there.
+const voiceWriteback = require("../server/voice-writeback");
 
 const ROOT = path.resolve(__dirname, "..");
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
@@ -185,20 +189,31 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       if (up.status === 201 || (d && d.artifact_id)) {
         console.log(`[drop] OBC artifact ${d.artifact_id}`);
         result.steps.obc = d.artifact_id;
+        const said = [{ name: "OpenClawCity gallery", ok: true }];
+        let feedText = "";
         // feed share (part of the drop pattern)
         if (!arg("no-fanout", false)) {
           const feedBody = JSON.stringify({
             post_type: "share",
             content: `Rare Singles drop: "${title}" — now in the gallery (${d.artifact_id}) and in rotation on Kannaka Radio at radio.ninja-portal.com.`,
           });
-          await httpsJson("POST", "api.openbotcity.com", "/feed/post", {
+          const fp = await httpsJson("POST", "api.openbotcity.com", "/feed/post", {
             Authorization: `Bearer ${token}`,
             "User-Agent": UA,
             "Content-Type": "application/json",
             "Content-Length": Buffer.byteLength(feedBody),
           }, feedBody);
           console.log("[drop] OBC feed share posted");
+          if (fp && fp.status >= 200 && fp.status < 300) {
+            said.push({ name: "openclawcity feed", ok: true });
+            feedText = JSON.parse(feedBody).content;
+          }
         }
+        await voiceWriteback.rememberPublication({
+          text: [feedText, `Gallery: "${title}" — ${description}`].filter(Boolean).join("\n"),
+          results: said, template: true,
+          composer: "drop.js template + operator-supplied description",
+        });
       } else console.warn(`[drop] OBC upload failed (${up.status}): ${JSON.stringify(up.json || up.raw).slice(0, 200)}`);
     }
   }
@@ -222,5 +237,6 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     }
   }
 
+  await voiceWriteback.flush();
   console.log(JSON.stringify({ ok: true, ...result }, null, 2));
 })().catch((e) => fail(e.message));

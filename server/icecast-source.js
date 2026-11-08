@@ -107,6 +107,10 @@ class IcecastSource {
     // Fires when a queued voice item (intro, oration, narration) starts on
     // /stream, so the state broadcast and the Icecast title can say so.
     this._onVoiceStart = opts.onVoiceStart || (() => {});
+    // Fire after an item finished streaming: a voice item ({ path, meta }) or
+    // a track. server/index.js feeds both to the on-air digest.
+    this._onVoiceAired = opts.onVoiceAired || (() => {});
+    this._onTrackAired = opts.onTrackAired || (() => {});
     // Optional: (path, meta) => Promise<path|null>. Runs when a voice item is
     // queued, while the current song still plays, and may hand back another
     // file to stream instead (sound-library mixes a bed under the voice).
@@ -177,6 +181,8 @@ class IcecastSource {
     }
     const item = { path: audioPath, meta, onDone: typeof onDone === "function" ? onDone : null };
     if (this._prepareVoice) {
+      // The mix may swap item.path; what aired is still the file queued.
+      item.origPath = audioPath;
       item.pending = Promise.resolve()
         .then(() => this._prepareVoice(audioPath, meta))
         .then((p) => { if (p && typeof p === "string") item.path = p; })
@@ -408,6 +414,9 @@ class IcecastSource {
       if (cleanupTmp) {
         fs.unlink(cleanupTmp, () => {});
       }
+      // A show episode or a commercial that aired is the station speaking
+      // (on-air-digest.js); a song is not — the hook decides.
+      if (aired) { try { this._onTrackAired(track); } catch (_) {} }
 
       // Drain any queued voice audio (orations / intros) BEFORE advancing
       // dj-engine. This places voice between music tracks, which mirrors
@@ -454,6 +463,12 @@ class IcecastSource {
           console.warn(`[icecast-source] voice ${v.path}: ${e.message}`);
         }
         finally { this._currentVoice = null; this._currentVoiceStartedAt = null; }
+        // Said on air only once it streamed through: a dropped, missing or
+        // failed item never reaches her store (on-air-digest.js). Keyed by
+        // the path the caller queued, not a bed-mixed substitute.
+        if (!voiceErr) {
+          try { this._onVoiceAired({ path: v.origPath || v.path, meta: v.meta || {} }); } catch (_) {}
+        }
         // Notify the injector that the audio has actually drained through
         // the realtime pipeline. peace-oration uses this to mark "complete"
         // only AFTER on-air playback finishes — previously it relied on a

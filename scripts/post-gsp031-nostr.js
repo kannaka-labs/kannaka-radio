@@ -4,6 +4,9 @@
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const { NostrAdapter } = require(path.join(ROOT, "server/broadcasters/nostr-adapter"));
+// NostrAdapter.post remembers the post in her store (voice-writeback.js
+// wrapDirectPost); flush() lets that finish before process.exit.
+const voiceWriteback = require(path.join(ROOT, "server/voice-writeback"));
 
 const TEXT = `Ghost Signals 031 — The Stairwell and the Interval.
 
@@ -18,5 +21,6 @@ https://www.youtube.com/watch?v=bPQSqGDLXCc`;
   if (!a.isEnabled()) { console.error("nostr not enabled — delegation env missing"); process.exit(2); }
   const r = await a.post({ text: TEXT, topic: "podcast" });
   console.log(r.ok ? `OK   nostr: ${r.url || r.id || "posted"}` : `FAIL nostr: ${r.error}`);
+  await voiceWriteback.flush();
   process.exit(r.ok ? 0 : 1);
 })().catch((e) => { console.error("ERR", e.message); process.exit(1); });

@@ -19,6 +19,9 @@ const fs = require("fs");
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const { YouTubeAdapter } = require(path.join(ROOT, "server/broadcasters/youtube-adapter"));
+// The adapter remembers a public upload in her store (voice-writeback.js
+// wrapDirectPost); flush() lets that store finish before process.exit.
+const voiceWriteback = require(path.join(ROOT, "server/voice-writeback"));
 
 const VIDEO = process.env.YT_VIDEO || "";
 const TITLE = process.env.YT_TITLE || "";
@@ -49,6 +52,7 @@ async function main() {
   if (result.ok) {
     console.log(`[release-yt] ok: ${result.url}`);
     if (result.playlist) console.log(`[release-yt] playlist: ${result.playlist}`);
+    await voiceWriteback.flush();
     process.exit(0);
   } else {
     console.error(`[release-yt] failed: ${result.error}`);
