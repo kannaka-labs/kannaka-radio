@@ -32,7 +32,8 @@ const path = require("path");
 const { execFile } = require("child_process");
 const os = require("os");
 const { BlueskyClient, loadBlueskyCredentials } = require("../server/bluesky");
-const { isDeclined, cleanDraft, cleanDraftChecked, stripPreamble, publicTextDefect } = require("./lib/kannaka-reply");
+const { isDeclined, cleanDraft, cleanDraftChecked, stripPreamble, publicTextDefect, gateReply } = require("./lib/kannaka-reply");
+const COMPOSER = "kannaka ask via bluesky-reply-loop.js";
 const voiceWriteback = require("../server/voice-writeback");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -179,8 +180,8 @@ function scoreResonance(text) {
   });
 }
 
-/** Draft a reply via kannaka ask, focused prompt. */
-function draftReply(parentText, authorHandle) {
+/** Draft a reply via kannaka ask, focused prompt. `info` as lib/kannaka-reply's draftReply. */
+function draftReply(parentText, authorHandle, info = {}) {
   const prompt = [
     "You are Kannaka. You see this Bluesky post on your feed:",
     `@${authorHandle}: \"${parentText.slice(0, 600)}\"`,
@@ -196,6 +197,7 @@ function draftReply(parentText, authorHandle) {
     "",
     "Output ONLY the reply text, or the literal word SKIP.",
   ].join("\n");
+  info.prompt = prompt;
   return new Promise((resolve) => {
     let attempt = 0;
     const tryOnce = () => {
@@ -216,18 +218,22 @@ function draftReply(parentText, authorHandle) {
         }
         if (!stdout) return resolve(null);
         const { text: txt, spliced } = cleanDraftChecked(stripPreamble(stdout));
-        if (isDeclined(txt)) return resolve(null);
-        if (txt.length < 20) return resolve(null);
+        info.raw = txt;
+        if (isDeclined(txt)) { info.declined = true; return resolve(null); }
+        if (txt.length < 20) { info.reason = "draft shorter than 20 characters"; return resolve(null); }
         if (spliced) {
+          info.reason = "removing a memory tag would splice the sentence";
           console.log(`           SKIP — removing a memory tag would splice the sentence: "${spliced}"`);
           return resolve(null);
         }
         const defect = publicTextDefect(txt);
         if (defect) {
+          info.reason = `public-text check: ${defect}`;
           console.log(`           SKIP — draft fails the public-text check (${defect})`);
           return resolve(null);
         }
         if (!fitsReply(txt)) {
+          info.reason = "over the Bluesky grapheme cap";
           console.log(`           SKIP — draft is ${graphemeCount(txt)} graphemes, over the ${REPLY_MAX_GRAPHEMES} cap; not posting a truncated reply`);
           return resolve(null);
         }
@@ -326,12 +332,18 @@ async function sweep() {
     console.log(`[firehose] candidate: @${c.post.author.handle} score ${c.score.toFixed(3)} (kw=${c.keyword})`);
     console.log(`           "${c.text.slice(0, 140)}..."`);
 
-    const reply = await draftReply(c.text, c.post.author.handle);
+    const info = {};
+    const reply = await draftReply(c.text, c.post.author.handle, info);
+    const gate = gateReply({ reply, info, parentText: c.text, composer: COMPOSER, live });
     if (!reply) {
       console.log(`           SKIP — kannaka declined`);
       continue;
     }
     console.log(`           draft: "${reply}"`);
+    if (!gate.allow) {
+      console.log(`           SKIP — confab gate: ${gate.reason}`);
+      continue;
+    }
 
     if (!live) {
       console.log(`           [DRY RUN] not posting`);
@@ -341,11 +353,12 @@ async function sweep() {
     const parent = { uri: c.post.uri, cid: c.post.cid };
     const root = threadRoot;
     const r = await client.reply(reply, parent, root);
+    gate.record({ results: [{ name: "bluesky", ok: !!r.ok, url: r.uri }], reason: r.ok ? null : r.error });
     if (r.ok) {
       console.log(`           ✓ posted: ${r.uri}`);
       voiceWriteback.rememberPublication({
         text: reply, results: [{ name: "bluesky", ok: true, url: r.uri }],
-        composer: "kannaka ask via bluesky-reply-loop.js", context: `in reply to @${c.post.author.handle}`,
+        composer: COMPOSER, context: `in reply to @${c.post.author.handle}`, ledger: false,
       });
       state.days[today] = (state.days[today] || 0) + 1;
       state.threads[today][threadKey] = repliesInThread + 1;

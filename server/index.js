@@ -117,6 +117,15 @@ memoryBridge.configure({ bin: KANNAKA_BIN });
 // And for remembering what she says publicly (voice-writeback.js).
 const voiceWriteback = require("./voice-writeback");
 voiceWriteback.configure({ bin: KANNAKA_BIN });
+// The confabulation gate (lib/confab-gate.js): compile rules v2 now (about
+// 200 ms) rather than inside the first oration check, and say at startup
+// whether the gate can grade; create the publication ledger as this user
+// (0600) so a root job can never create it first. Neither throws.
+{
+  const st = require("./lib/confab-rules-v2").rulesStatus();
+  if (st.ok) console.log(`   [confab] rules v2 ready (sha256 ${st.sha256.slice(0, 12)}…)`);
+  require("./lib/publication-ledger").ensureWritable();
+}
 // And what the station says on air: one digest memory per period (default
 // 4 h, KANNAKA_ON_AIR_DIGEST_HOURS), long-form pieces one each
 // (on-air-digest.js). The buffer lives in the radio's data dir so lines

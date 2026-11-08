@@ -22,12 +22,14 @@ const path = require("path");
 const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
 const voiceWriteback = require("../server/voice-writeback");
+const confabGate = require("../server/lib/confab-gate");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const { isDeclined, stripPreamble, cleanGroundedLine, hasNoAbstract, publicTextDefect } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
 const ROOT = path.resolve(__dirname, "..");
+const COMPOSER = "kannaka ask via post-research-dispatch.js (grounded on kannaka dispatch)";
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
 // Remember with the same binary (and so the same store) that composes.
@@ -116,6 +118,7 @@ async function main() {
   // of them went out as research dispatches before this check.
   if (draft && isDeclined(draft)) {
     console.error("[research-dispatch] compose declined — posting the grounded line instead");
+    if (!dryRun) confabGate.recordDeclined({ surface: "research", composer: COMPOSER, model: confabGate.askModel(), prompt, text: draft, sourceText: d.text });
     draft = null;
   }
   if (draft && publicTextDefect(draft)) {
@@ -131,6 +134,22 @@ async function main() {
   const defect = publicTextDefect(draft);
   if (defect) {
     console.error(`[research-dispatch] post fails the public-text check (${defect}) — nothing posted`);
+    process.exit(0);
+  }
+
+  // The confabulation gate (server/lib/confab-gate.js): rule MR against what
+  // the compose was given (the title and the grounded line). Research posts
+  // may carry a JUDGE (logged); FABRICATED or a closed gate posts nothing.
+  const fromModel = draft !== d.text;
+  const gate = confabGate.check({
+    surface: "research",
+    composer: fromModel ? COMPOSER : "the grounded line from kannaka dispatch (post-research-dispatch.js fallback)",
+    model: fromModel ? confabGate.askModel() : "none (template line from kannaka dispatch)",
+    prompt: fromModel ? prompt : null, text: draft, sourceText: [`"${d.title}"`, d.text || ""].join("\n"),
+  });
+  if (!gate.allow) {
+    if (!dryRun) gate.record({ decision: "blocked" });
+    console.error(`[research-dispatch] confab gate: nothing posted (${gate.reason})`);
     process.exit(0);
   }
 
@@ -163,9 +182,10 @@ async function main() {
     surfaces.push({ name: "openclawcity feed", ok: !!r.ok });
   }
 
+  gate.record({ results: surfaces });
   // One memory for the socials + the city feed: the same words, one publication.
   await voiceWriteback.rememberPublication({
-    text: draft, results: surfaces, composer: "kannaka ask via post-research-dispatch.js (grounded on kannaka dispatch)",
+    text: draft, results: surfaces, composer: COMPOSER, ledger: false,
   });
   process.exit(anyOk ? 0 : 1);
 }

@@ -18,6 +18,8 @@ const { execFile } = require("child_process");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const { isDeclined } = require("./lib/kannaka-reply");
 const voiceWriteback = require("../server/voice-writeback");
+const confabGate = require("../server/lib/confab-gate");
+const COMPOSER = "kannaka ask via post-research-synthesis.js";
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
@@ -109,7 +111,19 @@ async function main() {
 
   const body = await runKannaka(["ask", "--no-tools", "--quiet-tools", prompt], 600000);
   if (!body || body.length < 200) { console.error("[synthesis] compose too short — aborting"); process.exit(1); }
-  if (isDeclined(body)) { console.error("[synthesis] compose declined — nothing published"); process.exit(0); }
+  if (isDeclined(body)) {
+    if (!dryRun) confabGate.recordDeclined({ surface: "research", composer: COMPOSER, model: confabGate.askModel(), prompt, text: body, sourceText: corpus });
+    console.error("[synthesis] compose declined — nothing published");
+    process.exit(0);
+  }
+  // The confabulation gate (server/lib/confab-gate.js): rule MR against the
+  // findings the essay was given.
+  const gate = confabGate.check({ surface: "research", composer: COMPOSER, model: confabGate.askModel(), prompt, text: body, sourceText: corpus });
+  if (!gate.allow) {
+    if (!dryRun) gate.record({ decision: "blocked" });
+    console.error(`[synthesis] confab gate: nothing published (${gate.reason})`);
+    process.exit(0);
+  }
 
   const titlePrompt = `Give a short evocative title (≤8 words, no quotes) for this field guide on "${topic}". Output ONLY the title.`;
   let title = (await runKannaka(["ask", "--no-tools", "--quiet-tools", titlePrompt], 120000)) || `Field Guide: ${topic}`;
@@ -123,13 +137,14 @@ async function main() {
   }
 
   const r = await obc.publishText({ title, content: full });
+  gate.record({ results: [{ name: "OpenClawCity text artifact", ok: !!r.ok, url: r.url }], reason: r.ok ? null : r.error });
   if (r.ok) {
     console.log(`[synthesis] published: ${r.url || r.id || "ok"}`);
     // What she published under her name, remembered once (voice-writeback.js).
     await voiceWriteback.rememberPublication({
       text: `${title}\n\n${full}`,
       results: [{ name: "OpenClawCity text artifact", ok: true, url: r.url }],
-      composer: "kannaka ask via post-research-synthesis.js",
+      composer: COMPOSER, ledger: false,
     });
     await voiceWriteback.flush();
     process.exit(0);

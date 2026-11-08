@@ -22,7 +22,8 @@ const path = require("path");
 const os = require("os");
 const { MastodonAdapter } = require("../server/broadcasters/mastodon-adapter");
 const voiceWriteback = require("../server/voice-writeback");
-const { scoreResonance, draftReply, KANNAKA_BIN, stripHtml } = require("./lib/kannaka-reply");
+const { scoreResonance, draftReply, gateReply, KANNAKA_BIN, stripHtml } = require("./lib/kannaka-reply");
+const COMPOSER = "kannaka ask via mastodon-reply-loop.js";
 // Remember with the same binary (and so the same store) that composes.
 voiceWriteback.configure({ bin: KANNAKA_BIN });
 
@@ -92,17 +93,24 @@ async function main() {
     if (verbose) console.log(`  @${m.author} score=${score.toFixed(3)} "${text.slice(0, 80)}"`);
     if (score < cfg.threshold) continue;
 
-    const reply = await draftReply(text, m.author, "Mastodon", 480);
+    // A direct or followers-only mention is a DM: its text stays out of the
+    // publication ledger (hash only) and the reply keeps its visibility.
+    const isDm = m.visibility === "direct" || m.visibility === "private";
+    const info = {};
+    const reply = await draftReply(text, m.author, "Mastodon", 480, info);
+    const gate = gateReply({ reply, info, parentText: text, composer: COMPOSER, live, private: isDm });
     if (!reply) { console.log(`  @${m.author} SKIP (kannaka declined)`); continue; }
     console.log(`  @${m.author} draft: "${reply}"`);
+    if (!gate.allow) { console.log(`  @${m.author} SKIP — confab gate: ${gate.reason}`); continue; }
 
     if (!live) { console.log("  [DRY RUN] not posting"); continue; }
-    const r = await mast.reply(reply, { id: m.statusId });
+    const r = await mast.reply(reply, { id: m.statusId, visibility: m.visibility });
+    gate.record({ results: [{ name: "mastodon", ok: !!r.ok, url: r.url }], reason: r.ok ? null : r.error });
     if (r.ok) {
       console.log(`  ✓ ${r.url}`); state.days[today] += 1;
       voiceWriteback.rememberPublication({
-        text: reply, results: [{ name: "mastodon", ok: true, url: r.url }],
-        composer: "kannaka ask via mastodon-reply-loop.js", context: `in reply to @${m.author}`,
+        text: reply, results: [{ name: "mastodon", ok: true, url: r.url }], private: isDm,
+        composer: COMPOSER, context: `in reply to @${m.author}`, ledger: false,
       });
     }
     else console.error(`  ✗ ${r.error}`);

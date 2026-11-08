@@ -65,6 +65,9 @@ function getEnabledBroadcasters(rootDir) {
  *   peace-oration teaser"), for the provenance label in her memory.
  * @param {boolean} [msg.template] — template copy, not her own words: stored
  *   at a lower importance.
+ * @param {object|false} [msg.ledger] — a confab-gate handle (server/lib/
+ *   confab-gate.js check()) whose row is written here with the per-surface
+ *   results; false when the caller writes its publication-ledger row itself
  * @param {boolean} [msg.writeBack] — false when the caller remembers the
  *   publication itself; otherwise every fanout with at least one success is
  *   written ONCE to her store (voice-writeback.js), fire-and-forget.
@@ -72,7 +75,9 @@ function getEnabledBroadcasters(rootDir) {
  * @param {string} [opts.rootDir] — radio root for credential lookup.
  * @returns {Promise<Array<{name, ok, url?, error?}>>}
  */
-async function broadcastPost(msg, opts = {}) {
+async function broadcastPost(fullMsg, opts = {}) {
+  // The gate handle is ours, not the adapters'.
+  const { ledger: gate, ...msg } = fullMsg || {};
   const rootDir = opts.rootDir;
   let adapters = getEnabledBroadcasters(rootDir);
   // If the caller didn't attach media, skip the media-only adapters
@@ -82,7 +87,9 @@ async function broadcastPost(msg, opts = {}) {
     adapters = adapters.filter((a) => a.name !== "youtube");
   }
   if (adapters.length === 0) {
-    return [{ name: "none", ok: false, error: "no_adapters_configured" }];
+    const none = [{ name: "none", ok: false, error: "no_adapters_configured" }];
+    if (gate && typeof gate.record === "function") gate.record({ results: none, published: false, decision: "failed", reason: "no adapters configured" });
+    return none;
   }
   const results = await Promise.all(
     adapters.map(async (a) => {
@@ -98,10 +105,15 @@ async function broadcastPost(msg, opts = {}) {
   );
   // Her own words go into her own store, once per publication. Not awaited:
   // the post has already gone out and nothing here may delay or fail it.
+  // The publication-ledger row for a gated draft, with what each surface did.
+  if (gate && typeof gate.record === "function") {
+    try { gate.record({ results }); } catch (_) { /* never fail a post that went out */ }
+  }
   if (msg.writeBack !== false) {
     voiceWriteback.rememberPublication({
       text: msg.text, results, composer: msg.composer || inferComposer(),
       links: msg.link ? [msg.link] : [], template: !!msg.template,
+      ...(gate || fullMsg.ledger === false ? { ledger: false } : {}),
     });
   }
   return results;

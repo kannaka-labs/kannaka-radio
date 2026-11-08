@@ -585,7 +585,9 @@ function composeViaAnthropicDirect(prompt, opts = {}) {
   return (async () => {
     for (const model of candidates) {
       const r = await tryModel(model);
-      if (r.text) return r.text;
+      // opts.meta (an object) learns which model answered, for the
+      // publication ledger (server/lib/publication-ledger.js).
+      if (r.text) { if (opts.meta && typeof opts.meta === "object") opts.meta.model = model; return r.text; }
       if (!r.notFound) return null; // real error (auth/overload) — don't hammer other models
     }
     return null;
