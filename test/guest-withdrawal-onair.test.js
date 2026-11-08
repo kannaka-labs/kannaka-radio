@@ -294,6 +294,27 @@ check('cutCurrent settles a stalled stream at once and dropQueued reaches an ite
   assert.strictEqual(item.dropped, 'withdrawn');
 });
 
+check('a cut that lands while the file is still being probed stops it before a byte is sent', async () => {
+  const src = new IcecastSource({ djEngine: new FakeEngine(), getMusicDir: () => os.tmpdir() });
+  const ff = fakeFfmpeg();
+  let written = 0;
+  ff.stdin = new Writable({ write(c, e, cb) { written += c.length; cb(); } });
+  src._ffmpeg = ff;
+  src._running = true;
+  let release;
+  src._probeDurationMs = () => new Promise((res) => { release = () => res(60000); });
+  const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'gwp-')), 'probe.mp3');
+  fs.writeFileSync(f, Buffer.alloc(4096, 0x55));
+  const p = src._streamFileToFfmpeg(f, 0, { kind: 'track', track: { file: 'x', isPodcastScheduled: true } });
+  await until(() => release);
+  const info = src.cutCurrent('withdrawn mid-probe', (a) => a.kind === 'track' && a.track.file === 'x');
+  assert.ok(info, 'the probing file is cuttable');
+  release();
+  assert.deepStrictEqual(await p, { cut: true });
+  assert.strictEqual(written, 0, 'nothing of the withdrawn file reached ffmpeg');
+  assert.strictEqual(src._activeStream, null);
+});
+
 check('the server wiring: both guest schedulers, the link route hook, the log watcher', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'server', 'index.js'), 'utf8');
   assert.ok(/for \(const s of \[readingScheduler, showcaseScheduler\]\) \{\s*try \{ s\.withdrawGuest\(guest, \{ icecastSource \}\)/.test(src));

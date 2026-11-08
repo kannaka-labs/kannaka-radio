@@ -250,6 +250,42 @@ check('confirmation is queued to the contact ON RECORD, once a day per guest, an
   assert.strictEqual(gw.outboxHealth(st.P.outboxFile).pending, 1);
 });
 
+check('two flushes at once send a confirmation once; rows the inbox owns are left to it', async () => {
+  const st = tmpStation();
+  const r = gw.withdraw(st.P.withdrawalsFile, { guest: 'writer-a', channel: 'link', secret: SECRET });
+  gw.queueConfirmation(st.P.outboxFile, { guest: 'writer-a', record: gw.guestRecord(st.P.consentFile, 'writer-a'), row: r.row, channel: 'link' });
+  const r2 = gw.withdraw(st.P.withdrawalsFile, { guest: 'writer-b', channel: 'email', secret: SECRET });
+  const q2 = gw.queueConfirmation(st.P.outboxFile, { guest: 'writer-b', record: gw.guestRecord(st.P.consentFile, 'writer-b'), row: r2.row, channel: 'email', sender: 'inbox' });
+  gw.queueOperatorNote(st.P.outboxFile, { to: 'op@example.org', subject: 's', body: 'b', sender: 'inbox' });
+  const sent = [];
+  let release;
+  const gate = new Promise((res) => { release = res; });
+  // A relay that takes its time: the route's flush and the log watcher's overlap.
+  const mailer = { configured: () => true, send: async (m) => { sent.push(m.to); await gate; return true; } };
+  const a = gw.flushOutbox(st.P.outboxFile, mailer);
+  const b = gw.flushOutbox(st.P.outboxFile, mailer);
+  release();
+  await Promise.all([a, b]);
+  assert.deepStrictEqual(sent, ['a@example.org'], 'once, and never the inbox-owned confirmation or operator note');
+  assert.strictEqual(gw.readOutbox(st.P.outboxFile).filter((e) => e.event === 'sent').length, 1);
+  const left = gw.pendingConfirmations(st.P.outboxFile);
+  assert.strictEqual(left.length, 2, 'the inbox rows stay pending (visible in health) until the inbox marks them');
+  gw.markOutbox(st.P.outboxFile, q2.id, 'sent', { via: 'inbox' });
+  assert.strictEqual(gw.pendingConfirmations(st.P.outboxFile).length, 1);
+});
+
+check('CLI email path: the confirmation and operator note are queued for the inbox, not the radio mailer', () => {
+  const st = tmpStation();
+  const { run } = require('../scripts/guest-withdraw');
+  const env = { KANNAKA_RADIO_BASE_DIR: st.root, GUEST_WITHDRAW_SECRET: SECRET };
+  let res;
+  run(['email', '--from', 'a@example.org', '--subject', 'withdraw', '--message-id', '<m1@x>'], env, (o) => { res = o; });
+  assert.strictEqual(res.action, 'withdraw');
+  const queued = gw.readOutbox(st.P.outboxFile).filter((e) => e.event === 'queued');
+  assert.ok(queued.length >= 1);
+  assert.ok(queued.every((e) => e.sender === 'inbox'), JSON.stringify(queued.map((e) => [e.kind, e.sender])));
+});
+
 // ── the routes ───────────────────────────────────────────────────
 
 function makeServer(baseDir, extra = {}) {

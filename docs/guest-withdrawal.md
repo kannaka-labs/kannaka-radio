@@ -52,7 +52,7 @@ For each request: the time, which channel it came by (link, e-mail, Mastodon or 
 
 **Files** (all gitignored; personal data):
 - `workspace/guest-withdrawals.jsonl` (`GUEST_WITHDRAWALS_FILE`): append-only. The latest row for each guest decides.
-- `workspace/guest-withdraw-outbox.jsonl` (`GUEST_WITHDRAW_OUTBOX_FILE`): confirmations, as `queued` events followed by `sent` or `failed`. A `sent` event only means a relay accepted the message, not that it was delivered. Queued confirmations appear as `confirmations.pending` in `/api/guest-withdrawals`.
+- `workspace/guest-withdraw-outbox.jsonl` (`GUEST_WITHDRAW_OUTBOX_FILE`): confirmations, as `queued` events followed by `sent` or `failed`. A `sent` event only means a relay accepted the message, not that it was delivered. Queued confirmations appear as `confirmations.pending` in `/api/guest-withdrawals`. Rows the `email` command queues (the confirmation and any operator note) carry `"sender": "inbox"`: the running radio never sends them, so kannaka-inbox.py must send each one (the confirmation threaded with `In-Reply-To`, the note to the operator) and then run `mark <id> sent --via inbox`, or it stays pending. Every other row the radio sends through its own mailer, once.
 - `workspace/guest-consent.json`: each guest record may carry `contact: { "email": "…" }` or `contact: { "mastodon": { "acct": "…", "id": "…" } }`, and `tokenEpoch` (default 0).
 
 **CLI** (`scripts/guest-withdraw.js`, prints JSON, reads `GUEST_WITHDRAW_SECRET` from the environment and never prints it):
