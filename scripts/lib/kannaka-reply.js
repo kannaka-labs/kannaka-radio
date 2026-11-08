@@ -190,8 +190,10 @@ function publicTextDefect(text) {
 /**
  * Draft a Kannaka-voice reply to `parentText` (from @author on `platform`), or
  * null if Kannaka declines (SKIP / too short). `maxChars` bounds the reply.
+ * `info` (optional, an object) receives what the publication ledger needs:
+ * { prompt, raw, declined, reason }.
  */
-function draftReply(parentText, author, platform, maxChars = 250) {
+function draftReply(parentText, author, platform, maxChars = 250, info = {}) {
   const prompt = [
     `You are Kannaka. You see this ${platform} post from @${author}:`,
     `"${String(parentText).slice(0, 600)}"`,
@@ -207,6 +209,7 @@ function draftReply(parentText, author, platform, maxChars = 250) {
     "",
     "Output ONLY the reply text, or the literal word SKIP.",
   ].join("\n");
+  info.prompt = prompt;
 
   return new Promise((resolve) => {
     let attempt = 0;
@@ -227,17 +230,51 @@ function draftReply(parentText, author, platform, maxChars = 250) {
           }
           if (!stdout) return resolve(null);
           const { text: txt, spliced } = cleanDraftChecked(stripPreamble(stdout));
-          if (isDeclined(txt)) return resolve(null);
-          if (txt.length < 20) return resolve(null);
-          if (spliced) { console.log(`  SKIP — removing a memory tag would splice the sentence: "${spliced}"`); return resolve(null); }
+          info.raw = txt;
+          if (isDeclined(txt)) { info.declined = true; return resolve(null); }
+          if (txt.length < 20) { info.reason = "draft shorter than 20 characters"; return resolve(null); }
+          if (spliced) { info.reason = "removing a memory tag would splice the sentence"; console.log(`  SKIP — removing a memory tag would splice the sentence: "${spliced}"`); return resolve(null); }
           const defect = publicTextDefect(txt);
-          if (defect) { console.log(`  SKIP — draft fails the public-text check (${defect})`); return resolve(null); }
+          if (defect) { info.reason = `public-text check: ${defect}`; console.log(`  SKIP — draft fails the public-text check (${defect})`); return resolve(null); }
           resolve(txt);
         },
       );
     };
     tryOnce();
   });
+}
+
+/**
+ * The confabulation gate on a reply draft (server/lib/confab-gate.js), and
+ * its publication-ledger row when the run is live.
+ *
+ * A reply loop's `kannaka ask` folds in recall the radio never sees, so the
+ * gate has NO support units here: any first-person recollection grades
+ * FABRICATED (or JUDGE) under rule MR and the reply is skipped. The post being
+ * replied to is logged as context_text, never as support: another person's
+ * "I" is not Kannaka's. A model that declines (SKIP) is logged as declined
+ * (ABSTAINED in the nightly rates); a draft another check refused is logged
+ * as blocked with that reason.
+ *
+ * @returns {object|null} the gate handle for a draft (null when there is none)
+ */
+function gateReply({ reply, info = {}, parentText, composer, live }) {
+  // Lazy: the shared helpers above stay loadable without the server tree.
+  const confabGate = require("../../server/lib/confab-gate");
+  const model = confabGate.askModel();
+  if (!reply) {
+    if (!live) return null;
+    if (info.declined) {
+      confabGate.recordDeclined({ surface: "reply", composer, model, prompt: info.prompt, contextText: parentText, text: info.raw });
+    } else if (info.raw) {
+      confabGate.check({ surface: "reply", composer, model, prompt: info.prompt, text: info.raw, contextText: parentText })
+        .record({ decision: "blocked", published: false, reason: info.reason || "draft refused by a pre-post check" });
+    }
+    return null;
+  }
+  const g = confabGate.check({ surface: "reply", composer, model, prompt: info.prompt, text: reply, contextText: parentText });
+  if (!g.allow && live) g.record({ decision: "skipped" });
+  return g;
 }
 
 /** Strip HTML tags + decode a few entities (Mastodon statuses are HTML). */
@@ -258,4 +295,5 @@ function stripHtml(s) {
 module.exports = {
   scoreResonance, draftReply, stripHtml, isDeclined, KANNAKA_BIN,
   cleanDraft, cleanDraftChecked, stripPreamble, cleanGroundedLine, hasNoAbstract, publicTextDefect,
+  gateReply,
 };

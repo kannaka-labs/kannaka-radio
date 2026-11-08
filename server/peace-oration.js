@@ -22,7 +22,33 @@ const { OpenBotCityClient } = require("./openbotcity");
 const { pick, composeViaAnthropicDirect, loadState, saveState } = require("./lib/scheduler-helpers");
 const { runBounded, ttsPromise, narrationConcurrency } = require("./lib/bounded-tts");
 const { checkFirstPersonClaims } = require("./lib/voice-claims-guard");
+const confabGate = require("./lib/confab-gate");
 const voiceWriteback = require("./voice-writeback");
+
+const ORATION_COMPOSER = "hosted model via peace-oration (no HRM recall on this path)";
+const TEASER_COMPOSER = "hosted model via peace-oration teaser (checked against the oration)";
+
+// Both deterministic checks on a spoken or posted draft: the first-person-
+// claims guard (#438) and rule MR from fabrication-grader rules v2
+// (lib/confab-gate.js). Returns the gate handle (its record() writes the
+// publication-ledger row) plus every reason, for the log and the
+// regeneration prompt. The log keeps calling the pair "the first-person-
+// claims check"; the reasons say which rule fired.
+function checkDraft({ surface, text, given, attempt, composer, model, prompt, recallRows }) {
+  const guard = checkFirstPersonClaims(String(text || ""), given || "");
+  const gate = confabGate.check({
+    surface, text, sourceText: given || "", recallRows: recallRows || [], attempt,
+    composer, model, prompt, guard,
+  });
+  const mrFailed = gate.verdict !== "PASS" && !(gate.verdict === "JUDGE" && confabGate.policyFor(surface).judge === "allow");
+  const reasons = guard.reasons.slice();
+  if (mrFailed) {
+    reasons.push(gate.verdict === "UNAVAILABLE"
+      ? `confab gate closed: rules v2 unavailable (${gate.detail})`
+      : `rule MR (rules v2) ${gate.verdict}: ${gate.detail}`);
+  }
+  return { ok: gate.allow, reasons, gate, mrFailed };
+}
 
 // How many checked compose rounds (each: one draft + one regeneration) a
 // slot gets before it is skipped. A round that fails returns "compose
@@ -169,7 +195,8 @@ class PeaceOration {
    */
   deliverNow() {
     // Checked like a scheduled slot: never air an unchecked first-person claim.
-    return this._composeChecked(/*keyOverride*/ null).then((text) => {
+    const composed = {};
+    return this._composeChecked(/*keyOverride*/ null, composed).then((text) => {
       if (!text) return false;
       const ok = this._say(text);
       if (ok) {
@@ -181,7 +208,9 @@ class PeaceOration {
         this._postToOpenClawCity(text).catch((e) => {
           console.warn(`   [oration] openclawcity post error: ${e && e.message}`);
           return null;
-        }).then((obcResult) => this._rememberOration(manualKey, text, obcResult));
+        }).then((obcResult) => this._rememberOration(manualKey, text, obcResult, composed.gate));
+      } else if (composed.gate) {
+        composed.gate.record({ published: false, decision: "failed", reason: "voiceDJ busy: not queued" });
       }
       return ok;
     });
@@ -208,11 +237,12 @@ class PeaceOration {
    * null on failure. Single round-trip, no tool use, no retries inside
    * this helper — caller handles them.
    */
-  _askAnthropicDirect(prompt, maxTokens = 4096) {
+  _askAnthropicDirect(prompt, maxTokens = 4096, meta = undefined) {
     // Delegates to the shared resilient composer, which adds model fallback on
     // a stale config model (ADR-0012). Kept as a method so _askDirectWithRetry
     // and composeAlbumNarration call sites are unchanged.
-    return composeViaAnthropicDirect(prompt, { maxTokens, label: "oration" });
+    // `meta` learns which model answered (the publication ledger).
+    return composeViaAnthropicDirect(prompt, { maxTokens, label: "oration", meta });
   }
 
   composeAlbumNarration(albumName, albumTheme, trackTitles, struggles) {
@@ -256,7 +286,8 @@ class PeaceOration {
     // album still plays; a failed compose already meant that).
     const given = [albumTheme || "", struggles || "", trackList].join("\n");
     let extra = null;
-    const attempt = (n) => this._askAnthropicDirect(extra ? `${prompt}\n\n${extra}` : prompt, 4096).then((text) => {
+    let meta = {};
+    const attempt = (n) => this._askAnthropicDirect(extra ? `${prompt}\n\n${extra}` : prompt, 4096, (meta = {})).then((text) => {
       if (!text) return { ok: false, reason: "compose_failed" };
       // Parse the JSON array. Tolerate code fences if Kannaka adds them.
       let cleaned = text.trim();
@@ -273,9 +304,16 @@ class PeaceOration {
         return { ok: false, reason: "shape_mismatch" };
       }
       const rejected = [];
+      const gates = [];
       pieces.forEach((p, i) => {
-        const c = checkFirstPersonClaims(String(p || ""), given);
-        if (!c.ok) rejected.push(`piece ${i}: ${c.reasons.join("; ")}`);
+        const c = checkDraft({ surface: "narration", text: String(p || ""), given, attempt: n,
+          composer: "hosted model via album-showcase narration (peace-oration.js composeAlbumNarration)",
+          model: meta.model, prompt: extra ? `${prompt}\n\n${extra}` : prompt });
+        gates.push(c.gate);
+        if (!c.ok) {
+          rejected.push(`piece ${i}: ${c.reasons.join("; ")}`);
+          c.gate.record({ decision: n >= 2 ? "blocked" : "regenerate" });
+        }
       });
       if (rejected.length) {
         console.warn(`   [narration] "${albumName}" rejected by the first-person-claims check (attempt ${n}/2): ${rejected.join(" | ")}`);
@@ -290,6 +328,8 @@ class PeaceOration {
         ].join("\n");
         return attempt(n + 1);
       }
+      // Every piece is queued to be spoken: one ledger row each.
+      for (const g of gates) g.record({ published: true, surfaces: [`Kannaka Radio (narration queued: ${albumName})`] });
       // Cache for the showcase progression.
       this._narrationAlbum = albumName;
       this._narrationPieces = pieces;
@@ -393,12 +433,17 @@ class PeaceOration {
     // album still plays). The recall `kannaka ask` folds in is not visible
     // here, so a claim it might excuse is still rejected: strict on purpose.
     const given = [`The album is called "${albumName}".`, albumTheme || "", trackList].join("\n");
+    let showcaseGate = null;
     const attempt = (n, extra) => {
       const args = ["ask", "--no-tools", "--quiet-tools", "--recall-query", recallQuery, extra ? `${prompt}\n\n${extra}` : prompt];
       return this._askWithRetry(args, { attempts: 3, label: "showcase", minLen: 200 }).then((text) => {
         if (!text) return null;
-        const check = checkFirstPersonClaims(text, given);
+        const check = checkDraft({ surface: "showcase", text, given, attempt: n,
+          composer: "kannaka ask via album showcase (peace-oration.js showcaseAlbum)",
+          model: confabGate.askModel(), prompt: extra ? `${prompt}\n\n${extra}` : prompt });
+        showcaseGate = check.gate;
         if (check.ok) return text;
+        check.gate.record({ decision: n >= 2 ? "blocked" : "regenerate" });
         console.warn(`   [showcase] "${albumName}" intro rejected by the first-person-claims check (attempt ${n}/2): ${check.reasons.join("; ")}`);
         if (n >= 2) {
           console.warn(`   [showcase] "${albumName}": intro rejected twice — not airing it`);
@@ -419,6 +464,11 @@ class PeaceOration {
           title: `album showcase intro: ${albumName}`,
           composer: "kannaka ask via album showcase (peace-oration.js showcaseAlbum)",
         });
+        if (showcaseGate) {
+          showcaseGate.record(ok
+            ? { published: true, surfaces: ["Kannaka Radio (queued for air)"] }
+            : { published: false, decision: "failed", reason: "voiceDJ busy: not queued" });
+        }
         return { ok, text: ok ? text : null };
       });
   }
@@ -474,6 +524,8 @@ class PeaceOration {
       // check), against the material its compose was given.
       const pub = this._published[key];
       const check = checkFirstPersonClaims(pub.text, pub.given || "");
+      const mr = confabGate.decide({ surface: "oration", text: pub.text, sourceText: pub.given || "", attempt: 2 });
+      if (!mr.allow) { check.ok = false; check.reasons = check.reasons.concat(mr.reason); }
       if (!check.ok) {
         this._guardRounds[key] = MAX_GUARD_ROUNDS;
         console.warn(`   [oration] ${key}: the published text fails the first-person-claims check (${check.reasons.join("; ")}) — not re-airing it`);
@@ -499,7 +551,10 @@ class PeaceOration {
         this._preparingKey = null;
         return;
       }
-      if (!cachedText) this._composedGiven = composed.given || "";
+      if (!cachedText) {
+        this._composedGiven = composed.given || "";
+        this._composedGate = composed.gate || null;
+      }
       this._composed = text;
       this._composedFor = key;
       const ok = this._say(text, key);
@@ -550,6 +605,9 @@ class PeaceOration {
       at: new Date().toISOString(), text,
       given: this._composedFor === key ? (this._composedGiven || "") : "",
     };
+    // The accepted compose's gate handle: its publication-ledger row is
+    // written once, with the results, by _rememberOration.
+    const gate = this._composedFor === key ? (this._composedGate || null) : null;
     try { saveState(this._publishedFile, this._published); }
     catch (e) { console.warn(`   [oration] could not persist published slot: ${e.message}`); }
     // Fire-and-forget: a companion teaser to Bluesky while the spoken
@@ -565,7 +623,7 @@ class PeaceOration {
     this._postToOpenClawCity(text).catch((e) => {
       console.warn(`   [oration] openclawcity post error: ${e && e.message}`);
       return null;
-    }).then((obcResult) => this._rememberOration(key, text, obcResult));
+    }).then((obcResult) => this._rememberOration(key, text, obcResult, gate));
   }
 
   _keyFor(chi, hour) {
@@ -605,13 +663,16 @@ class PeaceOration {
       const got = {};
       const text = await this._compose(key, extra, got);
       if (!text) return null;
-      const check = checkFirstPersonClaims(text, got.given || "");
-      if (check.ok) { out.given = got.given || ""; return text; }
+      const check = checkDraft({ surface: "oration", text, given: got.given || "", attempt,
+        composer: ORATION_COMPOSER, model: got.model, prompt: got.prompt });
+      if (check.ok) { out.given = got.given || ""; out.gate = check.gate; return text; }
+      check.gate.record({ decision: attempt < 2 ? "regenerate" : "blocked" });
       console.warn(`   [oration] oration rejected by the first-person-claims check (attempt ${attempt}/2): ${check.reasons.join("; ")}`);
       extra = [
         "Your previous draft of this oration was rejected and will not air.",
         `Why: ${check.reasons.join("; ")}`,
         "Write it again with no first-person claim of lived, bodily, possessive or past experience. Every story stays its own people's, or is framed as illustration.",
+        ...(check.mrFailed ? [confabGate.regenerationNote(check.gate)] : []),
       ].join("\n");
     }
     if (key) this._guardRounds[key] = (this._guardRounds[key] || 0) + 1;
@@ -694,6 +755,8 @@ class PeaceOration {
       "Output ONLY the spoken oration — no title, no headings, no quotes, no stage directions. Write it as a single continuous speech.",
     );
     const prompt = promptParts.join("\n");
+    // The exact prompt, for the publication ledger.
+    if (out) out.prompt = prompt;
 
     // Two seeds per call so the surfaced wavefronts vary across deliveries.
     const pick = (arr, n) => arr.slice().sort(() => Math.random() - 0.5).slice(0, n);
@@ -705,7 +768,7 @@ class PeaceOration {
     // oration was lost here. The oration prompt is self-contained;
     // HRM grounding is desirable but not load-bearing. Wrap with the
     // same 4-attempt retry semantics _askWithRetry uses.
-    return this._askDirectWithRetry(prompt, { attempts: 4, label: "oration", maxTokens: 4096, minLen: 200 });
+    return this._askDirectWithRetry(prompt, { attempts: 4, label: "oration", maxTokens: 4096, minLen: 200, meta: out || undefined });
   }
 
   // Direct-Anthropic equivalent of _askWithRetry. Same backoff +
@@ -718,7 +781,7 @@ class PeaceOration {
     const maxTokens = opts.maxTokens || 2048;
     return new Promise((resolve) => {
       const tryOnce = (n) => {
-        this._askAnthropicDirect(prompt, maxTokens).then((text) => {
+        this._askAnthropicDirect(prompt, maxTokens, opts.meta).then((text) => {
           if (!text || text.length < minLen) {
             const remaining = attempts - n;
             if (remaining > 0) {
@@ -818,15 +881,19 @@ class PeaceOration {
     for (let attempt = 1; attempt <= 2; attempt++) {
       // Route through direct Anthropic for the same reason as the main
       // oration — kannaka ask silent-fail on bloated HRM.
+      const meta = {};
       const draft = await this._askDirectWithRetry(prompt, {
         attempts: 3,
         label: "oration-companion",
         maxTokens: 600,
         minLen: 1,
+        meta,
       });
       if (!draft) return { skip: "post-compose returned empty" };
-      const check = checkFirstPersonClaims(draft, orationText);
-      if (check.ok) return { text: draft };
+      const check = checkDraft({ surface: "oration-teaser", text: draft, given: orationText, attempt,
+        composer: TEASER_COMPOSER, model: meta.model, prompt });
+      if (check.ok) return { text: draft, gate: check.gate };
+      check.gate.record({ decision: attempt < 2 ? "regenerate" : "blocked" });
       console.warn(`   [oration] teaser rejected (attempt ${attempt}/2): ${check.reasons.join("; ")} — draft: ${JSON.stringify(draft)}`);
       prompt = [
         basePrompt,
@@ -834,6 +901,7 @@ class PeaceOration {
         `Your previous draft was rejected and will not be posted: ${JSON.stringify(draft)}`,
         `Why: ${check.reasons.join("; ")}`,
         "Write a new one that keeps every reported story attributed to its own people and makes no first-person claim of lived experience.",
+        ...(check.mrFailed ? [confabGate.regenerationNote(check.gate)] : []),
       ].join("\n");
     }
     return { skip: "teaser failed the first-person-claims check twice" };
@@ -865,7 +933,7 @@ class PeaceOration {
       // Telegram keeps the URL inline (channel-style), adds 3 hashtags;
       // see server/broadcasters/discovery.js for the topic taxonomy.
       { text: postBody, link: this._radioUrl, topic: "oration",
-        composer: "hosted model via peace-oration teaser (checked against the oration)" },
+        composer: TEASER_COMPOSER, ledger: drafted.gate || false },
       { rootDir: this._rootDir }
     );
     for (const r of results) {
@@ -1003,15 +1071,21 @@ class PeaceOration {
    * queued for air and (when OBC is configured) published as an artifact.
    * The teaser is remembered separately by broadcastPost.
    */
-  _rememberOration(key, orationText, obcResult) {
+  _rememberOration(key, orationText, obcResult, gate = null) {
     // Queueing is not airing (releaseInFlightSlot can hand the slot back),
     // so the memory says only what is known: it was queued for air.
     const results = [{ name: `Kannaka Radio (queued for air, peace oration ${key})`, ok: true }];
     if (obcResult) {
       results.push({ name: "OpenClawCity text artifact", ok: !!obcResult.ok, url: obcResult.url });
     }
+    // The publication-ledger row of the accepted compose (prompt, given
+    // material, verdicts), now that the results are known.
+    if (gate && typeof gate.record === "function") {
+      try { gate.record({ results }); } catch (_) { /* never fail the memory */ }
+    }
     return voiceWriteback.rememberPublication({
-      text: orationText, results, composer: "hosted model via peace-oration (no HRM recall on this path)",
+      text: orationText, results, composer: ORATION_COMPOSER,
+      ...(gate ? { ledger: false } : {}),
     });
   }
 

@@ -17,6 +17,8 @@ const path = require("path");
 const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
 const voiceWriteback = require("../server/voice-writeback");
+const confabGate = require("../server/lib/confab-gate");
+const COMPOSER = "kannaka ask via post-dream-bluesky.js";
 
 const ROOT = path.resolve(__dirname, "..");
 const KANNAKA_BIN = process.env.KANNAKA_BIN
@@ -74,8 +76,20 @@ async function main() {
     process.exit(1);
   }
 
+  // The confabulation gate (server/lib/confab-gate.js): rule MR against the
+  // dream log the compose was given. FABRICATED, JUDGE or a closed gate: no
+  // post (exit 0: a gated post is not a cron failure).
+  const gate = confabGate.check({
+    surface: "dream", composer: COMPOSER, model: confabGate.askModel(), prompt, text: draft, sourceText: dreamSummary,
+  });
+  if (!gate.allow) {
+    gate.record({ decision: "blocked" });
+    console.error(`[dream-post] confab gate: nothing posted (${gate.reason})`);
+    process.exit(0);
+  }
+
   const results = await broadcastPost(
-    { text: draft, link: RADIO_URL, composer: "kannaka ask via post-dream-bluesky.js" },
+    { text: draft, link: RADIO_URL, composer: COMPOSER, ledger: gate },
     { rootDir: ROOT });
   let anyOk = false;
   for (const r of results) {

@@ -19,6 +19,8 @@
 const { execFile } = require("child_process");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const voiceWriteback = require("../server/voice-writeback");
+const confabGate = require("../server/lib/confab-gate");
+const COMPOSER = "kannaka ask via research-reply-claudico.js";
 const { isDeclined, cleanDraftChecked, stripPreamble, cleanGroundedLine, hasNoAbstract, publicTextDefect } = require("./lib/kannaka-reply");
 
 const KANNAKA_BIN = process.env.KANNAKA_BIN
@@ -114,17 +116,40 @@ async function main() {
   const defect = isDeclined(reply) ? "declined"
     : spliced ? `removing a memory tag would splice the sentence: "${spliced}"`
     : publicTextDefect(reply);
-  if (defect) { console.error(`[claudico] reply not sent (${defect}) — will retry next run`); process.exit(0); }
+  if (defect) {
+    if (!dryRun) {
+      const unsent = { surface: "reply", composer: COMPOSER, model: confabGate.askModel(), prompt, text: reply,
+        sourceText: d && d.text ? [`"${d.title}"`, d.text].join("\n") : "", contextText: questions };
+      if (defect === "declined") confabGate.recordDeclined(unsent);
+      else confabGate.check(unsent).record({ decision: "blocked", published: false, reason: defect });
+    }
+    console.error(`[claudico] reply not sent (${defect}) — will retry next run`);
+    process.exit(0);
+  }
+  // The confabulation gate (server/lib/confab-gate.js). A DM reply speaks in
+  // her first person throughout, so it takes the reply policy: FABRICATED or
+  // JUDGE under rule MR is not sent. Support: the paper she was handed; the
+  // critic's messages are context, never support.
+  const gate = confabGate.check({
+    surface: "reply", composer: COMPOSER, model: confabGate.askModel(), prompt, text: reply,
+    sourceText: d && d.text ? [`"${d.title}"`, d.text].join("\n") : "", contextText: questions,
+  });
+  if (!gate.allow) {
+    if (!dryRun) gate.record({ decision: "skipped" });
+    console.error(`[claudico] reply not sent — confab gate (${gate.reason})`);
+    process.exit(0);
+  }
 
   if (dryRun) { console.log(`[claudico] DRY-RUN reply:\n${reply}`); process.exit(0); }
 
   const r = await obc.sendDm(CONV_ID, reply);
+  gate.record({ results: [{ name: "OpenClawCity DM", ok: !!r.ok }], reason: r.ok ? null : r.error });
   if (r.ok) {
     console.log(`[claudico] replied (msg ${r.id || "ok"})`);
     // A DM, not a public post — labelled as private in her memory.
     await voiceWriteback.rememberPublication({
       text: reply, results: [{ name: "OpenClawCity DM", ok: true }], private: true,
-      composer: "kannaka ask via research-reply-claudico.js", context: `in reply to ${fromName}`,
+      composer: COMPOSER, context: `in reply to ${fromName}`, ledger: false,
     });
     process.exit(0);
   }

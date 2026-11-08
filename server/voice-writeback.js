@@ -43,6 +43,7 @@ const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const childProcess = require("child_process");
+const publicationLedger = require("./lib/publication-ledger");
 
 // Same resolution server/index.js uses for KANNAKA_BIN: the env var, else the
 // kannaka-memory checkout beside this repo.
@@ -348,6 +349,8 @@ function releaseLedger(key) { appendLedger(key, { r: 1 }, "release the claim (it
  * @param {string[]} [p.links]   — extra links the post carried (msg.link)
  * @param {string}  [p.context]
  * @param {string}  [p.label]    — a complete provenance label (see buildMemoryText)
+ * @param {boolean} [p.ledger]   — false when the caller already wrote this
+ *   publication's publication-ledger row (with its prompt and verdicts)
  * @param {string}  [p.expires]  — RFC3339 time after which recall treats the
  *   memory as expired (`kannaka remember --expires`; the on-air digest)
  * @returns {Promise<{stored: boolean, reason?: string, memory?: string,
@@ -355,6 +358,7 @@ function releaseLedger(key) { appendLedger(key, { r: 1 }, "release the claim (it
  *   her store from inside the dedupe window (this process or another)
  */
 function rememberPublication(p = {}) {
+  ledgerCatchAll(p);
   let promise;
   try {
     promise = _remember(p);
@@ -365,6 +369,40 @@ function rememberPublication(p = {}) {
   _pending.add(promise);
   promise.then(() => _pending.delete(promise));
   return promise;
+}
+
+// Every model-composed publication gets a publication-ledger row
+// (server/lib/publication-ledger.js), whatever this module then does with it
+// (the kill switch and READONLY stop the store, not the evidence). Call sites
+// that gate a draft write a full row themselves (prompt, support, verdicts)
+// and pass `ledger: false`; everything else lands here as an "output-only"
+// row: the words and where they went, no prompt. Template copy and the on-air
+// digest (a `label`: lines already said on air, not a model draft of their
+// own) are skipped. Never throws.
+const MODEL_COMPOSER = /\b(?:kannaka ask|hosted model|model)\b/i;
+function surfaceFromComposer(composer) {
+  const c = String(composer || "").toLowerCase();
+  if (/reply-loop|reply-claudico|responder/.test(c)) return "reply";
+  if (/research/.test(c)) return "research";
+  if (/dream/.test(c)) return "dream";
+  if (/teaser/.test(c)) return "oration-teaser";
+  if (/showcase/.test(c)) return "showcase";
+  if (/narration/.test(c)) return "narration";
+  if (/oration/.test(c)) return "oration";
+  return "other";
+}
+function ledgerCatchAll(p) {
+  try {
+    if (!p || p.ledger === false || p.template || p.label) return;
+    if (!MODEL_COMPOSER.test(String(p.composer || ""))) return;
+    const ok = (p.results || []).filter((r) => r && r.ok && r.name !== "none");
+    if (!ok.length || !normalize(p.text)) return;
+    publicationLedger.append({
+      surface: surfaceFromComposer(p.composer), composer: p.composer, output: p.text,
+      results: p.results, published: true, decision: "published", capture: "output-only",
+      context_text: p.context || null,
+    });
+  } catch (_) { /* the ledger never fails a publication */ }
 }
 
 function _remember(p) {
@@ -535,12 +573,14 @@ function _reset() {
   // Every reset gets a fresh, empty ledger: a test never shares dedupe state
   // with an earlier run, the live store's ledger, or the repo's workspace.
   _ledgerPath = path.join(os.tmpdir(), `vw-ledger-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.jsonl`);
+  // ...and the publication ledger likewise never lands in the repo's workspace.
+  publicationLedger._setPath(path.join(os.tmpdir(), `pub-ledger-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.jsonl`));
 }
 
 module.exports = {
   rememberPublication, buildMemoryText, skipReason, disabledReason, configure, flush,
   defaultBin, radioDataDir, ledgerPath, claimLedger, inferComposer,
-  wrapDirectPost, youtubeSummary, IN_FANOUT,
+  wrapDirectPost, youtubeSummary, IN_FANOUT, surfaceFromComposer,
   IMPORTANCE, TEMPLATE_IMPORTANCE, MAX_TEXT_CHARS, LEDGER_LEASE_MS,
   _setExecFile, _setLedgerPath, _reset, _recentSize,
 };
