@@ -17,7 +17,7 @@
  *     credit line, "the operator has listened") must be listed in that
  *     guest's `resolved` array;
  *   • `maxAirings` caps how many times the file may air (ledger:
- *     workspace/guest-airings.json); `hours` limits the Chicago hours it may
+ *     workspace/guest-airings.json; an unreadable ledger holds everything); `hours` limits the Chicago hours it may
  *     start in; `explicit: true` adds the night window (22:00–05:59);
  *   • a spoken sidecar of the file (".intro*.txt", ".before.txt", ".after.txt") that still
  *     holds a "[[…]]" placeholder holds it too.
@@ -86,10 +86,18 @@ function readSidecar(dir, fileName) {
   return v && typeof v.guest === 'string' && v.guest ? v : null;
 }
 
-/** { "<folder>/<file>": ["iso", …] } */
+/**
+ * { "<folder>/<file>": ["iso", …] }. A missing ledger is an empty one; a
+ * ledger that exists but cannot be read is null, and the gate then holds
+ * every file (a corrupt ledger must not reset a once-only cap to zero).
+ */
 function readAirings(file) {
-  const v = readJson(file);
-  return v && typeof v === 'object' ? v : {};
+  let raw;
+  try { raw = fs.readFileSync(file, 'utf8'); } catch (e) { return e && e.code === 'ENOENT' ? {} : null; }
+  try {
+    const v = JSON.parse(raw);
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+  } catch (_) { return null; }
 }
 
 function ledgerKey(folder, fileName) { return `${folder}/${fileName}`; }
@@ -123,10 +131,18 @@ function clearance(sidecar, consent, o = {}) {
   const entry = (consent && consent.guests && consent.guests[sidecar.guest]) || null;
   if (!entry || entry.consent !== true) reasons.push(`no consent from "${sidecar.guest}"`);
   const resolved = new Set(entry && Array.isArray(entry.resolved) ? entry.resolved : []);
+  // Fail closed on a malformed sidecar: `requires` must be a list (an empty
+  // one is fine), and a cap that is present must be a whole number.
+  if (!Array.isArray(sidecar.requires)) reasons.push('sidecar "requires" is not a list');
   for (const req of Array.isArray(sidecar.requires) ? sidecar.requires : []) {
     if (!resolved.has(req)) reasons.push(`unresolved: ${req}`);
   }
-  if (!o.ignoreAirings && Number.isInteger(sidecar.maxAirings)
+  if (sidecar.maxAirings !== undefined && !Number.isInteger(sidecar.maxAirings)) {
+    reasons.push('sidecar "maxAirings" is not a whole number');
+  }
+  if (!o.ignoreAirings && o.airedCount === null) {
+    reasons.push('airings ledger unreadable');
+  } else if (!o.ignoreAirings && Number.isInteger(sidecar.maxAirings)
       && (o.airedCount || 0) >= sidecar.maxAirings) {
     reasons.push(`already aired ${o.airedCount}/${sidecar.maxAirings}`);
   }
@@ -150,9 +166,11 @@ function createGate({ musicDir, folder, consentFile, ledgerFile, log = console }
   const lastLogged = new Map();
   function check(fileName, o = {}) {
     const sidecar = readSidecar(getDir(), fileName);
-    const airings = readAirings(ledgerFile)[ledgerKey(folder, fileName)];
+    const ledger = readAirings(ledgerFile);
+    const airings = ledger ? ledger[ledgerKey(folder, fileName)] : undefined;
     const res = clearance(sidecar, readConsent(consentFile), {
-      airedCount: Array.isArray(airings) ? airings.length : 0,
+      // null = the ledger exists but is unreadable: held, not counted as zero.
+      airedCount: ledger === null ? null : (Array.isArray(airings) ? airings.length : 0),
       chicagoHour: o.chicagoHour,
       ignoreAirings: o.ignoreAirings,
     });
@@ -174,14 +192,21 @@ function createGate({ musicDir, folder, consentFile, ledgerFile, log = console }
   function recordAiring(fileName, now = new Date()) {
     const all = readAirings(ledgerFile);
     const key = ledgerKey(folder, fileName);
+    if (all === null) {
+      // Never overwrite a ledger we could not read: that would erase its history.
+      if (log && log.warn) log.warn(`[guest-consent] airings ledger unreadable; not recording ${key}`);
+      return false;
+    }
     all[key] = (Array.isArray(all[key]) ? all[key] : []).concat(now.toISOString());
     try {
       fs.mkdirSync(path.dirname(ledgerFile), { recursive: true });
       const tmp = `${ledgerFile}.tmp-${process.pid}`;
       fs.writeFileSync(tmp, JSON.stringify(all, null, 2) + '\n');
       fs.renameSync(tmp, ledgerFile);
+      return true;
     } catch (e) {
       if (log && log.warn) log.warn(`[guest-consent] could not record airing of ${key}: ${e && e.message}`);
+      return false;
     }
   }
   return { check, recordAiring, folder };

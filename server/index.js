@@ -410,7 +410,9 @@ const djEngine = new DJEngine({
       // Every 3-5 non-commercial tracks, the DJ does a talk-only segment
       // BEFORE the next track starts. Music pauses on the client while
       // the talk audio plays, then the track resumes afterward.
-      if (!actual.commercial && voiceDJ.shouldTalk(actual)) {
+      // A sealed guest-show episode (consent-gated) gets no talk segment in
+      // front of it: nothing of the DJ's sits between the show's own lines.
+      if (!actual.commercial && !actual.guestSealed && voiceDJ.shouldTalk(actual)) {
         // Broadcast a "talk_segment_pending" so clients know to pause music
         broadcast({ type: "dj_talk_pending", timestamp: new Date().toISOString() });
 
@@ -484,13 +486,18 @@ const djEngine = new DJEngine({
       // template intro would double-up. We also skip when peekNext
       // returns the same file (single-track playlists, end-of-album).
       try {
+        // announceableNext: the peeked track, or null for a commercial, the
+        // same file, or anything inside or about a sealed guest show (which
+        // must have no "Next up" line and no request spliced between its
+        // episodes; the engine's peek is side-effect free there).
         const upcoming = djEngine.peekNextTrack();
+        const announce = djEngine.announceableNext(actual, upcoming);
         // No pre-announcement when programming will switch albums at that
         // seam: the peeked track is from the old playlist and won't air.
         const switchDue = !!(deps.programming && typeof deps.programming.switchDueAtNextTrack === 'function'
           && deps.programming.switchDueAtNextTrack());
-        if (upcoming && !upcoming.commercial && upcoming.file !== actual.file && !switchDue) {
-          voiceDJ.generateIntro(upcoming);
+        if (announce && !switchDue) {
+          voiceDJ.generateIntro(announce);
         }
         // Stings at this seam: the store's door chime after its ad, the
         // bumper before the first commercial of a block (sound-library).

@@ -233,10 +233,99 @@ checkAsync('only episode 2 cleared: its content note still airs before it, behin
   st.s._voiceDJ.generateTTS = (text, cb) => { st.tts.push(text); pending.push(() => cb(null, `/tmp/${text}.mp3`, text)); };
   st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 1, 0);
   st.s._tick();
-  while (pending.length) pending.pop()(); // newest first: a racing render would finish first
+  // The note's render is slow: nothing may load, or be counted, before it is ready
+  // (else the stream could advance into the episode ahead of its warning).
+  assert.deepStrictEqual(st.engine.state.playlist, [], 'nothing loads while the lines render');
+  assert.deepStrictEqual(st.injected, []);
+  assert.strictEqual(fs.existsSync(st.paths.ledgerFile), false, 'nothing counted while rendering');
+  while (pending.length) pending.pop()();
   assert.deepStrictEqual(st.engine.state.playlist, [path.join('Guest Showcase', EP2)]);
-  assert.deepStrictEqual(st.injected.map((x) => x[1]), ['Guest Showcase intro', 'Guest Showcase: before Drama — 2 — Night']);
-  assert.deepStrictEqual(st.tts, ['generic', 'CONTENT NOTE']);
+  assert.deepStrictEqual(st.injected.map((x) => x[1]), ['Guest Showcase intro', 'Guest Showcase: before Drama — 2 — Night'],
+    'intro, then the note, both queued before the episode was loaded');
+  assert.deepStrictEqual(st.tts, ['generic', 'CONTENT NOTE', 'CLOSING CREDIT'], 'every line rendered up front');
+});
+
+const failingTTS = (st, bad) => {
+  st.s._voiceDJ.generateTTS = (text, cb) => { st.tts.push(text); if (bad.includes(text)) cb(new Error('tts down')); else cb(null, `/tmp/${text}.mp3`, text); };
+};
+const clearShowcase = (st) => st.setConsent({ guests: { 'creator-b': { consent: true, resolved: SHOWCASE.requires } } });
+
+checkAsync('content note fails to render: that episode is held (fail closed), the other airs', async () => {
+  const st = showcaseStation();
+  clearShowcase(st);
+  failingTTS(st, ['CONTENT NOTE']);
+  st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 0, 0);
+  st.s._tick();
+  assert.deepStrictEqual(st.engine.state.playlist, [path.join('Guest Showcase', EP1)], 'no warning → no Night');
+  const led = JSON.parse(fs.readFileSync(st.paths.ledgerFile, 'utf8'));
+  assert.deepStrictEqual(Object.keys(led), [`Guest Showcase/${EP1}`], 'only what loaded is counted');
+});
+
+checkAsync('only the warned episode cleared and its note fails: nothing airs, nothing counted', async () => {
+  const st = showcaseStation();
+  fs.writeFileSync(path.join(st.musicDir, 'Guest Showcase', 'Drama — 1 — Pilot.guest.json'),
+    JSON.stringify({ ...SHOWCASE, requires: [...SHOWCASE.requires, 'file:ep1-identity'] }));
+  clearShowcase(st);
+  failingTTS(st, ['CONTENT NOTE']);
+  st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 0, 0);
+  st.s._tick();
+  assert.deepStrictEqual(st.engine.state.playlist, []);
+  assert.deepStrictEqual(st.injected, [], 'not even the intro');
+  assert.strictEqual(fs.existsSync(st.paths.ledgerFile), false);
+  assert.strictEqual(st.s.getStatus().podcastPlaying, false, 'the slot is released');
+});
+
+checkAsync('the intro or a credit fails to render: the whole airing is held', async () => {
+  for (const bad of ['INTRO CREDIT', 'CLOSING CREDIT']) {
+    const st = showcaseStation();
+    clearShowcase(st);
+    failingTTS(st, [bad]);
+    st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 0, 0);
+    st.s._tick();
+    assert.deepStrictEqual(st.engine.state.playlist, [], bad);
+    assert.deepStrictEqual(st.injected, [], bad);
+    assert.strictEqual(fs.existsSync(st.paths.ledgerFile), false, bad);
+    assert.strictEqual(st.s.getStatus().podcastPlaying, false, bad);
+  }
+});
+
+checkAsync('renders that never finish: held after the timeout; a late render loads nothing', async () => {
+  const st = showcaseStation();
+  clearShowcase(st);
+  st.s._prerenderTimeoutMs = 20;
+  const pending = [];
+  st.s._voiceDJ.generateTTS = (text, cb) => { pending.push(() => cb(null, `/tmp/${text}.mp3`, text)); };
+  st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 0, 0);
+  st.s._tick();
+  await new Promise((r) => setTimeout(r, 60));
+  assert.strictEqual(st.s.getStatus().podcastPlaying, false);
+  while (pending.length) pending.shift()();
+  assert.deepStrictEqual(st.engine.state.playlist, []);
+  assert.deepStrictEqual(st.injected, []);
+});
+
+checkAsync('consent withdrawn while the lines render: nothing loads', async () => {
+  const st = showcaseStation();
+  clearShowcase(st);
+  const pending = [];
+  st.s._voiceDJ.generateTTS = (text, cb) => { pending.push(() => cb(null, `/tmp/${text}.mp3`, text)); };
+  st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 0, 0);
+  st.s._tick();
+  st.setConsent({ guests: { 'creator-b': { consent: false, resolved: SHOWCASE.requires } } });
+  while (pending.length) pending.shift()();
+  assert.deepStrictEqual(st.engine.state.playlist, []);
+  assert.deepStrictEqual(st.injected, []);
+  assert.strictEqual(fs.existsSync(st.paths.ledgerFile), false);
+});
+
+checkAsync('spoken lines but no stream to place them in: held', async () => {
+  const st = showcaseStation();
+  clearShowcase(st);
+  st.s._injectVoice = null;
+  st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 0, 0);
+  st.s._tick();
+  assert.deepStrictEqual(st.engine.state.playlist, []);
+  assert.deepStrictEqual(st.tts, []);
 });
 
 checkAsync('one gap, two lines: the credit after an episode airs before the note for the next, however the renders finish', async () => {
@@ -246,12 +335,106 @@ checkAsync('one gap, two lines: the credit after an episode airs before the note
   st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 0, 0);
   st.s._tick();
   await new Promise((r) => setImmediate(r));
-  const pending = [];
-  st.s._voiceDJ.generateTTS = (text, cb) => { pending.push(() => cb(null, `/tmp/${text}.mp3`, text)); };
+  // Everything was rendered before the airing; the seam queues it synchronously.
+  st.s._voiceDJ.generateTTS = () => { throw new Error('no render at the seam'); };
   st.injected.length = 0;
   st.s.onTrackStart(st.engine.state.playlistMeta[0]);
-  while (pending.length) pending.pop()();
-  assert.deepStrictEqual(st.injected.map((x) => x[0]), ['/tmp/EP1 CREDIT.mp3', '/tmp/CONTENT NOTE.mp3']);
+  assert.deepStrictEqual(st.injected.map((x) => x[1]),
+    ['Guest Showcase: after Drama — 1 — Pilot', 'Guest Showcase: before Drama — 2 — Night']);
+  assert.deepStrictEqual(st.tts, ['INTRO CREDIT', 'EP1 CREDIT', 'CONTENT NOTE', 'CLOSING CREDIT']);
+});
+
+// ── the real DJ engine: nothing gets between a sealed show's episodes ──
+
+check('DJ engine: no request, listener guest spot, wrap reshuffle or "next up" inside a sealed guest show', () => {
+  const { DJEngine } = require('../server/dj-engine');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'guest-dj-'));
+  const e = new DJEngine({ musicDir: tmp });
+  e._getMusicDir = () => tmp;
+  e._playLedger.filePath = null;
+  e.state.channel = 'dj';
+  const changes = [];
+  e._onTrackChange = (t) => changes.push(t);
+  const st = showcaseStation();
+  clearShowcase(st);
+  // A real scheduler loads the episodes into the real engine.
+  st.s._djEngine = e;
+  st.s._chicagoNow = () => new Date(2026, 10, 9, 23, 0, 0);
+  e.state.playlist = ['Some Album/song.mp3'];
+  e.state.playlistMeta = [{ title: 'song', file: 'Some Album/song.mp3', album: 'Some Album' }];
+  e.state.currentTrackIdx = 0;
+  e.state.currentAlbum = 'Some Album';
+  st.s._tick();
+  const [ep1, ep2] = e.state.playlistMeta;
+  assert.ok(ep1.guestSealed && ep2.guestSealed, 'guest episodes are sealed');
+  // A listener request and a listener guest spot are both waiting.
+  e.userQueue.push({ filename: 'Some Album/request.mp3', title: 'Request' });
+  e._pendingGuest = { orderId: 'o1', staged: 'GSR/spot.mp3', title: 'Spot', album: 'GSR' };
+  const before = e.state.playlistMeta.map((t) => t.file);
+
+  // Episode 1 on: the stream's seam logic (index.js) asks what to announce.
+  assert.strictEqual(e.isSealed(), true);
+  assert.strictEqual(e.announceableNext(ep1), null, 'no "Next up" line between the episodes');
+  assert.strictEqual(e.peekNextTrack().file, ep2.file, 'the peek is the next episode, untouched');
+  assert.strictEqual(e.userQueue.length, 1, 'the request was not spliced in');
+  const onEp2 = e.advanceTrack(ep1.file);
+  assert.strictEqual(onEp2.file, ep2.file, 'episode 2 follows episode 1');
+  assert.ok(!onEp2.guestSpot, 'not replaced by a listener guest spot');
+  assert.strictEqual(e.userQueue.length, 1);
+
+  // Episode 2 (the last) on: nothing to announce, no reshuffle of the show.
+  assert.strictEqual(e.announceableNext(onEp2), null);
+  assert.strictEqual(e.peekNextTrack(), null, 'end of the show: nothing peeked');
+  assert.ok(!e.state._reshufflePending, 'the show was not reshuffled for a wrap');
+  assert.deepStrictEqual(e.state.playlistMeta.map((t) => t.file), before);
+
+  // It ends: the show's exhaustion hook gives the station back, and the
+  // waiting request is free to go on after it.
+  e.loadAlbum = (name) => {
+    e.state.currentAlbum = name;
+    e.state.playlist = ['Some Album/next.mp3', 'Some Album/after.mp3'];
+    e.state.playlistMeta = [{ title: 'next', file: 'Some Album/next.mp3' }, { title: 'after', file: 'Some Album/after.mp3' }];
+    e.state.currentTrackIdx = 0;
+    return e.state.playlistMeta[0];
+  };
+  const back = e.advanceTrack(ep2.file);
+  assert.strictEqual(st.s.getStatus().podcastPlaying, false);
+  assert.ok(back && !back.guestSealed && /Some Album/.test(back.file), 'the station is back');
+  assert.strictEqual(e.isSealed(), false);
+  assert.strictEqual(e.announceableNext(back).file, 'Some Album/request.mp3', 'requests resume once the show is over');
+  assert.strictEqual(st.injected.length >= 1, true);
+});
+
+check('index.js seam: intros go through announceableNext; no talk segment before a sealed episode', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'server', 'index.js'), 'utf8');
+  assert.match(src, /const announce = djEngine\.announceableNext\(actual, upcoming\);/);
+  assert.match(src, /if \(announce && !switchDue\) \{\s*voiceDJ\.generateIntro\(announce\);/);
+  assert.match(src, /!actual\.guestSealed && voiceDJ\.shouldTalk\(actual\)/);
+});
+
+// ── fail closed on broken files ────────────────────────────────
+
+check('a corrupt airings ledger holds capped and uncapped files alike, and is never overwritten', () => {
+  const st = readingStation();
+  st.setConsent(ALL_READING);
+  fs.writeFileSync(st.paths.ledgerFile, '{ broken');
+  const gate = gc.createGate({ musicDir: st.musicDir, folder: 'Guest Reading', ...st.paths, log: quiet });
+  const r = gate.check(READ_FILE, { chicagoHour: 0 });
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.reasons.includes('airings ledger unreadable'), r.reasons.join('; '));
+  assert.strictEqual(gate.recordAiring(READ_FILE), false);
+  assert.strictEqual(fs.readFileSync(st.paths.ledgerFile, 'utf8'), '{ broken');
+  // A missing ledger is just an empty one.
+  fs.unlinkSync(st.paths.ledgerFile);
+  assert.strictEqual(gate.check(READ_FILE, { chicagoHour: 0 }).ok, true);
+});
+
+check('a malformed sidecar holds: "requires" not a list, "maxAirings" not a whole number', () => {
+  const c = { guests: { 'writer-a': { consent: true, resolved: READING.requires } } };
+  assert.strictEqual(gc.clearance({ ...READING, requires: 'listened:nick' }, c, {}).ok, false);
+  assert.strictEqual(gc.clearance({ guest: 'writer-a' }, c, {}).ok, false, 'no requires at all');
+  assert.strictEqual(gc.clearance({ ...READING, requires: [] }, c, {}).ok, true, 'an empty list is fine');
+  assert.strictEqual(gc.clearance({ ...READING, maxAirings: '1' }, c, {}).ok, false);
 });
 
 checkAsync('cleared showcase forced in daylight (explicit) does not air', async () => {

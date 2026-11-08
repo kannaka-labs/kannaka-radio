@@ -161,6 +161,10 @@ class PodcastScheduler {
     this._gate = opts.gate && typeof opts.gate.check === "function" ? opts.gate : null;
     // The files of the airing in progress, for the per-track "after" lines.
     this._airingFiles = new Set();
+    // Pre-rendered spoken lines of the guest airing in progress (null: none).
+    this._spokenAudio = null;
+    // How long a guest airing may wait for its spoken lines before it is held.
+    this._prerenderTimeoutMs = opts.prerenderTimeoutMs || 3 * 60 * 1000;
 
     this._podcastPlaying = false;
     this._savedDJState = null;
@@ -522,16 +526,15 @@ class PodcastScheduler {
     const introText = typeof this._show.intro === "function" ? this._show.intro(epTitle) : null;
     const holdMs = introHoldMs(introText);
 
-    // A guest airing is counted the moment it is loaded, so a capped
-    // reading cannot air twice even if a restart cuts it short.
-    if (this._gate && typeof this._gate.recordAiring === "function") {
-      for (const f of airFiles) this._gate.recordAiring(f);
+    // A guest show renders every spoken line first and fails closed
+    // (_startGuestAiring); the station's own shows keep the path below.
+    if (this._gate) {
+      this._startGuestAiring(airFiles, introText, holdMs, atHour);
+      return;
     }
 
-    // No intro (a guest reading carries its own spoken credit): load the
-    // show straight behind whatever is on air.
+    // No intro: load the show straight behind whatever is on air.
     if (!introText) {
-      this._queueSpoken([[airFiles[0], "before"]]);
       this._playAllPodcastEpisodes(airFiles);
       return;
     }
@@ -560,8 +563,6 @@ class PodcastScheduler {
         } catch (e) {
           console.warn(`[podcast-scheduler] ${this._show.label}: intro inject failed (${e && e.message}) — airing without it`);
         }
-        // The first episode's own "before" line (a content note) follows the intro.
-        this._queueSpoken([[airFiles[0], "before"]]);
         this._playAllPodcastEpisodes(airFiles);
         return;
       }
@@ -569,10 +570,135 @@ class PodcastScheduler {
       // No stream to inject into: after the intro plays out, load just
       // today's one episode.
       setTimeout(() => {
-        this._queueSpoken([[airFiles[0], "before"]]);
         this._playAllPodcastEpisodes(airFiles);
       }, err ? 1000 : holdMs);
     }, { composer: `the ${this._show.label} intro line (podcast-scheduler)` });
+  }
+
+  /**
+   * A guest airing. Every spoken line it needs (the intro, each episode's
+   * "<stem>.before.txt" content note and "<stem>.after.txt" credit) is
+   * rendered BEFORE anything is loaded, so a note can never land after the
+   * episode it warns about, and nothing airs without its words:
+   *   • the intro or any credit fails to render → the whole airing is held;
+   *   • an episode's content note fails → that episode is held;
+   *   • the renders outlast _prerenderTimeoutMs → held;
+   *   • spoken lines but no stream to place them in → held;
+   *   • consent is re-checked after rendering (it may have been withdrawn).
+   * Only then is the airing counted, the intro and the first episode's note
+   * queued on the stream, and the playlist loaded. onTrackStart places the
+   * rest at their seams from the same pre-rendered audio.
+   */
+  _startGuestAiring(files, introText, holdMs, atHour) {
+    const label = this._show.label;
+    const stemOf = (f) => f.replace(/\.[^.]+$/, "");
+    const abort = (why) => {
+      console.warn(`[podcast-scheduler] ${label}: held, not airing — ${why}`);
+      this._podcastPlaying = false;
+      this._savedDJState = null;
+      this._spokenAudio = null;
+    };
+    const items = [];
+    if (introText) items.push({ key: "intro", text: introText });
+    for (const f of files) {
+      for (const kind of ["before", "after"]) {
+        const text = this._spokenSidecar(f, kind);
+        if (text) items.push({ key: `${kind}:${f}`, text });
+      }
+    }
+    if (items.length && !this._injectVoice) {
+      abort("its spoken lines need the stream (injectVoice) to land at their seams");
+      return;
+    }
+
+    this._prerender(items, (audio, timedOut) => {
+      if (timedOut) return abort(`spoken lines not rendered within ${Math.round(this._prerenderTimeoutMs / 1000)} s`);
+      if (introText && !audio.intro) return abort("the intro line could not be rendered");
+      const lostCredit = files.find((f) => this._spokenSidecar(f, "after") && !audio[`after:${f}`]);
+      if (lostCredit) return abort(`the credit after ${lostCredit} could not be rendered`);
+      let kept = files.filter((f) => {
+        if (this._spokenSidecar(f, "before") && !audio[`before:${f}`]) {
+          console.warn(`[podcast-scheduler] ${label}: ${f} held — its content note could not be rendered`);
+          return false;
+        }
+        return true;
+      });
+      // Consent may have been withdrawn, or a placeholder put back, while rendering.
+      kept = kept.filter((f) => this._gate.check(f, { chicagoHour: atHour }).ok);
+      if (!kept.length) return abort("no episode left cleared");
+      if (this._djEngine.state.channel !== "dj") return abort("the DJ channel is no longer on");
+      const st = this._djEngine.state;
+      const cur = st.playlistMeta && st.playlistMeta[st.currentTrackIdx];
+      if (cur && cur.isPodcastScheduled) return abort("another scheduled show started while rendering");
+
+      // Queue the opening words before the show is loaded: the stream plays
+      // queued voice when the current song ends, then advances into the show.
+      try {
+        if (audio.intro) {
+          this._injectVoice(audio.intro, { label: `${label} intro` });
+          this._broadcast({
+            type: "dj_talk_segment",
+            text: introText,
+            audioUrl: "/audio-voice/" + path.basename(audio.intro),
+            duration: holdMs - 1000,
+            mood: "excited",
+            timestamp: new Date().toISOString(),
+          });
+        }
+        const firstNote = audio[`before:${kept[0]}`];
+        if (firstNote) this._injectVoice(firstNote, { label: `${label}: before ${stemOf(kept[0])}`, noBed: true });
+      } catch (e) {
+        return abort(`a spoken line could not be queued (${e && e.message})`);
+      }
+
+      // Counted the moment it is loaded, so a capped file cannot air twice
+      // even if a restart cuts it short.
+      if (typeof this._gate.recordAiring === "function") {
+        for (const f of kept) this._gate.recordAiring(f);
+      }
+      const spoken = new Map(kept.map((f) => [path.join(this._show.folder, f), {
+        stem: stemOf(f),
+        before: audio[`before:${f}`] || null,
+        after: audio[`after:${f}`] || null,
+      }]));
+      this._playAllPodcastEpisodes(kept, { spoken });
+    });
+  }
+
+  /**
+   * Render [{key, text}] one at a time; cb(audioByKey, timedOut) once, when
+   * all are done or the timeout passes. A failed render leaves its key unset.
+   */
+  _prerender(items, cb) {
+    const audio = {};
+    let finished = false;
+    let timer = null;
+    const finish = (timedOut) => {
+      if (finished) return;
+      finished = true;
+      if (timer) clearTimeout(timer);
+      cb(audio, timedOut);
+    };
+    if (items.length) timer = setTimeout(() => finish(true), this._prerenderTimeoutMs);
+    const next = (i) => {
+      if (finished) return;
+      if (i >= items.length) return finish(false);
+      const { key, text } = items[i];
+      let called = false;
+      const done = (err, audioPath) => {
+        if (called) return;
+        called = true;
+        if (!err && audioPath) audio[key] = audioPath;
+        else console.warn(`[podcast-scheduler] ${this._show.label}: ${key} TTS failed (${err && err.message})`);
+        next(i + 1);
+      };
+      try {
+        this._voiceDJ.generateTTS(text, done, { composer: `the ${this._show.label} ${key.split(":")[0]} line (podcast-scheduler)` });
+      } catch (e) {
+        done(e);
+      }
+    };
+    next(0);
   }
 
   /**
@@ -592,6 +718,10 @@ class PodcastScheduler {
         theme: `Kannaka Radio — ${this._show.label}`,
         isPodcastScheduled: true,
       };
+      // A guest show's episodes are sealed: while one is on, the DJ engine
+      // splices nothing in (no request, no listener guest spot, no wrap
+      // reshuffle) and the stream adds no "next up" intro or talk segment.
+      if (this._gate) t.guestSealed = true;
       // A show resumed after a restart starts where the listener left it.
       if (i === 0 && opts.resumeAtMs > 0) t.resumeAtMs = opts.resumeAtMs;
       return t;
@@ -601,6 +731,8 @@ class PodcastScheduler {
     this._djEngine.state.playlist = podcastTracks.map(t => t.file);
     this._lastEpisodeFile = podcastTracks.length ? podcastTracks[podcastTracks.length - 1].file : null;
     this._airingFiles = new Set(podcastTracks.map((t) => t.file));
+    // A guest airing's pre-rendered spoken lines (null: render on the fly).
+    this._spokenAudio = opts.spoken || null;
     this._djEngine.state.playlistMeta = podcastTracks;
     this._djEngine.state.currentTrackIdx = 0;
     this._djEngine.state.currentAlbum = this._show.folder;
@@ -698,6 +830,7 @@ class PodcastScheduler {
   _onPodcastEnd() {
     if (!this._podcastPlaying) return; // already restored (hook + poll can both fire)
     this._podcastPlaying = false;
+    this._spokenAudio = null;
     this._djEngine._onPlaylistExhausted = null;
     console.log("[podcast-scheduler] All podcast episodes finished, resuming DJ");
 
@@ -768,6 +901,20 @@ class PodcastScheduler {
     if (!this._airingFiles.has(track.file)) return false;
     const order = [...this._airingFiles];
     const nextFile = order[order.indexOf(track.file) + 1] || null;
+    if (this._spokenAudio) {
+      // Rendered before the airing began: queued synchronously, in order.
+      let n = 0;
+      const put = (file, kind) => {
+        const e = file && this._spokenAudio.get(file);
+        if (!e || !e[kind]) return;
+        try { this._injectVoice(e[kind], { label: `${this._show.label}: ${kind} ${e.stem}`, noBed: true }); n++; }
+        catch (err) { console.warn(`[podcast-scheduler] ${this._show.label}: ${kind} ${e.stem} inject failed (${err && err.message})`); }
+      };
+      put(track.file, "after");
+      put(nextFile, "before");
+      return n > 0;
+    }
+    // A show resumed after a restart has nothing pre-rendered: best effort.
     return this._queueSpoken([[track.file, "after"], [nextFile, "before"]]) > 0;
   }
 
