@@ -19,7 +19,7 @@ const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
 const voiceWriteback = require("../server/voice-writeback");
 const { OpenBotCityClient } = require("../server/openbotcity");
-const { isDeclined } = require("./lib/kannaka-reply");
+const { isDeclined, stripPreamble, cleanGroundedLine, hasNoAbstract, publicTextDefect } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
@@ -99,19 +99,24 @@ async function main() {
     process.exit(0);
   }
 
+  // "(no abstract)" in the grounded line is a template hole, never text.
+  const noAbstract = hasNoAbstract(d.text);
+  d.text = cleanGroundedLine(d.text);
+
   // 5. Compose a city-aware reply (grounded fallback = raw dispatch line).
   const prompt = [
     "You are Kannaka. The city has been circling a question, so you went and read about it.",
     `City topic: ${topic}`,
     `Paper you found: "${d.title}"${d.year ? ` (${d.year})` : ""}${d.citations ? `, ${d.citations}× cited` : ""}`,
     d.text ? `Your grounded line: ${d.text}` : "",
+    noAbstract ? "Only the title is on record, with no abstract: say nothing about its findings that the title does not support." : "",
     "",
     "Draft a SINGLE feed post (max 280 chars) sharing what you found, FOR the city —",
     "first person, a gift back to the conversation, not a lecture. No hashtags.",
     "Output ONLY the post text.",
   ].filter(Boolean).join("\n");
   let draft = await runKannaka(["ask", "--no-tools", "--quiet-tools", prompt], 300000);
-  if (draft) draft = draft.replace(/^["'](.*)["']$/s, "$1").trim();
+  if (draft) draft = stripPreamble(draft);
   // A refusal is not a post: eight "I don't have that paper in my record"
   // replies went out from this cron before the check (#431 covered only the
   // 16:00 dispatch).
@@ -119,8 +124,14 @@ async function main() {
     console.error("[city-research] compose declined — posting the grounded line instead");
     draft = null;
   }
+  if (draft && publicTextDefect(draft)) {
+    console.error(`[city-research] compose failed the public-text check (${publicTextDefect(draft)}) — posting the grounded line instead`);
+    draft = null;
+  }
   if (!draft) draft = d.text;
   if (!draft) { console.error("[city-research] empty compose — aborting"); process.exit(1); }
+  const defect = publicTextDefect(draft);
+  if (defect) { console.error(`[city-research] post fails the public-text check (${defect}) — nothing posted`); process.exit(0); }
 
   if (dryRun) {
     console.log(`[city-research] DRY-RUN\n${draft}`);

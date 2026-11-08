@@ -50,6 +50,8 @@ run('an internal memory id tag never reaches a public reply', () => {
   const live = "I'm drawn to something in [memory id=65bd4ae0-8902-4309-a636-04b945ba4a9a] — Tononi's work on integrated information.";
   const out = cleanDraft(live);
   assert.ok(!/memory id|65bd4ae0/.test(out), out);
+  // Stripping alone leaves a splice; cleanDraftChecked reports it and the loop
+  // skips the draft (public-text-hygiene.test.js).
   assert.strictEqual(out, "I'm drawn to something in — Tononi's work on integrated information.");
   assert.strictEqual(cleanDraft('Which parts are *integrated* [id=abc], not decomposed .'), 'Which parts are integrated, not decomposed.');
 });
