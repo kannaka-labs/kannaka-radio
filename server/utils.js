@@ -4,6 +4,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { isGuestPath } = require("./guest-consent");
 
 const AUDIO_EXTS = new Set([".mp3", ".wav", ".flac", ".m4a", ".ogg"]);
 const MIME = { ".mp3": "audio/mpeg", ".wav": "audio/wav", ".flac": "audio/flac", ".ogg": "audio/ogg", ".m4a": "audio/mp4" };
@@ -23,6 +24,9 @@ function refreshFileCache(musicDir) {
       if (entry.isFile() && AUDIO_EXTS.has(path.extname(entry.name).toLowerCase())) {
         _cachedFiles.push(entry.name);
       } else if (entry.isDirectory()) {
+        // Guest folders are reached only through their consent-gated shows,
+        // never by a request, a vote, Deep Cuts or an album lookup.
+        if (isGuestPath(path.join(entry.name, "x"))) continue;
         try {
           for (const sub of fs.readdirSync(path.join(musicDir, entry.name))) {
             if (AUDIO_EXTS.has(path.extname(sub).toLowerCase())) {

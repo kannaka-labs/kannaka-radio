@@ -410,7 +410,9 @@ const djEngine = new DJEngine({
       // Every 3-5 non-commercial tracks, the DJ does a talk-only segment
       // BEFORE the next track starts. Music pauses on the client while
       // the talk audio plays, then the track resumes afterward.
-      if (!actual.commercial && voiceDJ.shouldTalk(actual)) {
+      // A sealed guest-show episode (consent-gated) gets no talk segment in
+      // front of it: nothing of the DJ's sits between the show's own lines.
+      if (!actual.commercial && !actual.guestSealed && voiceDJ.shouldTalk(actual)) {
         // Broadcast a "talk_segment_pending" so clients know to pause music
         broadcast({ type: "dj_talk_pending", timestamp: new Date().toISOString() });
 
@@ -484,13 +486,18 @@ const djEngine = new DJEngine({
       // template intro would double-up. We also skip when peekNext
       // returns the same file (single-track playlists, end-of-album).
       try {
+        // announceableNext: the peeked track, or null for a commercial, the
+        // same file, or anything inside or about a sealed guest show (which
+        // must have no "Next up" line and no request spliced between its
+        // episodes; the engine's peek is side-effect free there).
         const upcoming = djEngine.peekNextTrack();
+        const announce = djEngine.announceableNext(actual, upcoming);
         // No pre-announcement when programming will switch albums at that
         // seam: the peeked track is from the old playlist and won't air.
         const switchDue = !!(deps.programming && typeof deps.programming.switchDueAtNextTrack === 'function'
           && deps.programming.switchDueAtNextTrack());
-        if (upcoming && !upcoming.commercial && upcoming.file !== actual.file && !switchDue) {
-          voiceDJ.generateIntro(upcoming);
+        if (announce && !switchDue) {
+          voiceDJ.generateIntro(announce);
         }
         // Stings at this seam: the store's door chime after its ad, the
         // bumper before the first commercial of a block (sound-library).
@@ -1316,6 +1323,70 @@ const storyScheduler = new PodcastScheduler({
 storyScheduler.start();
 deps.storyScheduler = storyScheduler;
 
+// ── Guest segments — staged before their creators said yes, so gated ─
+// Two shows whose every file is someone else's work: "Guest Reading" (a
+// text by another writer, voiced by the station with neutral voices, aired
+// after a peace oration) and "Guest Showcase" (a guest's own audio, a
+// late-night showcase at 23:00). server/guest-consent.js holds them closed
+// until workspace/guest-consent.json says that guest consented and every
+// item its "<stem>.guest.json" sidecar requires is resolved. The consent
+// file is read at schedule time; flipping it needs no restart.
+const guestConsent = require("./guest-consent");
+const GUEST_PATHS = guestConsent.defaultPaths(BASE_DIR);
+const READING_FOLDER = "Guest Reading";
+const readingScheduler = new PodcastScheduler({
+  djEngine,
+  voiceDJ,
+  broadcast,
+  broadcastState,
+  getMusicDir: () => MUSIC_DIR,
+  injectVoice: showIntroInject,
+  gate: guestConsent.createGate({ musicDir: () => MUSIC_DIR, folder: READING_FOLDER, ...GUEST_PATHS }),
+  show: {
+    label: "Guest Reading",
+    folder: READING_FOLDER,
+    airHours: [],              // on demand only: after a peace oration
+    newReleasePriority: false,
+    trackPrefix: "[READING]",
+    // The file carries its own spoken credit in the readers' voices, so the
+    // DJ says nothing: oration, then the reading, with nothing jokey between.
+    intro: null,
+  },
+});
+readingScheduler.start();
+deps.readingScheduler = readingScheduler;
+
+const SHOWCASE_FOLDER = "Guest Showcase";
+const showcaseScheduler = new PodcastScheduler({
+  djEngine,
+  voiceDJ,
+  broadcast,
+  broadcastState,
+  getMusicDir: () => MUSIC_DIR,
+  injectVoice: showIntroInject,
+  gate: guestConsent.createGate({ musicDir: () => MUSIC_DIR, folder: SHOWCASE_FOLDER, ...GUEST_PATHS }),
+  show: {
+    label: "Guest Showcase",
+    folder: SHOWCASE_FOLDER,
+    // Late: guest drama can be marked explicit, and the sidecar's
+    // `explicit: true` holds it to 22:00–05:59 whatever this says.
+    airHours: [23],
+    playAll: true,             // the cleared episodes, in name order, one sitting
+    newReleasePriority: false,
+    // The guest-work marker: no AI tags on the now-playing posts
+    // (scripts/post-now-playing.js isFeatured, radio #396).
+    trackPrefix: "[FEATURED]",
+    promoLine: "At eleven o'clock, a late-night guest showcase: an audio drama from an independent creator we've invited onto the station. It's for grown-up ears.",
+    // Intro = the first episode's "<stem>.intro.txt"; a content note is the
+    // "<stem>.before.txt" of the episode it warns about, and the closing
+    // credit the last episode's "<stem>.after.txt" (onTrackStart below).
+    intro: (stem) => sidecarIntro(path.join(MUSIC_DIR, SHOWCASE_FOLDER), stem)
+      || "It's eleven o'clock, and this is a guest showcase on Kannaka Radio.",
+  },
+});
+showcaseScheduler.start();
+deps.showcaseScheduler = showcaseScheduler;
+
 // ── Programming schedule — time-of-day album rotation ────
 const { ProgrammingSchedule, DAILY_SHOWCASES } = require("./programming");
 const programming = new ProgrammingSchedule({
@@ -1324,7 +1395,7 @@ const programming = new ProgrammingSchedule({
   broadcast,
   broadcastState,
   getPodcastStatus: () => {
-    for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler]) {
+    for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler, readingScheduler, showcaseScheduler]) {
       const status = s.getStatus();
       if (status.podcastPlaying) {
         return { podcastPlaying: true, label: s._show.label };
@@ -1342,7 +1413,7 @@ const programming = new ProgrammingSchedule({
 // Issue #426: Detect and log collisions between DAILY_SHOWCASES and PodcastScheduler airHours
 for (const showcase of DAILY_SHOWCASES) {
   for (const hour of showcase.hours) {
-    for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler]) {
+    for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler, readingScheduler, showcaseScheduler]) {
       if (s._show && Array.isArray(s._show.airHours) && s._show.airHours.includes(hour)) {
         console.warn(`[programming] warning: showcase "${showcase.album || 'rotation'}" at ${hour}:00 collides with program "${s._show.label}"`);
       }
@@ -1359,7 +1430,7 @@ voiceDJ.setProgramming(() => programming);
 sound.cues.startClock(() => ({
   channel: djEngine.state.channel,
   live: live.state.active,
-  showPlaying: [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler]
+  showPlaying: [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler, readingScheduler, showcaseScheduler]
     .some((s) => s && s.getStatus().podcastPlaying),
 }));
 
@@ -1378,10 +1449,19 @@ const peaceOration = new PeaceOration({
   broadcast,
   getChannel: () => djEngine.state.channel,
   getFloor: () => floor, // ADR-0008 deferred layer: orations reference today's resonance
-  // The artist story follows every scheduled oration (see Artist Story above).
+  // The artist story follows every scheduled oration (see Artist Story above),
+  // unless a cleared guest reading is due: then the reading takes that one
+  // slot, so it airs straight after the oration and nothing lighter sits
+  // beside it.
   afterOration: (slotKey) => {
-    Promise.resolve(storyScheduler.airNow(`after the ${slotKey} peace oration`))
-      .catch((e) => console.warn(`[artist-story] could not air after the oration: ${e && e.message}`));
+    let next = storyScheduler;
+    try {
+      if (readingScheduler.pickTodayEpisode({ atHour: readingScheduler._chicagoNow().getHours() })) next = readingScheduler;
+    } catch (e) {
+      console.warn(`[guest-reading] gate check failed, the story keeps the slot: ${e && e.message}`);
+    }
+    Promise.resolve(next.airNow(`after the ${slotKey} peace oration`))
+      .catch((e) => console.warn(`[${next._show.label}] could not air after the oration: ${e && e.message}`));
   },
   dataDir: path.join(BASE_DIR, "workspace"),
   rootDir: BASE_DIR,
@@ -1475,8 +1555,12 @@ if (process.env.KANNAKA_ICECAST_SOURCE === "1") {
       // The show's outro sting is queued as its last episode starts, so it
       // airs right after that episode drains.
       if (track && track.isPodcastScheduled) {
-        for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler]) {
+        for (const s of [podcastScheduler, tsofScheduler, featuredScheduler, storyScheduler, readingScheduler, showcaseScheduler]) {
           if (s && typeof s.isLastEpisode === "function" && s.isLastEpisode(track.file)) sound.cues.onShowEnd(s._show.label);
+        }
+        // Guest content notes and closing credits ("<stem>.before.txt" / ".after.txt").
+        for (const s of [readingScheduler, showcaseScheduler]) {
+          try { s.onTrackStart(track); } catch (e) { console.warn(`[guest] after-line failed: ${e && e.message}`); }
         }
       }
       try {

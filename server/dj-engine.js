@@ -1637,6 +1637,7 @@ class DJEngine {
     try {
       const g = this._pendingGuest;
       if (!g || !current || current.commercial) return current;
+      if (current.guestSealed) return current;          // a consent-gated guest show is never replaced
       if (current.guestSpot) return current;            // never stack two
       if (this.state.channel !== "dj") return current;  // guest scope = Kannaka Radio programming
       if (!g.staged) return current;                    // nothing to play is not a slot
@@ -1791,6 +1792,9 @@ class DJEngine {
   _promoteQueuedRequest() {
     const meta = this.state.playlistMeta;
     if (!meta || !Array.isArray(this.userQueue)) return null;
+    // Nothing is spliced into a sealed guest show; requests wait until the
+    // station's own playlist is back.
+    if (this.isSealed()) return null;
 
     const nextIdx = this.state.currentTrackIdx + 1;
     if (meta[nextIdx] && meta[nextIdx].requested) return meta[nextIdx];
@@ -1818,8 +1822,40 @@ class DJEngine {
     return entry;
   }
 
+  /**
+   * True while the current track is a sealed guest-show episode
+   * (podcast-scheduler marks a consent-gated show's episodes `guestSealed`).
+   * While sealed: no request promotion, no listener guest-spot overlay, no
+   * wrap reshuffle, and announceableNext() announces nothing.
+   */
+  isSealed() {
+    const meta = this.state.playlistMeta;
+    const cur = meta && meta[this.state.currentTrackIdx];
+    return !!(cur && cur.guestSealed);
+  }
+
+  /**
+   * What the stream should pre-announce ("Next up …") now that `actual` has
+   * started, or null for nothing: never inside or around a sealed guest show
+   * (its own spoken lines are the only words there), never a commercial, never
+   * the track that is already on.
+   */
+  announceableNext(actual, upcoming = this.peekNextTrack()) {
+    if (actual && actual.guestSealed) return null;
+    if (this.isSealed()) return null;
+    if (!upcoming || upcoming.commercial || upcoming.guestSealed) return null;
+    if (actual && upcoming.file === actual.file) return null;
+    return upcoming;
+  }
+
   peekNextTrack() {
     if (!this.state.playlistMeta || this.state.playlistMeta.length === 0) return null;
+    if (this.isSealed()) {
+      // Side-effect free inside a sealed guest show: the next episode, or
+      // null at its end (the show's exhaustion hook restores the album; no
+      // reshuffle of the show, no guest-spot or sponsor overlay).
+      return this.state.playlistMeta[this.state.currentTrackIdx + 1] || null;
+    }
     // A pending request outranks whatever the playlist had queued up next,
     // and promoting it here (not just in advanceTrack) keeps the DJ's
     // "coming up next" announcement matched to what actually airs.
