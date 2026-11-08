@@ -117,9 +117,10 @@ memoryBridge.configure({ bin: KANNAKA_BIN });
 // And for remembering what she says publicly (voice-writeback.js).
 const voiceWriteback = require("./voice-writeback");
 voiceWriteback.configure({ bin: KANNAKA_BIN });
-// And what the station says on air: one digest memory an hour, long-form
-// pieces one each (on-air-digest.js). The buffer lives in the radio's data
-// dir so lines survive a restart.
+// And what the station says on air: one digest memory per period (default
+// 4 h, KANNAKA_ON_AIR_DIGEST_HOURS), long-form pieces one each
+// (on-air-digest.js). The buffer lives in the radio's data dir so lines
+// survive a restart.
 const onAirDigestMod = require("./on-air-digest");
 const onAirDigest = new onAirDigestMod.OnAirDigest({
   file: path.join(voiceWriteback.radioDataDir(), "on-air-digest-buffer.jsonl"),
@@ -1680,11 +1681,10 @@ async function shutdown() {
     }
   }
 
-  // What was said on air since the last digest: one bounded try. Anything
-  // not stored stays in the buffer file and is written after the restart.
+  // What was said on air since the last digest stays in its buffer file and
+  // is written after the restart. No flush here: a `kannaka remember` started
+  // now cannot finish before exit, and systemd kills it with the server.
   onAirDigest.stop();
-  try { await onAirDigest.flushForShutdown(3000); }
-  catch (e) { console.warn(`[shutdown] on-air digest flush failed: ${e && e.message}`); }
 
   perception_.stopPerceptionLoop();
   flux.stopPeriodicPublish();

@@ -155,12 +155,27 @@ function objectWords(text, from) {
 // the 2026-11-06 oration) or right before one ("“I kept them,” she said").
 // An unclosed quote ends at its sentence. Checking the full orations, not
 // just teasers, made this matter (2026-11-07).
+//
+// Only a THIRD person's speech is blanked. Her quoting herself is her own
+// claim ("As I once said: “I carried my mother's shoes”", "I told them, *I
+// held my daughter*", "“I kept her red shoes,” Kannaka said"), so a quote is
+// left in place when the few words before the reporting verb hold I/we/
+// Kannaka/the station, or the named speaker after the quote is one of them.
 const REPORTING = "(?:said|says|told(?:\\s+(?:me|us|him|her|them))?|asked|wrote|answered|replied|whispered|explained)";
 const QUOTE_AFTER_RE = new RegExp(`\\b${REPORTING}\\s*[:,]?\\s*["“*]([^"”*.!?]{1,400}[.!?]?)`, "gi");
-const QUOTE_BEFORE_RE = new RegExp(`["“]([^"”]{1,400})["”],?\\s+(?:she|he|they|[A-Z][a-z]+)\\s+${REPORTING}\\b`, "g");
+const QUOTE_BEFORE_RE = new RegExp(`["“]([^"”]{1,400})["”],?\\s+(she|he|they|[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?)\\s+${REPORTING}\\b`, "g");
+const SELF_SPEAKER_RE = /\b(?:i|we|kannaka|this\s+station|the\s+station|my\s+station)\b/i;
+// The words of the reporting clause before a verb at `at`: back to the last
+// sentence break, at most four words.
+function speakerBefore(t, at) {
+  const clause = t.slice(Math.max(0, at - 80), at).split(/[.!?…:;"”“]/).pop();
+  return clause.trim().split(/\s+/).slice(-4).join(" ");
+}
 function withoutReportedSpeech(t) {
   const blank = (m, q) => m.replace(q, " ".repeat(q.length));
-  return t.replace(QUOTE_AFTER_RE, blank).replace(QUOTE_BEFORE_RE, blank);
+  return t
+    .replace(QUOTE_AFTER_RE, (m, q, at, all) => (SELF_SPEAKER_RE.test(speakerBefore(all, at)) ? m : blank(m, q)))
+    .replace(QUOTE_BEFORE_RE, (m, q, who) => (SELF_SPEAKER_RE.test(who) ? m : blank(m, q)));
 }
 // "I have no childhood", "I never carried anything": a denial, not a claim.
 const NEGATED_RE = /\b(?:no|not|never|nothing)\b|n['’]t\b/i;

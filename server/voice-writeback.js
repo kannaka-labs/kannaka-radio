@@ -72,6 +72,15 @@ const LEDGER_PRUNE_LINES = 2000;
 // A lock file older than this belongs to a process that died holding it.
 const LEDGER_LOCK_STALE_MS = 15000;
 const LEDGER_LOCK_WAIT_MS = 2000;
+// A claim that never became a stored record (the claimer was killed with its
+// `kannaka remember` child, e.g. a restart) holds its words only this long:
+// the remember timeout plus a margin. A claim from a process that is no
+// longer alive on this host is released at once.
+const LEDGER_LEASE_MS = REMEMBER_TIMEOUT_MS + 30000;
+// `kannaka remember` rewrites the whole store; on O1 that competes with the
+// audio for one CPU, so the child runs at low priority (like the reply-loop
+// cron's `nice -n 15`).
+const DEFAULT_NICE = 15;
 
 // The radio's own data dir: state the server and its cron scripts share,
 // never under ~/.kannaka (that is the memory store's, not ours).
@@ -82,7 +91,7 @@ function radioDataDir() {
 let _bin = null;
 let _ledgerPath = null; // test seam; else env / radio data dir
 let _execFile = childProcess.execFile;
-const _recent = new Map(); // normalized text -> ms stored
+const _recent = new Map(); // normalized text -> { t, stored }
 const _pending = new Set();
 // `kannaka remember` loads and saves the whole store and the CLI takes no
 // write lock for it, so two at once can lose one. Our own stores run one at
@@ -106,23 +115,37 @@ function dedupeWindowMs() {
 
 function pruneRecent() {
   const cutoff = Date.now() - dedupeWindowMs();
-  for (const [k, t] of _recent) if (t < cutoff) _recent.delete(k);
+  for (const [k, e] of _recent) if (e.t < cutoff) _recent.delete(k);
 }
 
 function forced() { return String(process.env.KANNAKA_VOICE_WRITEBACK || "").toLowerCase() === "force"; }
 
-/** Why a publication would not be written, or null when it would. */
-function skipReason({ text, results } = {}) {
+/**
+ * Why NOTHING would be written right now, from the environment alone (kill
+ * switch, read-only store), or null. The on-air digest asks this before it
+ * buffers a line, so a switched-off write-back does not fill its buffer.
+ */
+function disabledReason() {
   if (process.env.KANNAKA_VOICE_WRITEBACK === "0") return "disabled (KANNAKA_VOICE_WRITEBACK=0)";
   if (process.env.KANNAKA_READONLY === "1" && !forced()) {
     return "store is read-only (KANNAKA_READONLY=1) — KANNAKA_VOICE_WRITEBACK=force writes back anyway";
   }
+  return null;
+}
+
+/** Why a publication would not be written, or null when it would. */
+function skipReason({ text, results } = {}) {
+  const off = disabledReason();
+  if (off) return off;
   if (!normalize(text)) return "empty text";
   const ok = (results || []).filter((r) => r && r.ok && r.name !== "none");
   if (ok.length === 0) return "no surface succeeded";
   pruneRecent();
   const at = _recent.get(normalize(text));
-  if (at && Date.now() - at < dedupeWindowMs()) return "identical text already stored in this window";
+  if (at && Date.now() - at.t < dedupeWindowMs()) {
+    return at.stored ? "identical text already stored in this window"
+      : "identical text already queued in this window (its store is still running)";
+  }
   return null;
 }
 
@@ -156,15 +179,22 @@ function buildMemoryText({ text, surfaces, composer, at, urls, private: isPrivat
 //
 // The server and the cron scripts are separate processes, so an in-process
 // map cannot stop both storing the same words (a research post the server
-// also fans out, an oration re-aired after a restart). Each claim is one
-// JSON line, {"h": sha256(normalized text), "t": ms}, appended to
-// <radio data dir>/voice-writeback-ledger.jsonl; a failed store appends
-// {"h", "t", "r": 1} to release it. Check-and-append runs under an
-// exclusive-create lock file, so two processes cannot both see "not
-// claimed" and both claim. The file is rewritten without expired entries
-// once it passes LEDGER_PRUNE_LINES. Any ledger failure (unwritable dir, a
-// lock that stays busy) falls back to in-process dedupe, logged: dedupe is
-// never a reason to lose a memory.
+// also fans out, an oration re-aired after a restart). Each event is one
+// JSON line in <radio data dir>/voice-writeback-ledger.jsonl, keyed by
+// h = sha256(normalized text):
+//   {"h", "t", "s": "p", "pid", "host"}  claimed: a store is about to run
+//   {"h", "t", "s": "s"}                 stored: `kannaka remember` succeeded
+//   {"h", "t", "r": 1}                   released: the store failed
+// The ledger records COMPLETED stores, not just claims: only "stored" makes
+// identical text a duplicate for the dedupe window. A claim blocks others
+// only while its lease runs (LEDGER_LEASE_MS) and its process is alive, so a
+// claimer killed mid-store (a restart takes its `kannaka remember` child
+// with it) never makes words look stored that were not. Check-and-append
+// runs under an exclusive-create lock file, so two processes cannot both see
+// "not claimed" and both claim. The file is rewritten without expired
+// entries once it passes LEDGER_PRUNE_LINES. Any ledger failure (unwritable
+// dir, a lock that stays busy) falls back to in-process dedupe, logged:
+// dedupe is never a reason to lose a memory.
 
 function ledgerPath() {
   return _ledgerPath || process.env.KANNAKA_VOICE_WRITEBACK_LEDGER ||
@@ -176,19 +206,38 @@ function hashOf(key) { return crypto.createHash("sha256").update(key).digest("he
 const _sleepCell = new Int32Array(new SharedArrayBuffer(4));
 function sleepSync(ms) { Atomics.wait(_sleepCell, 0, 0, ms); }
 
+// A stale lock (its holder died) is broken by RENAMING it to a unique name
+// first, then checking what was moved: if another process broke it and took
+// a fresh lock between our stat and our rename, we moved THEIR lock, so it
+// is put back (link, which fails rather than clobber a third lock). The
+// holder writes a token into its lock and, on release, unlinks the lock only
+// while it still holds that token.
+function breakStaleLock(lock) {
+  let st;
+  try { st = fs.statSync(lock); } catch (_) { return true; } // gone: try again
+  if (Date.now() - st.mtimeMs <= LEDGER_LOCK_STALE_MS) return false;
+  const grave = `${lock}.stale.${process.pid}.${crypto.randomBytes(4).toString("hex")}`;
+  try { fs.renameSync(lock, grave); } catch (_) { return true; }
+  let fresh = false;
+  try { fresh = Date.now() - fs.statSync(grave).mtimeMs <= LEDGER_LOCK_STALE_MS; } catch (_) {}
+  if (fresh) { try { fs.linkSync(grave, lock); } catch (_) {} }
+  try { fs.unlinkSync(grave); } catch (_) {}
+  return true;
+}
+
 function withLedgerLock(file, fn) {
   const lock = `${file}.lock`;
+  const token = `${process.pid}.${crypto.randomBytes(6).toString("hex")}`;
   const deadline = Date.now() + LEDGER_LOCK_WAIT_MS;
   let fd = null;
   while (fd === null) {
     try {
       fd = fs.openSync(lock, "wx");
+      try { fs.writeSync(fd, token); } catch (_) {}
     } catch (e) {
       if (e.code === "ENOENT") { fs.mkdirSync(path.dirname(lock), { recursive: true }); continue; }
       if (e.code !== "EEXIST" && e.code !== "EPERM") throw e;
-      try {
-        if (Date.now() - fs.statSync(lock).mtimeMs > LEDGER_LOCK_STALE_MS) { fs.unlinkSync(lock); continue; }
-      } catch (_) { /* vanished between open and stat: try again */ }
+      if (breakStaleLock(lock)) continue;
       if (Date.now() > deadline) throw new Error(`ledger lock ${lock} stayed busy for ${LEDGER_LOCK_WAIT_MS} ms`);
       sleepSync(5 + Math.floor(Math.random() * 10));
     }
@@ -196,11 +245,20 @@ function withLedgerLock(file, fn) {
   try { return fn(); }
   finally {
     try { fs.closeSync(fd); } catch (_) {}
-    try { fs.unlinkSync(lock); } catch (_) {}
+    try { if (fs.readFileSync(lock, "utf8") === token) fs.unlinkSync(lock); } catch (_) {}
   }
 }
 
-// Latest state per hash: { t, released }.
+// Is `pid` alive on this host? Unknown (another host, no pid) counts as alive.
+function processAlive(pid, host) {
+  if (!Number.isInteger(pid) || pid <= 0) return true;
+  if (host && host !== os.hostname()) return true;
+  try { process.kill(pid, 0); return true; }
+  catch (e) { return e.code === "EPERM"; }
+}
+
+// Latest state per hash: { t, state: "pending" | "stored" | "released", pid, host }.
+// A line with neither "s" nor "r" (that shape was never deployed) reads as stored.
 function readLedger(file) {
   const out = new Map();
   let raw = "";
@@ -211,16 +269,31 @@ function readLedger(file) {
     lines++;
     try {
       const e = JSON.parse(line);
-      if (e && typeof e.h === "string" && Number.isFinite(e.t)) out.set(e.h, { t: e.t, released: !!e.r });
+      if (!e || typeof e.h !== "string" || !Number.isFinite(e.t)) continue;
+      const state = e.r ? "released" : e.s === "p" ? "pending" : "stored";
+      out.set(e.h, { t: e.t, state, pid: e.pid, host: e.host });
     } catch (_) { /* a torn line from a crash: ignore it */ }
   }
   return { entries: out, lines };
 }
 
+// Does a ledger entry still stand in the way of storing the same words?
+function blocking(e, now, windowMs) {
+  if (!e) return null;
+  if (e.state === "stored" && now - e.t < windowMs) {
+    return { reason: "identical text already stored in this window (shared ledger)", alreadyStored: true };
+  }
+  if (e.state === "pending" && now - e.t < LEDGER_LEASE_MS && processAlive(e.pid, e.host)) {
+    return { reason: `identical text is being stored by another process (pid ${e.pid}, shared ledger)`, alreadyStored: false };
+  }
+  return null;
+}
+
 /**
- * Claim `key` in the shared ledger. Returns { ok: true } when this process
- * may store it, { ok: false, reason } when another process (or this one)
- * already stored the same words inside the window.
+ * Claim `key` in the shared ledger right before storing it. Returns
+ * { ok: true } when this process may store it; { ok: false, reason,
+ * alreadyStored } when the same words were already stored inside the window
+ * (alreadyStored: true) or a live process is storing them right now (false).
  */
 function claimLedger(key, now = Date.now()) {
   const file = ledgerPath();
@@ -229,18 +302,17 @@ function claimLedger(key, now = Date.now()) {
   try {
     return withLedgerLock(file, () => {
       const { entries, lines } = readLedger(file);
-      const prior = entries.get(h);
-      if (prior && !prior.released && now - prior.t < windowMs) {
-        return { ok: false, reason: "identical text already stored in this window (shared ledger)" };
-      }
+      const blocked = blocking(entries.get(h), now, windowMs);
+      if (blocked) return { ok: false, ...blocked };
       if (lines >= LEDGER_PRUNE_LINES) {
-        const keep = [...entries].filter(([, e]) => !e.released && now - e.t < windowMs)
-          .map(([hh, e]) => JSON.stringify({ h: hh, t: e.t }));
+        const keep = [...entries].filter(([, e]) => blocking(e, now, windowMs))
+          .map(([hh, e]) => JSON.stringify(e.state === "pending"
+            ? { h: hh, t: e.t, s: "p", pid: e.pid, host: e.host } : { h: hh, t: e.t, s: "s" }));
         const tmp = `${file}.${process.pid}.tmp`;
         fs.writeFileSync(tmp, keep.length ? keep.join("\n") + "\n" : "");
         fs.renameSync(tmp, file);
       }
-      fs.appendFileSync(file, JSON.stringify({ h, t: now }) + "\n");
+      fs.appendFileSync(file, JSON.stringify({ h, t: now, s: "p", pid: process.pid, host: os.hostname() }) + "\n");
       return { ok: true };
     });
   } catch (e) {
@@ -249,14 +321,18 @@ function claimLedger(key, now = Date.now()) {
   }
 }
 
-function releaseLedger(key) {
+function appendLedger(key, entry, what) {
   const file = ledgerPath();
   try {
-    withLedgerLock(file, () => fs.appendFileSync(file, JSON.stringify({ h: hashOf(key), t: Date.now(), r: 1 }) + "\n"));
+    withLedgerLock(file, () => fs.appendFileSync(file, JSON.stringify({ h: hashOf(key), t: Date.now(), ...entry }) + "\n"));
   } catch (e) {
-    log(`could not release the shared-ledger claim (${e && e.message}); identical text waits out the window`);
+    log(`could not ${what} in the shared ledger (${e && e.message})`);
   }
 }
+// The store succeeded: identical text is a duplicate for the window.
+function markStored(key) { appendLedger(key, { s: "s" }, "record the store"); }
+// The store failed: another process may store the words at once.
+function releaseLedger(key) { appendLedger(key, { r: 1 }, "release the claim (its lease still runs out)"); }
 
 /**
  * Remember one publication. Never throws, never rejects.
@@ -272,7 +348,11 @@ function releaseLedger(key) {
  * @param {string[]} [p.links]   — extra links the post carried (msg.link)
  * @param {string}  [p.context]
  * @param {string}  [p.label]    — a complete provenance label (see buildMemoryText)
- * @returns {Promise<{stored: boolean, reason?: string, memory?: string}>}
+ * @param {string}  [p.expires]  — RFC3339 time after which recall treats the
+ *   memory as expired (`kannaka remember --expires`; the on-air digest)
+ * @returns {Promise<{stored: boolean, reason?: string, memory?: string,
+ *   alreadyStored?: boolean}>} alreadyStored: the same words are already in
+ *   her store from inside the dedupe window (this process or another)
  */
 function rememberPublication(p = {}) {
   let promise;
@@ -292,7 +372,7 @@ function _remember(p) {
   const why = skipReason(p);
   if (why) {
     log(`not stored: ${preview} — ${why}`);
-    return Promise.resolve({ stored: false, reason: why });
+    return Promise.resolve({ stored: false, reason: why, alreadyStored: /already stored/.test(why) });
   }
   const ok = p.results.filter((r) => r && r.ok && r.name !== "none");
   const memory = buildMemoryText({
@@ -305,16 +385,13 @@ function _remember(p) {
     label: p.label,
   });
   const key = normalize(p.text);
-  // Claimed before the store runs, so two fanouts of the same words racing
-  // each other do not both write; released again if the store fails. The
-  // in-process map answers first; the shared ledger covers other processes.
-  _recent.set(key, Date.now());
-  const claim = claimLedger(key);
-  if (!claim.ok) {
-    log(`not stored: ${preview} — ${claim.reason}`);
-    return Promise.resolve({ stored: false, reason: claim.reason });
-  }
-  const release = () => { _recent.delete(key); releaseLedger(key); };
+  // The in-process map answers first, at once, so two fanouts of the same
+  // words racing each other do not both queue. The shared ledger is claimed
+  // when the store actually starts (inside _chain), so a claim's lease is
+  // spent on the store, never on waiting behind this process's queue.
+  const mine = { t: Date.now(), stored: false };
+  _recent.set(key, mine);
+  const forget = () => { if (_recent.get(key) === mine) _recent.delete(key); };
   const bin = _bin || defaultBin();
   const explicit = Number(p.importance);
   const importance = (p.importance != null && Number.isFinite(explicit) && explicit >= 0 && explicit <= 1)
@@ -327,10 +404,19 @@ function _remember(p) {
   // (kannaka-memory remember_events.rs, RememberLevel::default_for("cli")).
   // A private message stays private: ids only on the bus.
   if (p.private) env.KANNAKA_EVENTS_REMEMBER = "ids";
+  const args = ["remember", memory, "--importance", importance.toFixed(2)];
+  if (typeof p.expires === "string" && p.expires) args.push("--expires", p.expires);
   const run = () => new Promise((resolve) => {
+    const claim = claimLedger(key);
+    if (!claim.ok) {
+      if (claim.alreadyStored) mine.stored = true; else forget();
+      log(`not stored: ${preview} — ${claim.reason}`);
+      resolve({ stored: false, reason: claim.reason, alreadyStored: !!claim.alreadyStored });
+      return;
+    }
+    const release = () => { forget(); releaseLedger(key); };
     try {
-      _execFile(bin, ["remember", memory, "--importance", importance.toFixed(2)],
-        { timeout: REMEMBER_TIMEOUT_MS, env },
+      const child = _execFile(bin, args, { timeout: REMEMBER_TIMEOUT_MS, env },
         (err) => {
           if (err) {
             release();
@@ -339,9 +425,12 @@ function _remember(p) {
             resolve({ stored: false, reason, memory });
             return;
           }
+          mine.stored = true;
+          markStored(key);
           log(`stored: ${preview} (${ok.map((r) => r.name).join(", ")}; composed by ${p.composer || "?"})`);
           resolve({ stored: true, memory });
         });
+      lowerPriority(child);
     } catch (e) {
       release();
       log(`not stored: ${preview} — ${e && e.message}`);
@@ -351,6 +440,14 @@ function _remember(p) {
   const result = _chain.then(run);
   _chain = result;
   return result;
+}
+
+// KANNAKA_VOICE_WRITEBACK_NICE: the child's priority (default 15; 0 leaves it).
+function lowerPriority(child) {
+  const v = parseInt(process.env.KANNAKA_VOICE_WRITEBACK_NICE || "", 10);
+  const nice = Number.isFinite(v) ? Math.max(0, Math.min(19, v)) : DEFAULT_NICE;
+  if (!nice || !child || !child.pid) return;
+  try { os.setPriority(child.pid, nice); } catch (_) { /* best effort */ }
 }
 
 /**
@@ -441,9 +538,9 @@ function _reset() {
 }
 
 module.exports = {
-  rememberPublication, buildMemoryText, skipReason, configure, flush,
+  rememberPublication, buildMemoryText, skipReason, disabledReason, configure, flush,
   defaultBin, radioDataDir, ledgerPath, claimLedger, inferComposer,
   wrapDirectPost, youtubeSummary, IN_FANOUT,
-  IMPORTANCE, TEMPLATE_IMPORTANCE, MAX_TEXT_CHARS,
+  IMPORTANCE, TEMPLATE_IMPORTANCE, MAX_TEXT_CHARS, LEDGER_LEASE_MS,
   _setExecFile, _setLedgerPath, _reset, _recentSize,
 };

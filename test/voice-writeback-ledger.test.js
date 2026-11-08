@@ -55,7 +55,11 @@ function spawnClaimers(n, ledger, key) {
     console.log = () => {};
     const go = Number(process.argv[1]);
     while (Date.now() < go) {}
-    process.stdout.write(JSON.stringify(vw.claimLedger(${JSON.stringify(key)})));`;
+    process.stdout.write(JSON.stringify(vw.claimLedger(${JSON.stringify(key)})));
+    // Stay alive until every claimer has claimed: a claim from a process
+    // that has exited is released (it was killed mid-store, as far as the
+    // ledger can tell).
+    setTimeout(() => {}, Math.max(0, go + 1500 - Date.now()));`;
   const go = Date.now() + 1500;
   return Promise.all(Array.from({ length: n }, () => new Promise((resolve, reject) => {
     const c = spawn(process.execPath, ['-e', code, String(go)], {
@@ -104,6 +108,53 @@ async function main() {
     assert.strictEqual(r1.stored, false);
     assert.strictEqual(r2.stored, true);
     assert.ok(fs.readFileSync(vw.ledgerPath(), 'utf8').includes('"r":1'));
+  });
+
+  await run('the ledger records the completed store, not just the claim', async () => {
+    reset();
+    const r = await vw.rememberPublication({ text: 'stored for real', results: OK, composer: 'x' });
+    assert.strictEqual(r.stored, true);
+    const lines = fs.readFileSync(vw.ledgerPath(), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.deepStrictEqual(lines.map((e) => e.s), ['p', 's'], JSON.stringify(lines));
+    assert.strictEqual(lines[0].pid, process.pid);
+    asAnotherProcess();
+    const r2 = await vw.rememberPublication({ text: 'stored for real', results: OK, composer: 'x' });
+    assert.strictEqual(r2.alreadyStored, true);
+  });
+
+  await run('a claim whose process died, or whose lease ran out, does not block the same words', async () => {
+    reset();
+    const dead = await new Promise((resolve) => {
+      const c = spawn(process.execPath, ['-e', '']);
+      c.on('exit', () => resolve(c.pid));
+    });
+    const crypto = require('crypto');
+    const h = (t) => crypto.createHash('sha256').update(t).digest('hex');
+    const now = Date.now();
+    fs.writeFileSync(vw.ledgerPath(), [
+      { h: h('killed mid-store'), t: now, s: 'p', pid: dead, host: os.hostname() },
+      { h: h('lease ran out'), t: now - vw.LEDGER_LEASE_MS - 1000, s: 'p', pid: process.pid, host: os.hostname() },
+      { h: h('still storing'), t: now, s: 'p', pid: process.pid, host: os.hostname() },
+    ].map((e) => JSON.stringify(e)).join('\n') + '\n');
+    assert.strictEqual(vw.claimLedger('killed mid-store').ok, true, 'dead claimer');
+    assert.strictEqual(vw.claimLedger('lease ran out').ok, true, 'expired lease');
+    const busy = vw.claimLedger('still storing');
+    assert.strictEqual(busy.ok, false, 'a live claimer inside its lease');
+    assert.strictEqual(busy.alreadyStored, false);
+    assert.ok(/being stored by another process/.test(busy.reason), busy.reason);
+  });
+
+  await run('the remember child runs at low priority, and a digest can carry --expires', async () => {
+    reset();
+    const reniced = [];
+    const realSet = os.setPriority;
+    os.setPriority = (pid, p) => { reniced.push([pid, p]); };
+    try {
+      vw._setExecFile((bin, args, opts, cb) => { calls.push({ bin, args, opts }); setImmediate(() => cb(null, '', '')); return { pid: 4242 }; });
+      await vw.rememberPublication({ text: 'gently', results: OK, composer: 'x', expires: '2026-12-07T18:00:00Z' });
+      assert.deepStrictEqual(reniced, [[4242, 15]]);
+      assert.deepStrictEqual(calls[0].args.slice(-2), ['--expires', '2026-12-07T18:00:00Z']);
+    } finally { os.setPriority = realSet; }
   });
 
   await run('claims expire with the dedupe window', async () => {

@@ -116,7 +116,8 @@ async function main(argv, io = {}) {
   const r = await voiceWriteback.rememberPublication(p);
   await voiceWriteback.flush();
   if (r.stored) { out("stored"); return 0; }
-  if (/identical text already stored/.test(r.reason || "")) { out(`already stored — ${r.reason}`); return 0; }
+  // Only a COMPLETED store counts; "being stored by another process" is not.
+  if (r.alreadyStored) { out(`already stored — ${r.reason}`); return 0; }
   err(`not stored — ${r.reason || "unknown"}`);
   return 1;
 }

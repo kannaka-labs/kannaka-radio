@@ -10,23 +10,33 @@
  * 2026-11-06 red-shoes teaser.
  *
  * One memory per line would be hundreds a day in a store whose size is
- * already the recall-latency problem. So:
- *   - short lines are buffered and written as ONE digest per hour:
+ * already the recall-latency problem, and every `kannaka remember` loads and
+ * rewrites the whole store (125 MB on O1, one CPU shared with the audio). So:
+ *   - short lines are buffered and written as ONE digest per period
+ *     (KANNAKA_ON_AIR_DIGEST_HOURS, default 4 h: about 6 a day), or sooner
+ *     when the buffer fills a digest's character budget, so no line is cut:
  *       [Provenance: said on air on Kannaka Radio between <t1> and <t2>;
  *       composed by <composers>; said, not lived.]
  *       - [Kannaka (DJ)] <line>
  *       - [Gene (News Anchor)] <line>
  *     Exact repeats (station IDs, a line heard on /stream and the web
- *     player) are kept once; the digest is cut to voice-writeback's 6000-char
- *     cap with a count of what was left out;
+ *     player) are kept once. A digest carries `--expires` (default +30 days,
+ *     KANNAKA_ON_AIR_DIGEST_EXPIRE_DAYS, 0 = never), so recall treats old
+ *     station patter as expired;
  *   - long-form pieces (news and gossip segments, album-showcase intros,
  *     an episode whose script sits beside its audio) are one memory per
- *     airing, at the publication importance;
+ *     airing, at the publication importance (one try: a failed store of a
+ *     whole piece is logged, not retried);
  *   - the buffer is a small JSONL file under the radio's data dir (never
  *     under ~/.kannaka), so lines survive a restart; it is only emptied once
- *     the digest is stored (or the shared ledger says it already was);
- *   - shutdown flushes best-effort; what does not make it is flushed on the
- *     next start.
+ *     the digest is stored (or the shared ledger says those exact words were
+ *     stored). There is no shutdown flush: a store started at SIGTERM is
+ *     killed with the server, and the buffer file already survives;
+ *   - a failed store backs off (15, 30, 60, then 120 min) instead of
+ *     re-running a whole-store rewrite every check;
+ *   - with write-back switched off (KANNAKA_VOICE_WRITEBACK=0, or a
+ *     read-only store without force) nothing is buffered; the buffer is
+ *     capped at MAX_BUFFER_LINES either way, oldest dropped and logged.
  *
  * What counts as "said on air": a voice file that actually finished
  * streaming on /stream (icecast-source onVoiceAired), a show/commercial
@@ -46,10 +56,22 @@ const path = require("path");
 const voiceWriteback = require("./voice-writeback");
 
 const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
 const CHECK_MS = 5 * 60 * 1000;
+const DEFAULT_PERIOD_HOURS = 4;
+const DEFAULT_EXPIRE_DAYS = 30;
+// After a failed store: 15, 30, 60, then 120 minutes between tries.
+const BACKOFF_MS = [15, 30, 60, 120].map((m) => m * 60 * 1000);
+// About a week of O1's on-air lines (~300 a day); oldest dropped beyond it.
+const MAX_BUFFER_LINES = 2000;
 // Station patter, mostly model-composed: lighter than her published words.
 const DIGEST_IMPORTANCE = 0.3;
 const REGISTRY_MAX = 300;
+
+function envNumber(name, dflt) {
+  const v = Number(process.env[name]);
+  return process.env[name] != null && process.env[name] !== "" && Number.isFinite(v) && v >= 0 ? v : dflt;
+}
 
 function log(line) { console.log(`   [on-air-digest] ${line}`); }
 function normalize(text) { return String(text || "").replace(/\s+/g, " ").trim(); }
@@ -82,14 +104,19 @@ class OnAirDigest {
   /**
    * @param {object} o
    * @param {string}   o.file           the buffer file (JSONL)
-   * @param {number}   [o.flushEveryMs] digest period (default 1 h)
+   * @param {number}   [o.flushEveryMs] digest period (default
+   *   KANNAKA_ON_AIR_DIGEST_HOURS, else 4 h)
+   * @param {number}   [o.expireDays]   digest --expires, days (default
+   *   KANNAKA_ON_AIR_DIGEST_EXPIRE_DAYS, else 30; 0 = never)
    * @param {number}   [o.checkEveryMs]
    * @param {object}   [o.writeback]    voice-writeback (test seam)
    * @param {function} [o.now]
    */
   constructor(o = {}) {
     this._file = o.file;
-    this._flushEveryMs = o.flushEveryMs || HOUR_MS;
+    const hours = envNumber("KANNAKA_ON_AIR_DIGEST_HOURS", DEFAULT_PERIOD_HOURS);
+    this._flushEveryMs = o.flushEveryMs || (hours > 0 ? hours : DEFAULT_PERIOD_HOURS) * HOUR_MS;
+    this._expireDays = o.expireDays != null ? o.expireDays : envNumber("KANNAKA_ON_AIR_DIGEST_EXPIRE_DAYS", DEFAULT_EXPIRE_DAYS);
     this._checkEveryMs = o.checkEveryMs || CHECK_MS;
     this._wb = o.writeback || voiceWriteback;
     this._now = o.now || (() => Date.now());
@@ -97,7 +124,25 @@ class OnAirDigest {
     this._keys = new Set();
     this._timer = null;
     this._flushing = null;
+    this._failures = 0;
+    this._retryAt = 0;
     this._load();
+  }
+
+  // A digest's character budget: what fits under voice-writeback's cap
+  // after the provenance label.
+  _budget() { return (this._wb.MAX_TEXT_CHARS || 6000) - 120; }
+  static _lineOf(e) { return `- [${e.speaker}] ${e.text}`; }
+
+  // Oldest lines dropped past MAX_BUFFER_LINES (a store that never succeeds
+  // must not grow the file without bound).
+  _cap() {
+    const over = this._buf.length - MAX_BUFFER_LINES;
+    if (over <= 0) return false;
+    this._buf.splice(0, over);
+    this._keys = new Set(this._buf.map((e) => keyOf(e.text)));
+    log(`buffer over ${MAX_BUFFER_LINES} lines: dropped the ${over} oldest, never stored`);
+    return true;
   }
 
   _load() {
@@ -114,6 +159,7 @@ class OnAirDigest {
         }
       } catch (_) { /* a torn last line from a crash */ }
     }
+    if (this._cap()) this._persist();
     if (this._buf.length) log(`resumed ${this._buf.length} buffered line(s) from ${path.basename(this._file)}`);
   }
 
@@ -140,7 +186,8 @@ class OnAirDigest {
    * @param {string}  [e.composer] — who wrote the words
    * @param {boolean} [e.whole]    — a long-form piece: its own memory
    * @param {string}  [e.title]    — what the piece was, for a whole memory
-   * @returns {string} what happened: "buffered" | "repeat" | "whole" | "empty"
+   * @returns {string} what happened: "buffered" | "repeat" | "whole" |
+   *   "empty" | "disabled"
    */
   record(e = {}) {
     try {
@@ -161,12 +208,17 @@ class OnAirDigest {
         });
         return "whole";
       }
+      // Switched off: a line is not buffered (it would only pile up). A
+      // whole piece above still goes to voice-writeback, which logs the skip.
+      if (typeof this._wb.disabledReason === "function" && this._wb.disabledReason()) return "disabled";
       const k = keyOf(text);
       if (this._keys.has(k)) return "repeat";
       const entry = { t: Date.parse(at), text, speaker, composer };
       this._buf.push(entry);
       this._keys.add(k);
-      if (this._file) {
+      if (this._cap()) {
+        this._persist();
+      } else if (this._file) {
         try {
           fs.mkdirSync(path.dirname(this._file), { recursive: true });
           fs.appendFileSync(this._file, JSON.stringify(entry) + "\n");
@@ -174,6 +226,8 @@ class OnAirDigest {
           log(`could not append to the buffer file (${err.message}); line held in memory only`);
         }
       }
+      // A full digest's worth: write it now rather than cut lines later.
+      if (this._timer && this._bufferChars() >= this._budget()) this.maybeFlush();
       return "buffered";
     } catch (err) {
       log(`record failed: ${err && err.message}`);
@@ -181,15 +235,37 @@ class OnAirDigest {
     }
   }
 
+  _bufferChars() {
+    let n = 0;
+    for (const e of this._buf) n += OnAirDigest._lineOf(e).length + 1;
+    return n;
+  }
+
+  // The oldest buffered lines that fit one digest (at least one: a single
+  // line longer than the budget is cut by voice-writeback's cap). The rest
+  // stay buffered for the next digest; nothing is dropped to make it fit.
+  _take() {
+    const max = this._budget();
+    const out = [];
+    let used = 0;
+    for (const e of this._buf) {
+      const len = OnAirDigest._lineOf(e).length + 1;
+      if (out.length && used + len > max) break;
+      out.push(e);
+      used += len;
+    }
+    return out;
+  }
+
   /** The digest for `entries`: { text, label }. */
   build(entries) {
-    const max = (this._wb.MAX_TEXT_CHARS || 6000) - 120;
+    const max = this._budget();
     const lines = [];
     let used = 0;
     let dropped = 0;
     for (const e of entries) {
-      const line = `- [${e.speaker}] ${e.text}`;
-      if (used + line.length + 1 > max) { dropped++; continue; }
+      const line = OnAirDigest._lineOf(e);
+      if (lines.length && used + line.length + 1 > max) { dropped++; continue; }
       lines.push(line);
       used += line.length + 1;
     }
@@ -205,16 +281,21 @@ class OnAirDigest {
   }
 
   /**
-   * Write the buffered lines as ONE memory. Resolves { stored, reason };
-   * never rejects. The buffer is emptied only when the digest was stored or
-   * the shared ledger says identical text already was.
+   * Write the oldest buffered lines that fit one digest as ONE memory.
+   * Resolves { stored, reason }; never rejects. Those lines leave the buffer
+   * only when the digest was stored, or voice-writeback reports the exact
+   * same words already stored (alreadyStored: a COMPLETED store, never a
+   * mere claim by a process that may have died). A failure backs off.
    */
-  flush(reason = "hourly") {
+  flush(reason = "periodic") {
     if (this._flushing) return this._flushing;
     if (this._buf.length === 0) return Promise.resolve({ stored: false, reason: "nothing buffered" });
-    const taken = this._buf.slice();
+    const taken = this._take();
     const digest = this.build(taken);
-    log(`writing ${taken.length} line(s) as one digest (${reason})`);
+    const left = this._buf.length - taken.length;
+    log(`writing ${taken.length} line(s) as one digest (${reason})${left ? `; ${left} more wait for the next` : ""}`);
+    const expires = this._expireDays > 0
+      ? new Date(this._now() + this._expireDays * DAY_MS).toISOString().replace(/\.\d{3}Z$/, "Z") : undefined;
     // Called now, not on a later tick, so voiceWriteback.flush() sees it in
     // flight (rememberPublication never throws).
     this._flushing = Promise.resolve(this._wb.rememberPublication({
@@ -223,16 +304,23 @@ class OnAirDigest {
       composer: digest.composers,
       importance: DIGEST_IMPORTANCE,
       label: digest.label,
+      expires,
     }))
       .then((r) => {
-        const done = r && (r.stored || /identical text already stored/.test(r.reason || ""));
+        const done = r && (r.stored || r.alreadyStored);
         if (done) {
           const gone = new Set(taken);
           this._buf = this._buf.filter((e) => !gone.has(e));
           this._keys = new Set(this._buf.map((e) => keyOf(e.text)));
           this._persist();
+          if (this._failures) log(`digest stored after ${this._failures} failed tr${this._failures === 1 ? "y" : "ies"}; back-off reset`);
+          this._failures = 0;
+          this._retryAt = 0;
         } else {
-          log(`digest not stored (${(r && r.reason) || "unknown"}); ${taken.length} line(s) stay buffered`);
+          const wait = BACKOFF_MS[Math.min(this._failures, BACKOFF_MS.length - 1)];
+          this._failures++;
+          this._retryAt = this._now() + wait;
+          log(`digest not stored (${(r && r.reason) || "unknown"}); ${taken.length} line(s) stay buffered; next try in ${Math.round(wait / 60000)} min`);
         }
         return r || { stored: false };
       })
@@ -241,12 +329,17 @@ class OnAirDigest {
     return this._flushing;
   }
 
-  /** Flush when the oldest buffered line is a period old. */
+  /**
+   * Flush when the oldest buffered line is a period old, or the buffer
+   * holds a full digest; never inside a failure back-off.
+   */
   maybeFlush() {
-    if (this._buf.length === 0) return null;
+    if (this._buf.length === 0 || this._flushing) return null;
+    if (this._now() < this._retryAt) return null;
     const oldest = Math.min(...this._buf.map((e) => e.t));
-    if (this._now() - oldest < this._flushEveryMs) return null;
-    return this.flush("hourly");
+    if (this._now() - oldest >= this._flushEveryMs) return this.flush("periodic");
+    if (this._bufferChars() >= this._budget()) return this.flush("a full digest");
+    return null;
   }
 
   start() {
@@ -258,16 +351,6 @@ class OnAirDigest {
   }
 
   stop() { if (this._timer) { clearInterval(this._timer); this._timer = null; } }
-
-  /** Best effort at shutdown, bounded: what does not finish stays on disk. */
-  flushForShutdown(waitMs = 3000) {
-    if (this._buf.length === 0) return Promise.resolve();
-    let timer;
-    return Promise.race([
-      this.flush("shutdown"),
-      new Promise((r) => { timer = setTimeout(r, waitMs); }),
-    ]).then(() => clearTimeout(timer));
-  }
 
   /**
    * A voice file finished streaming on /stream.

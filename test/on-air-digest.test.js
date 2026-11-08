@@ -44,9 +44,12 @@ function fresh(opts = {}) {
   calls = []; behaviour = 'ok'; logs.length = 0;
   delete process.env.KANNAKA_VOICE_WRITEBACK;
   delete process.env.KANNAKA_READONLY;
+  delete process.env.KANNAKA_ON_AIR_DIGEST_HOURS;
+  delete process.env.KANNAKA_ON_AIR_DIGEST_EXPIRE_DAYS;
   clock = Date.parse('2026-11-07T18:00:00.000Z');
   const file = opts.file || path.join(tmp, `buf-${++n}.jsonl`);
-  return { d: new OnAirDigest({ file, now: () => clock }), file };
+  // Most tests drive a one-hour period; the 4-hour default has its own test.
+  return { d: new OnAirDigest({ file, now: () => clock, flushEveryMs: 60 * 60 * 1000, ...opts.digest }), file };
 }
 
 async function main() {
@@ -84,21 +87,108 @@ async function main() {
     assert.strictEqual(d.pending(), 1);
   });
 
-  await run('a long hour is cut to the 6000-char cap, with a count of what was left out', async () => {
+  await run('a long period is split into full digests under the 6000-char cap; no line is dropped', async () => {
     const { d } = fresh();
     for (let i = 0; i < 200; i++) d.record({ text: `Line number ${i}: ${'words '.repeat(20)}` });
-    await d.flush('test');
-    const memory = calls[0].args[1];
-    assert.ok(memory.length <= vw.MAX_TEXT_CHARS + 400, `memory is ${memory.length} chars`);
-    assert.ok(/\[…\d+ more line\(s\) said in this window, not kept here\]/.test(memory), memory.slice(-200));
-    assert.ok(!memory.includes('[…truncated]'), 'the digest cuts whole lines itself');
+    let flushes = 0;
+    while (d.pending() && flushes < 20) { await d.flush('test'); flushes++; }
+    assert.strictEqual(d.pending(), 0);
+    assert.ok(flushes > 1, 'more than one digest');
+    const all = calls.map((c) => c.args[1]).join('\n');
+    for (const c of calls) {
+      assert.ok(c.args[1].length <= vw.MAX_TEXT_CHARS + 400, `memory is ${c.args[1].length} chars`);
+      assert.ok(!c.args[1].includes('[…truncated]') && !/more line\(s\) said/.test(c.args[1]), 'nothing cut');
+    }
+    for (let i = 0; i < 200; i++) assert.ok(all.includes(`Line number ${i}: `), `line ${i} kept`);
+  });
+
+  await run('a buffer holding a full digest is written before the period is up', async () => {
+    const { d } = fresh();
+    d.start();
+    try {
+      for (let i = 0; i < 60; i++) d.record({ text: `Busy hour line ${i}: ${'words '.repeat(20)}` });
+      await vw.flush(1000);
+      assert.ok(calls.length >= 1, 'flushed on a full buffer, not on the clock');
+    } finally { d.stop(); }
+  });
+
+  await run('the default period is 4 hours (KANNAKA_ON_AIR_DIGEST_HOURS overrides); digests expire in 30 days', async () => {
+    fresh();
+    const file = path.join(tmp, `buf-${++n}.jsonl`);
+    const d = new OnAirDigest({ file, now: () => clock });
+    d.record({ text: 'Four hours of patter, one memory.' });
+    clock += 61 * 60 * 1000;
+    assert.strictEqual(d.maybeFlush(), null, 'not after one hour');
+    clock += 3 * 60 * 60 * 1000;
+    await d.maybeFlush();
+    assert.strictEqual(calls.length, 1, 'after four');
+    const args = calls[0].args;
+    const at = args.indexOf('--expires');
+    assert.ok(at > 0, args.join(' '));
+    assert.strictEqual(args[at + 1], new Date(clock + 30 * 24 * 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z'));
+    process.env.KANNAKA_ON_AIR_DIGEST_HOURS = '2';
+    process.env.KANNAKA_ON_AIR_DIGEST_EXPIRE_DAYS = '0';
+    const d2 = new OnAirDigest({ file: path.join(tmp, `buf-${++n}.jsonl`), now: () => clock });
+    d2.record({ text: 'Two-hour period, no expiry.' });
+    clock += 2 * 60 * 60 * 1000;
+    await d2.maybeFlush();
+    assert.strictEqual(calls.length, 2);
+    assert.ok(!calls[1].args.includes('--expires'));
+    delete process.env.KANNAKA_ON_AIR_DIGEST_HOURS;
+    delete process.env.KANNAKA_ON_AIR_DIGEST_EXPIRE_DAYS;
+  });
+
+  await run('a failing store backs off (15, 30, 60, 120 min), logged once per failure, and resets on success', async () => {
+    const { d } = fresh();
+    d.record({ text: 'Keep trying, gently.' });
+    clock += 61 * 60 * 1000;
+    behaviour = 'fail';
+    await d.maybeFlush();
+    assert.strictEqual(calls.length, 1);
+    clock += 5 * 60 * 1000;
+    assert.strictEqual(d.maybeFlush(), null, 'no retry 5 min later');
+    clock += 10 * 60 * 1000;
+    await d.maybeFlush();
+    assert.strictEqual(calls.length, 2, 'retried after 15 min');
+    clock += 15 * 60 * 1000;
+    assert.strictEqual(d.maybeFlush(), null, 'then waits 30');
+    clock += 15 * 60 * 1000;
+    await d.maybeFlush();
+    assert.strictEqual(calls.length, 3);
+    assert.ok(logs.some((l) => /next try in 30 min/.test(l)), logs.join('\n'));
+    behaviour = 'ok';
+    clock += 60 * 60 * 1000;
+    const r = await d.maybeFlush();
+    assert.strictEqual(r.stored, true);
+    assert.ok(logs.some((l) => /back-off reset/.test(l)));
+    d.record({ text: 'Next period.' });
+    clock += 61 * 60 * 1000;
+    assert.ok(d.maybeFlush(), 'no back-off after a success');
+  });
+
+  await run('switched off, nothing is buffered; the buffer is capped either way', async () => {
+    const { d, file } = fresh();
+    process.env.KANNAKA_VOICE_WRITEBACK = '0';
+    assert.strictEqual(d.record({ text: 'Not kept while off.' }), 'disabled');
+    process.env.KANNAKA_READONLY = '1'; delete process.env.KANNAKA_VOICE_WRITEBACK;
+    assert.strictEqual(d.record({ text: 'Not kept while read-only.' }), 'disabled');
+    process.env.KANNAKA_VOICE_WRITEBACK = 'force';
+    assert.strictEqual(d.record({ text: 'Kept under force.' }), 'buffered');
+    delete process.env.KANNAKA_READONLY; delete process.env.KANNAKA_VOICE_WRITEBACK;
+    assert.strictEqual(d.pending(), 1);
+    for (let i = 0; i < 2100; i++) d.record({ text: `filler ${i}` });
+    assert.strictEqual(d.pending(), 2000);
+    assert.ok(logs.some((l) => /buffer over 2000 lines: dropped the 1 oldest/.test(l)));
+    const onDisk = fs.readFileSync(file, 'utf8').trim().split('\n');
+    assert.strictEqual(onDisk.length, 2000);
+    assert.ok(!onDisk[0].includes('Kept under force.'), 'the oldest went first');
   });
 
   await run('buffered lines survive a restart and are written by the next process', async () => {
     const { d, file } = fresh();
     d.record({ text: 'Said before the restart.' });
     d.record({ text: 'Also before the restart.' });
-    const d2 = new OnAirDigest({ file, now: () => clock });
+    const d2 = new OnAirDigest({ file, now: () => clock, flushEveryMs: 60 * 60 * 1000 });
     assert.strictEqual(d2.pending(), 2, 'resumed from the buffer file');
     clock += 61 * 60 * 1000;
     d2.start();
@@ -141,14 +231,50 @@ async function main() {
     assert.strictEqual(d2.pending(), 0);
   });
 
-  await run('shutdown flush is bounded: a hung store does not hold the exit, and the lines stay on disk', async () => {
+  await run('a restart that kills a store mid-flight loses nothing: the next process stores the digest', async () => {
+    // PR #439 review: the claim used to read as "already stored" after the
+    // server (and its `kannaka remember` child) died, and the restart threw
+    // the buffered lines away.
     const { d, file } = fresh();
-    d.record({ text: 'Last words before SIGTERM.' });
+    d.record({ text: 'Said just before the deploy.' });
     behaviour = 'hang';
-    const t0 = Date.now();
-    await d.flushForShutdown(50);
-    assert.ok(Date.now() - t0 < 1000);
-    assert.ok(fs.readFileSync(file, 'utf8').includes('Last words before SIGTERM.'));
+    d.flush('test');
+    for (let k = 0; k < 20; k++) await new Promise((r) => setImmediate(r));
+    assert.strictEqual(calls.length, 1, 'the store started');
+    const ledger = vw.ledgerPath();
+    const claim = JSON.parse(fs.readFileSync(ledger, 'utf8').trim().split('\n').pop());
+    assert.strictEqual(claim.s, 'p', 'a claim, not a stored record');
+    assert.strictEqual(claim.pid, process.pid);
+    // The server is killed: its pid is gone. (A pid that just exited stands in.)
+    const dead = await new Promise((resolve) => {
+      const c = require('child_process').spawn(process.execPath, ['-e', '']);
+      c.on('exit', () => resolve(c.pid));
+    });
+    fs.writeFileSync(ledger, JSON.stringify({ ...claim, pid: dead }) + '\n');
+    assert.ok(fs.readFileSync(file, 'utf8').includes('Said just before the deploy.'), 'still on disk');
+    // The restarted server.
+    vw._reset(); vw._setExecFile(fakeExecFile); vw.configure({ bin: '/fake/kannaka' }); vw._setLedgerPath(ledger);
+    behaviour = 'ok'; calls = [];
+    const d2 = new OnAirDigest({ file, now: () => clock, flushEveryMs: 60 * 60 * 1000 });
+    const r = await d2.flush('test');
+    assert.strictEqual(r.stored, true, JSON.stringify(r));
+    assert.strictEqual(calls.length, 1);
+    assert.ok(calls[0].args[1].includes('Said just before the deploy.'));
+    assert.strictEqual(d2.pending(), 0);
+  });
+
+  await run('a live process still storing the same digest is waited for, not counted as stored', async () => {
+    const { d } = fresh();
+    d.record({ text: 'Being stored elsewhere.' });
+    const key = d.build(d._take()).text.replace(/\s+/g, ' ').trim().toLowerCase();
+    // Another live process (this one's pid stands in) claimed it a moment ago.
+    assert.strictEqual(vw.claimLedger(key).ok, true);
+    const r = await d.flush('test');
+    assert.strictEqual(r.stored, false);
+    assert.strictEqual(r.alreadyStored, false);
+    assert.ok(/being stored by another process/.test(r.reason), r.reason);
+    assert.strictEqual(d.pending(), 1, 'kept for the next try');
+    assert.strictEqual(calls.length, 0);
   });
 
   await run('a long-form piece is its own memory per airing, at publication importance, in its own voice', async () => {
@@ -247,7 +373,8 @@ async function main() {
     assert.ok(/onVoiceAired: \(voice\) => onAirDigest\.aired\(voice\)/.test(idx));
     assert.ok(/onTrackAired: \(track\) => onAirDigest\.trackAired\(track, MUSIC_DIR\)/.test(idx));
     assert.ok(/onAirDigest\.fromBroadcast\(msg\)/.test(idx));
-    assert.ok(/await onAirDigest\.flushForShutdown\(/.test(idx));
+    assert.ok(!/flushForShutdown/.test(idx), 'no shutdown flush: a store started at SIGTERM is killed with the server');
+    assert.ok(/onAirDigest\.stop\(\);/.test(idx));
     assert.ok(/voiceWriteback\.radioDataDir\(\), "on-air-digest-buffer\.jsonl"/.test(idx), 'the buffer lives in the radio data dir, not ~/.kannaka');
   });
 

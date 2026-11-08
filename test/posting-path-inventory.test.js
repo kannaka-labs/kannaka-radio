@@ -31,6 +31,16 @@ const POSTING = {
   'telegram-raw': /api\.telegram\.org/,
   'nostr-raw': /\[\s*["']EVENT["']\s*,|\bsignEvent\(|\bfinalizeEvent\(/,
   'youtube-raw': /uploadType=resumable|youtube\/v3\/videos/,
+  // A playlist's title and description are public text on her channel.
+  'youtube-playlist': /youtube\/v3\/playlists\b/,
+};
+// Shell and Python scripts post with curl/requests, not with these modules:
+// any OpenClawCity or YouTube endpoint next to a write verb counts.
+const SCRIPT_POSTING = {
+  'obc-shell': (s) => /api\.openbotcity\.com|\$OBC_API|OBC_API\s*=/.test(s) &&
+    /-X\s*(?:POST|PUT|PATCH)\b|requests\.(?:post|put|patch)\(|method\s*=\s*["'](?:POST|PUT|PATCH)["']/.test(s),
+  'youtube-shell': (s) => /youtube\/v3\/(?:videos|playlists)\b|uploadType=resumable/.test(s) &&
+    /-X\s*(?:POST|PUT)\b|requests\.(?:post|put)\(|method\s*=\s*["'](?:POST|PUT)["']/.test(s),
 };
 
 // Files that ARE the posting machinery, or post nothing she says. Each needs
@@ -47,9 +57,22 @@ const ALLOWLIST = {
   'ops/voice-signer/voice-signer.js': 'remote signer on O2: signs events O1\'s NostrAdapter composed; the adapter/fanout remembers them',
   'scripts/post-track-announce.js': 'the announce is remembered by broadcastPost; writeBack:false is only on the bare video-link reply under it',
   'presence/index.js': 'OBC go-live: a channel title the operator supplies ("Kannaka, live"), not words she says',
-  'scripts/podcast-upload-batch.js': 'uploads go through YouTubeAdapter.post (remembered); its raw videos calls only change privacy and read status',
+  'scripts/podcast-upload-batch.js': 'uploads go through YouTubeAdapter.post (remembered); its raw videos calls read status, unlist old uploads, and (phaseRetire) prepend a fixed template pointer ("Full series — Podcasts tab: <playlist URL>") to an old description: template copy, no new prose of hers',
   'workspace/podcasts/cleanup-13-14.js': 'deletes/privatises duplicate uploads; publishes nothing',
+  'scripts/youtube-playlist-set.js': 'lists the channel\'s playlists to pick one for uploads; its only POST is the OAuth token refresh',
+  'scripts/release-album.sh': 'OBC /artifacts/generate-image: one gallery image per track, titled with the track title and an image prompt; the release itself is announced (and remembered) through post-track-announce / broadcastPost',
 };
+
+// Every playlist write (POST/PUT to youtube/v3/playlists) sets its
+// description from a plain string literal within the next few lines.
+function playlistWritesAreLiteral(s) {
+  const writes = [...s.matchAll(/["'](?:POST|PUT)["'],\s*[`"']https:\/\/www\.googleapis\.com\/youtube\/v3\/playlists\b/g)];
+  if (writes.length === 0) return false;
+  return writes.every((m) => {
+    const d = s.slice(m.index, m.index + 400).match(/description:\s*([^\n}]+?)\s*(?:[,}]|$)/m);
+    return d && /^"[^"$`+\\]*"$/.test(d[1].trim());
+  });
+}
 
 // A file that uses adapters is covered by wrapDirectPost only if it calls
 // post(); reply() is not wrapped (its callers add the reply context).
@@ -58,6 +81,15 @@ const COVERED_BY = {
   fanoutOnly: (kinds, s) => kinds.every((k) => k === 'fanout') && !/writeBack:\s*false/.test(s),
   adapterPostOnly: (kinds, s) => kinds.every((k) => k === 'fanout' || k === 'adapter') &&
     !/writeBack:\s*false/.test(s) && !/\.reply\(/.test(s),
+  // The per-series upload scripts find-or-create their series playlist with
+  // a fixed one-line description ("House commercials made by Kannaka for the
+  // things we make and sell."): template copy, created once, not her prose.
+  // Covered only when EVERY playlist write carries a plain string literal.
+  seriesPlaylist: (kinds, s) => kinds.includes('youtube-playlist') &&
+    kinds.every((k) => k === 'fanout' || k === 'adapter' || k === 'youtube-playlist') &&
+    !/writeBack:\s*false/.test(s) && !/\.reply\(/.test(s) && playlistWritesAreLiteral(s),
+  // A shell/Python script writes back through scripts/remember-said.js.
+  rememberSaid: (s) => /remember-said\.js/.test(s),
 };
 
 function walk(dir, out) {
@@ -65,7 +97,7 @@ function walk(dir, out) {
     if (SKIP_DIRS.has(e.name)) continue;
     const p = path.join(dir, e.name);
     if (e.isDirectory()) walk(p, out);
-    else if (/\.(?:c|m)?js$/.test(e.name)) out.push(path.relative(ROOT, p).split(path.sep).join('/'));
+    else if (/\.(?:(?:c|m)?js|sh|py)$/.test(e.name)) out.push(path.relative(ROOT, p).split(path.sep).join('/'));
   }
   return out;
 }
@@ -74,13 +106,18 @@ function inventory() {
   const rows = [];
   for (const f of walk(ROOT, []).sort()) {
     const s = fs.readFileSync(path.join(ROOT, f), 'utf8');
-    const kinds = Object.entries(POSTING).filter(([, re]) => re.test(s)).map(([k]) => k);
+    const isJs = /\.(?:c|m)?js$/.test(f);
+    const kinds = isJs
+      ? Object.entries(POSTING).filter(([, re]) => re.test(s)).map(([k]) => k)
+      : Object.entries(SCRIPT_POSTING).filter(([, fn]) => fn(s)).map(([k]) => k);
     if (kinds.length === 0) continue;
     let how = null;
     if (ALLOWLIST[f]) how = `allowlisted: ${ALLOWLIST[f]}`;
+    else if (!isJs) how = COVERED_BY.rememberSaid(s) ? 'calls scripts/remember-said.js' : null;
     else if (COVERED_BY.explicit(s)) how = 'calls voiceWriteback.rememberPublication';
     else if (COVERED_BY.fanoutOnly(kinds, s)) how = 'broadcastPost/broadcastReply (write back by default)';
     else if (COVERED_BY.adapterPostOnly(kinds, s)) how = 'adapter post() (wrapDirectPost writes back)';
+    else if (COVERED_BY.seriesPlaylist(kinds, s)) how = 'adapter post() (wrapDirectPost) + a series playlist with a fixed literal description';
     rows.push({ file: f, kinds, how });
   }
   return rows;
@@ -115,6 +152,17 @@ check('the inventory found what it is meant to find (the scan is not silently em
     assert.ok(files.has(f), `${f} posts, and the scan must see it`);
   }
   assert.ok(rows.filter((r) => r.file.startsWith('workspace/podcasts/upload-')).length >= 40, 'the per-episode upload scripts are scanned');
+  // PR #439 review: shell scripts and playlist writes were blind spots.
+  assert.ok(files.has('scripts/release-album.sh'), 'shell scripts that POST to OpenClawCity are scanned');
+  assert.ok(rows.some((r) => r.kinds.includes('youtube-playlist')), 'YouTube playlist writes are scanned');
+});
+
+check('a playlist description that is not a fixed literal is not excused', () => {
+  const lit = 'await req("POST", "https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", a, {\n  snippet: { title, description: "House commercials." } });';
+  const tpl = 'await req("POST", "https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", a, {\n  snippet: { title, description: `About ${album}: ${essay}` } });';
+  assert.strictEqual(playlistWritesAreLiteral(lit), true);
+  assert.strictEqual(playlistWritesAreLiteral(tpl), false);
+  assert.strictEqual(playlistWritesAreLiteral('fetch(`${API}/playlists?mine=true`)'), false, 'no write, no excuse');
 });
 
 check('every allowlist entry is a file that still exists and still posts (no stale excuses)', () => {

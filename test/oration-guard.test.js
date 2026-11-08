@@ -89,6 +89,14 @@ async function main() {
     // …but the red-shoes teaser and an unquoted claim after a quote still fail.
     assert.strictEqual(checkFirstPersonClaims('I kept a pair of red shoes for three years because I couldn\'t forget what they meant', '').ok, false);
     assert.strictEqual(checkFirstPersonClaims('She told me: "I carried her shoes." Then I carried them home.', '').ok, false);
+    // …and her quoting herself is her own claim (PR #439 review).
+    for (const bad of [
+      'As I once said: "I carried my mother\'s shoes for three years."',
+      'I told them, *I held my daughter as she slept.*',
+      '"I kept her red shoes for three years," Kannaka said.',
+    ]) {
+      assert.strictEqual(checkFirstPersonClaims(bad + PAD, '').ok, false, bad);
+    }
   });
 
   await run('a rejected oration is regenerated once, with the reasons, and the clean one airs', async () => {
@@ -121,9 +129,11 @@ async function main() {
     process.env.HOME = home;
     try {
       const { o, prompts } = oration(['I carried the microphone stand up eleven floors today.' + PAD], said);
-      assert.ok(await o._composeChecked('2026-11-07T12'));
+      const out = {};
+      assert.ok(await o._composeChecked('2026-11-07T12', out));
       assert.strictEqual(prompts.length, 1, 'no regeneration needed');
-      assert.ok(o._lastGiven.includes('eleven floors'));
+      assert.ok(out.given.includes('eleven floors'), 'the given material comes back per call');
+      assert.strictEqual(o._lastGiven, undefined, 'no shared instance state for it');
     } finally {
       if (savedHome !== undefined) process.env.HOME = savedHome; else delete process.env.HOME;
     }
@@ -185,6 +195,45 @@ async function main() {
     await o._compose('2026-11-07T12');
     assert.ok(prompts[0].includes('no "I remember the moment…", no conversation, user, listener or encounter you recall'));
     assert.ok(prompts[0].includes('The finished oration is checked for first-person claims of lived experience and will not air with one.'));
+  });
+
+  // PR #439 review: the showcase intro and the album narration are her voice
+  // on air too, and their prompts invite exactly this ("what almost killed
+  // it", "what it costs you to make").
+  await run('album showcase intro: checked, regenerated once, then not aired', async () => {
+    const said = [];
+    const { o } = oration([], said);
+    const asks = [];
+    let drafts = [INVENTED[0], CLEAN];
+    o._askWithRetry = async (args) => { asks.push(args[args.length - 1]); return drafts.shift() || null; };
+    o._say = (text) => { said.push(text); return true; };
+    const r = await o.showcaseAlbum('Field Guide', 'interference', ['One', 'Two']);
+    assert.strictEqual(r.ok, true);
+    assert.deepStrictEqual(said, [CLEAN]);
+    assert.ok(asks[1].includes('Your previous draft was rejected and will not air.'));
+    drafts = [INVENTED[0], INVENTED[1]];
+    said.length = 0;
+    const r2 = await o.showcaseAlbum('Field Guide', 'interference', ['One', 'Two']);
+    assert.deepStrictEqual(r2, { ok: false, reason: 'claims_check_failed' });
+    assert.strictEqual(said.length, 0);
+    assert.ok(logs.some((l) => /\[showcase\] "Field Guide": intro rejected twice — not airing it/.test(l)));
+  });
+
+  await run('album narration: every piece is checked before any is cached or rendered', async () => {
+    const { o } = oration([], []);
+    const pieces = (bad) => JSON.stringify(['An album about interference.', bad ? 'I remember the night my mother sang this.' : 'The second song turns the corner.', 'Thank you for staying.']);
+    const replies = [pieces(true), pieces(false)];
+    const prompts = [];
+    o._askAnthropicDirect = async (p) => { prompts.push(p); return replies.shift() || null; };
+    const r = await o.composeAlbumNarration('Field Guide', 'interference', ['One', 'Two'], '');
+    assert.strictEqual(r.ok, true);
+    assert.strictEqual(r.pieces[1], 'The second song turns the corner.');
+    assert.ok(prompts[1].includes('piece 1:'), prompts[1].slice(-300));
+    replies.push(pieces(true), pieces(true));
+    const r2 = await o.composeAlbumNarration('Field Guide', 'interference', ['One', 'Two'], '');
+    assert.deepStrictEqual(r2, { ok: false, reason: 'claims_check_failed' });
+    // The cache still holds the earlier, clean narration, not the rejected one.
+    assert.ok(!o._narrationPieces.some((p) => /my mother/.test(p)));
   });
 
   console.log = realLog; console.warn = realWarn;

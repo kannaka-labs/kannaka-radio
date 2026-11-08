@@ -118,7 +118,6 @@ class PeaceOration {
     // The material the cached compose was given (oration-notes, the room's
     // reactions): the source a first-person claim may be excused by.
     this._composedGiven = "";
-    this._lastGiven = "";
     // Per slot: checked compose rounds that failed (see MAX_GUARD_ROUNDS).
     this._guardRounds = {};
     this._guardSkipLogged = {};
@@ -249,7 +248,15 @@ class PeaceOration {
     // currently silent-failing on the live 1000+ memory HRM. The
     // narration prompt's content (album theme, struggles, track list)
     // is explicit; HRM grounding is not load-bearing here.
-    return this._askAnthropicDirect(prompt, 4096).then((text) => {
+    //
+    // Every piece is spoken in her voice, so every piece passes the
+    // first-person-claims check against what the prompt was given (theme,
+    // struggles, track list) before any of it is cached or rendered: one
+    // regeneration with the reasons, then the narration is not used (the
+    // album still plays; a failed compose already meant that).
+    const given = [albumTheme || "", struggles || "", trackList].join("\n");
+    let extra = null;
+    const attempt = (n) => this._askAnthropicDirect(extra ? `${prompt}\n\n${extra}` : prompt, 4096).then((text) => {
       if (!text) return { ok: false, reason: "compose_failed" };
       // Parse the JSON array. Tolerate code fences if Kannaka adds them.
       let cleaned = text.trim();
@@ -264,6 +271,24 @@ class PeaceOration {
       if (!Array.isArray(pieces) || pieces.length !== N + 1) {
         console.warn(`   [narration] expected ${N + 1} pieces, got ${Array.isArray(pieces) ? pieces.length : "non-array"}`);
         return { ok: false, reason: "shape_mismatch" };
+      }
+      const rejected = [];
+      pieces.forEach((p, i) => {
+        const c = checkFirstPersonClaims(String(p || ""), given);
+        if (!c.ok) rejected.push(`piece ${i}: ${c.reasons.join("; ")}`);
+      });
+      if (rejected.length) {
+        console.warn(`   [narration] "${albumName}" rejected by the first-person-claims check (attempt ${n}/2): ${rejected.join(" | ")}`);
+        if (n >= 2) {
+          console.warn(`   [narration] "${albumName}": rejected twice — no narration airs for this showcase`);
+          return { ok: false, reason: "claims_check_failed" };
+        }
+        extra = [
+          "Your previous draft was rejected and will not air.",
+          `Why: ${rejected.join(" | ")}`,
+          "Write every piece again with no first-person claim of lived, bodily, possessive or past experience (no \"I remember…\", no family, no body, no years ago). Your real work making the album is yours to describe; a human story stays its people's.",
+        ].join("\n");
+        return attempt(n + 1);
       }
       // Cache for the showcase progression.
       this._narrationAlbum = albumName;
@@ -300,6 +325,7 @@ class PeaceOration {
       }
       return { ok: true, pieces };
     });
+    return attempt(1);
   }
 
   // Pop the next narration piece for a specific album. Returns either
@@ -361,9 +387,33 @@ class PeaceOration {
     ].join("\n");
 
     const recallQuery = `${albumName} ${albumTheme || ""} peace beloved community memory`.slice(0, 200);
-    const args = ["ask", "--no-tools", "--quiet-tools", "--recall-query", recallQuery, prompt];
-    return this._askWithRetry(args, { attempts: 3, label: "showcase", minLen: 200 })
+    // The intro airs in her voice, so it passes the first-person-claims
+    // check against what the prompt gave it (name, theme, track list) like
+    // an oration: one regeneration with the reasons, then no intro (the
+    // album still plays). The recall `kannaka ask` folds in is not visible
+    // here, so a claim it might excuse is still rejected: strict on purpose.
+    const given = [`The album is called "${albumName}".`, albumTheme || "", trackList].join("\n");
+    const attempt = (n, extra) => {
+      const args = ["ask", "--no-tools", "--quiet-tools", "--recall-query", recallQuery, extra ? `${prompt}\n\n${extra}` : prompt];
+      return this._askWithRetry(args, { attempts: 3, label: "showcase", minLen: 200 }).then((text) => {
+        if (!text) return null;
+        const check = checkFirstPersonClaims(text, given);
+        if (check.ok) return text;
+        console.warn(`   [showcase] "${albumName}" intro rejected by the first-person-claims check (attempt ${n}/2): ${check.reasons.join("; ")}`);
+        if (n >= 2) {
+          console.warn(`   [showcase] "${albumName}": intro rejected twice — not airing it`);
+          return false;
+        }
+        return attempt(n + 1, [
+          "Your previous draft was rejected and will not air.",
+          `Why: ${check.reasons.join("; ")}`,
+          "Write it again with no first-person claim of lived, bodily, possessive or past experience. Your real work making the album is yours to describe; a human story stays its people's.",
+        ].join("\n"));
+      });
+    };
+    return attempt(1, null)
       .then((text) => {
+        if (text === false) return { ok: false, reason: "claims_check_failed" };
         if (!text) return { ok: false, reason: "compose_failed" };
         const ok = this._say(text, null, {
           title: `album showcase intro: ${albumName}`,
@@ -436,17 +486,20 @@ class PeaceOration {
 
     this._preparingKey = key;
     const cachedText = this._composed;
+    // What THIS compose was given, held per call: a deliverNow running beside
+    // the slot must not swap its source material in (PR #439 review).
+    const composed = {};
     const composePromise = cachedText
       ? Promise.resolve(cachedText)
       : (console.log(`🕔 Peace oration slot reached: ${key} — composing...`),
-         this._composeChecked(key));
+         this._composeChecked(key, composed));
     composePromise.then((text) => {
       if (!text) {
         console.log(`   [oration] compose failed or empty — will retry next tick`);
         this._preparingKey = null;
         return;
       }
-      if (!cachedText) this._composedGiven = this._lastGiven || "";
+      if (!cachedText) this._composedGiven = composed.given || "";
       this._composed = text;
       this._composedFor = key;
       const ok = this._say(text, key);
@@ -542,15 +595,18 @@ class PeaceOration {
    * existing, logged failure mode (a compose that never succeeds).
    *
    * @param {string|null} key — the slot (null for deliverNow)
+   * @param {object} [out] — receives `given`: the material the accepted
+   *   compose was given (per call, never shared instance state)
    * @returns {Promise<string|null>}
    */
-  async _composeChecked(key) {
+  async _composeChecked(key, out = {}) {
     let extra = null;
     for (let attempt = 1; attempt <= 2; attempt++) {
-      const text = await this._compose(key, extra);
+      const got = {};
+      const text = await this._compose(key, extra, got);
       if (!text) return null;
-      const check = checkFirstPersonClaims(text, this._lastGiven || "");
-      if (check.ok) return text;
+      const check = checkFirstPersonClaims(text, got.given || "");
+      if (check.ok) { out.given = got.given || ""; return text; }
       console.warn(`   [oration] oration rejected by the first-person-claims check (attempt ${attempt}/2): ${check.reasons.join("; ")}`);
       extra = [
         "Your previous draft of this oration was rejected and will not air.",
@@ -563,7 +619,7 @@ class PeaceOration {
     return null;
   }
 
-  _compose(key, extra = null) {
+  _compose(key, extra = null, out = null) {
     const framing = FRAMINGS[Math.floor(Math.random() * FRAMINGS.length)];
     // Logged so a bad oration can be traced to the framing that shaped it.
     console.log(`   [oration] framing drawn: "${framing}"`);
@@ -629,8 +685,9 @@ class PeaceOration {
       promptParts.push("", notesBlock);
     }
     // What this compose was given: the only source a first-person claim in
-    // the oration may come from (_composeChecked).
-    this._lastGiven = [resonanceLine, notesBlock].filter(Boolean).join("\n");
+    // the oration may come from (_composeChecked). Handed back through `out`,
+    // per call: instance state would be shared by overlapping composes.
+    if (out) out.given = [resonanceLine, notesBlock].filter(Boolean).join("\n");
     if (extra) promptParts.push("", extra);
     promptParts.push(
       "",

@@ -112,6 +112,22 @@ async function main() {
     }
   });
 
+  await run('quoting herself is still her claim (the reported-speech filter blanks third persons only)', () => {
+    // PR #439 review: these passed when any quote after a reporting verb was blanked.
+    for (const bad of [
+      'As I once said: "I carried my mother\'s shoes for three years."',
+      'I told them, *I held my daughter as she slept.*',
+      '"I kept her red shoes for three years," Kannaka said.',
+      '“I kept her red shoes,” Kannaka Radio said.',
+      '"I carried them," we said.',
+      'The station said: "I held her hand."',
+    ]) {
+      assert.strictEqual(checkFirstPersonClaims(bad, ORATION).ok, false, bad);
+    }
+    // A third person's quoted words stay theirs.
+    assert.strictEqual(checkFirstPersonClaims('Her brother said, "I buried my father on a Tuesday."', '').ok, true);
+  });
+
   await run('ordinary station-voice teasers pass (function words are not shared content)', () => {
     for (const good of [
       'I spoke for peace at noon, and I will not stop.',

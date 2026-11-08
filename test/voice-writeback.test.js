@@ -112,7 +112,7 @@ async function main() {
     await broadcastPost({ text: '  same   WORDS. ', composer: 'x' }, {});
     await vw.flush(1000);
     assert.strictEqual(calls.length, 1);
-    assert.ok(logs.some((l) => /identical text already stored in this window/.test(l)));
+    assert.ok(logs.some((l) => /identical text already (?:stored|queued) in this window/.test(l)));
   });
 
   await run('a failed store releases the dedupe claim so a later post can retry', async () => {
