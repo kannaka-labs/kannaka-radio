@@ -309,4 +309,9 @@ function postRaw(url, body, headers) {
   });
 }
 
+// A script that calls post() itself (an upload, a one-network announce) is
+// remembered in her store too; broadcastPost's own calls are not (it
+// remembers the whole fanout once). See voice-writeback.js wrapDirectPost.
+require("../voice-writeback").wrapDirectPost(YouTubeAdapter);
+
 module.exports = { YouTubeAdapter };

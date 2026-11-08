@@ -16,7 +16,6 @@
 
 "use strict";
 
-const path = require("path");
 const { BlueskyAdapter } = require("./bluesky-adapter");
 const { MastodonAdapter } = require("./mastodon-adapter");
 const { TelegramAdapter } = require("./telegram-adapter");
@@ -26,10 +25,7 @@ const voiceWriteback = require("../voice-writeback");
 
 // Who composed a post, when the caller did not say: the script that is
 // running. Server callers pass `composer` explicitly.
-function inferComposer() {
-  const main = process.argv[1] ? path.basename(process.argv[1]) : "";
-  return main ? `unlabelled caller (${main})` : "unlabelled caller";
-}
+const { inferComposer, IN_FANOUT } = voiceWriteback;
 
 /**
  * Build the list of adapters that have credentials configured.
@@ -91,7 +87,9 @@ async function broadcastPost(msg, opts = {}) {
   const results = await Promise.all(
     adapters.map(async (a) => {
       try {
-        const r = await a.post(msg);
+        // IN_FANOUT: the adapter's own direct-post write-back stands down;
+        // the whole fanout is remembered once, below.
+        const r = await a.post({ ...msg, [IN_FANOUT]: true });
         return { name: a.name, ...r };
       } catch (e) {
         return { name: a.name, ok: false, error: e && e.message };

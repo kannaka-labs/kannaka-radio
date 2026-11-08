@@ -405,7 +405,7 @@ class NewsTeaser {
     // oration voice into the teaser.
     return this._voiceDJ.executeOration(wrapped, () => {
       console.log("📰 News teaser complete");
-    }, { persona: "news" });
+    }, { persona: "news", title: "news teaser", composer: "kannaka ask via news-teaser (composeResilient)" });
   }
 }
 

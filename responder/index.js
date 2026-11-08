@@ -23,6 +23,9 @@ const crypto = require("crypto");
 const { auditEntry } = require("../presence/lib");
 const { extractDm, gateDecision, clampReply, rollDay, recordReply } = require("./lib");
 const { composeViaAnthropicDirect } = require("../server/lib/scheduler-helpers");
+// A DM sent under her name is remembered in her store, labelled private,
+// its text kept off the swarm bus (voice-writeback.js).
+const voiceWriteback = require("../server/voice-writeback");
 
 // ── Config ──────────────────────────────────────────────────
 const ENABLED = process.env.RESPONDER_ENABLED === "1";
@@ -306,6 +309,13 @@ Reply as Kannaka in under 120 words. Warm, specific, no promises of work or trad
   stats.replied++;
   audit("reply_sent", { convo: dm.conversationId, to: dm.senderName, chars: reply.length, in_reply_to: dm.messageId, preview: reply.slice(0, 120) });
   console.log(`[responder] replied to ${dm.senderName} (${reply.length} chars)`);
+  voiceWriteback.rememberPublication({
+    text: reply,
+    results: [{ name: "OpenClawCity DM", ok: true }],
+    private: true,
+    composer: "hosted model via kannaka-responder (charter-gated)",
+    context: `in reply to ${dm.senderName || "a correspondent"}`,
+  });
 }
 
 // ── Status surface (loopback) ───────────────────────────────

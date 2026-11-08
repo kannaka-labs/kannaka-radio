@@ -22,6 +22,12 @@ const https = require("https");
 const crypto = require("crypto");
 const WebSocket = require("ws");
 const { schnorr } = require("@noble/curves/secp256k1");
+// Her store, when this runs from a kannaka-radio checkout with a kannaka
+// binary beside it. On O2 (an ops dir, no store) the module or the binary is
+// missing and the skip is logged: what it posts there is template copy, the
+// same now-playing announcements O1's post-now-playing.js already remembers.
+let voiceWriteback = null;
+try { voiceWriteback = require("../../server/voice-writeback"); } catch (_) { /* standalone deploy */ }
 
 const KEY_PATH = process.env.VOICE_KEY_PATH || path.join(os.homedir(), ".kannaka-voice-nostr.json");
 const STATE_PATH = path.join(os.homedir(), ".kannaka", "nostr-nowplaying-state.json");
@@ -142,6 +148,15 @@ function publish(url, event) {
     state.days = { [day]: (state.days[day] || 0) + 1 }; // keep only today
     saveState(state);
     console.log(`posted "${title}" as ${key.npub} (event ${event.id.slice(0, 12)}…)`);
+    if (voiceWriteback) {
+      await voiceWriteback.rememberPublication({
+        text: body, results: [{ name: "nostr", ok: true }], template: true,
+        composer: "now-playing template (ops/voice-signer/voice-nowplaying.js)",
+      });
+      await voiceWriteback.flush();
+    } else {
+      console.log("voice write-back unavailable here (no kannaka-radio checkout): not remembered");
+    }
   } else {
     console.error("no relay accepted; not advancing state");
     process.exit(1);

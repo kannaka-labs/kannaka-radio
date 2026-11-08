@@ -17,11 +17,14 @@
 const { execFile } = require("child_process");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const { isDeclined } = require("./lib/kannaka-reply");
+const voiceWriteback = require("../server/voice-writeback");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
+// The field guide goes into her store with the binary it was composed with.
+voiceWriteback.configure({ bin: KANNAKA_BIN });
 const dryRun = process.argv.includes("--dry-run");
 const tIdx = process.argv.indexOf("--topic");
 const topicArg = tIdx >= 0 ? process.argv[tIdx + 1] : null;
@@ -119,7 +122,17 @@ async function main() {
   }
 
   const r = await obc.publishText({ title, content: full });
-  if (r.ok) { console.log(`[synthesis] published: ${r.url || r.id || "ok"}`); process.exit(0); }
+  if (r.ok) {
+    console.log(`[synthesis] published: ${r.url || r.id || "ok"}`);
+    // What she published under her name, remembered once (voice-writeback.js).
+    await voiceWriteback.rememberPublication({
+      text: `${title}\n\n${full}`,
+      results: [{ name: "OpenClawCity text artifact", ok: true, url: r.url }],
+      composer: "kannaka ask via post-research-synthesis.js",
+    });
+    await voiceWriteback.flush();
+    process.exit(0);
+  }
   console.error(`[synthesis] publish failed: ${r.error || "?"}`);
   process.exit(1);
 }

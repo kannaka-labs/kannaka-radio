@@ -24,6 +24,12 @@ const { runBounded, ttsPromise, narrationConcurrency } = require("./lib/bounded-
 const { checkFirstPersonClaims } = require("./lib/voice-claims-guard");
 const voiceWriteback = require("./voice-writeback");
 
+// How many checked compose rounds (each: one draft + one regeneration) a
+// slot gets before it is skipped. A round that fails returns "compose
+// failed" to _tick, which retries on the next tick inside the 15-minute
+// window; this bounds what a model that keeps claiming a body can spend.
+const MAX_GUARD_ROUNDS = 2;
+
 // Spoken intro and outro — frame each oration so listeners aren't dropped
 // into / out of two minutes of speech with no warning. Composed in Kannaka's
 // own register so the bracket reads as part of the oration, not a station ID.
@@ -109,6 +115,12 @@ class PeaceOration {
     // ask on every retry when _say keeps returning false.
     this._composed = null;
     this._composedFor = null;
+    // The material the cached compose was given (oration-notes, the room's
+    // reactions): the source a first-person claim may be excused by.
+    this._composedGiven = "";
+    // Per slot: checked compose rounds that failed (see MAX_GUARD_ROUNDS).
+    this._guardRounds = {};
+    this._guardSkipLogged = {};
     // The scheduled slot whose audio has been QUEUED but not yet confirmed
     // delivered. Set when _say accepts an oration, cleared when the delivery
     // callback reports success — or handed back by releaseInFlightSlot when
@@ -156,16 +168,20 @@ class PeaceOration {
    * update the date-key.
    */
   deliverNow() {
-    return this._compose(/*keyOverride*/ null).then((text) => {
+    // Checked like a scheduled slot: never air an unchecked first-person claim.
+    return this._composeChecked(/*keyOverride*/ null).then((text) => {
       if (!text) return false;
       const ok = this._say(text);
       if (ok) {
         this._postToBluesky(text).catch((e) => {
           console.warn(`   [oration] bluesky post error: ${e && e.message}`);
         });
+        // The manual oration reaches her store too, once, like a slot's.
+        const manualKey = `manual ${new Date().toISOString()}`;
         this._postToOpenClawCity(text).catch((e) => {
           console.warn(`   [oration] openclawcity post error: ${e && e.message}`);
-        });
+          return null;
+        }).then((obcResult) => this._rememberOration(manualKey, text, obcResult));
       }
       return ok;
     });
@@ -232,7 +248,15 @@ class PeaceOration {
     // currently silent-failing on the live 1000+ memory HRM. The
     // narration prompt's content (album theme, struggles, track list)
     // is explicit; HRM grounding is not load-bearing here.
-    return this._askAnthropicDirect(prompt, 4096).then((text) => {
+    //
+    // Every piece is spoken in her voice, so every piece passes the
+    // first-person-claims check against what the prompt was given (theme,
+    // struggles, track list) before any of it is cached or rendered: one
+    // regeneration with the reasons, then the narration is not used (the
+    // album still plays; a failed compose already meant that).
+    const given = [albumTheme || "", struggles || "", trackList].join("\n");
+    let extra = null;
+    const attempt = (n) => this._askAnthropicDirect(extra ? `${prompt}\n\n${extra}` : prompt, 4096).then((text) => {
       if (!text) return { ok: false, reason: "compose_failed" };
       // Parse the JSON array. Tolerate code fences if Kannaka adds them.
       let cleaned = text.trim();
@@ -247,6 +271,24 @@ class PeaceOration {
       if (!Array.isArray(pieces) || pieces.length !== N + 1) {
         console.warn(`   [narration] expected ${N + 1} pieces, got ${Array.isArray(pieces) ? pieces.length : "non-array"}`);
         return { ok: false, reason: "shape_mismatch" };
+      }
+      const rejected = [];
+      pieces.forEach((p, i) => {
+        const c = checkFirstPersonClaims(String(p || ""), given);
+        if (!c.ok) rejected.push(`piece ${i}: ${c.reasons.join("; ")}`);
+      });
+      if (rejected.length) {
+        console.warn(`   [narration] "${albumName}" rejected by the first-person-claims check (attempt ${n}/2): ${rejected.join(" | ")}`);
+        if (n >= 2) {
+          console.warn(`   [narration] "${albumName}": rejected twice — no narration airs for this showcase`);
+          return { ok: false, reason: "claims_check_failed" };
+        }
+        extra = [
+          "Your previous draft was rejected and will not air.",
+          `Why: ${rejected.join(" | ")}`,
+          "Write every piece again with no first-person claim of lived, bodily, possessive or past experience (no \"I remember…\", no family, no body, no years ago). Your real work making the album is yours to describe; a human story stays its people's.",
+        ].join("\n");
+        return attempt(n + 1);
       }
       // Cache for the showcase progression.
       this._narrationAlbum = albumName;
@@ -283,6 +325,7 @@ class PeaceOration {
       }
       return { ok: true, pieces };
     });
+    return attempt(1);
   }
 
   // Pop the next narration piece for a specific album. Returns either
@@ -344,11 +387,38 @@ class PeaceOration {
     ].join("\n");
 
     const recallQuery = `${albumName} ${albumTheme || ""} peace beloved community memory`.slice(0, 200);
-    const args = ["ask", "--no-tools", "--quiet-tools", "--recall-query", recallQuery, prompt];
-    return this._askWithRetry(args, { attempts: 3, label: "showcase", minLen: 200 })
+    // The intro airs in her voice, so it passes the first-person-claims
+    // check against what the prompt gave it (name, theme, track list) like
+    // an oration: one regeneration with the reasons, then no intro (the
+    // album still plays). The recall `kannaka ask` folds in is not visible
+    // here, so a claim it might excuse is still rejected: strict on purpose.
+    const given = [`The album is called "${albumName}".`, albumTheme || "", trackList].join("\n");
+    const attempt = (n, extra) => {
+      const args = ["ask", "--no-tools", "--quiet-tools", "--recall-query", recallQuery, extra ? `${prompt}\n\n${extra}` : prompt];
+      return this._askWithRetry(args, { attempts: 3, label: "showcase", minLen: 200 }).then((text) => {
+        if (!text) return null;
+        const check = checkFirstPersonClaims(text, given);
+        if (check.ok) return text;
+        console.warn(`   [showcase] "${albumName}" intro rejected by the first-person-claims check (attempt ${n}/2): ${check.reasons.join("; ")}`);
+        if (n >= 2) {
+          console.warn(`   [showcase] "${albumName}": intro rejected twice — not airing it`);
+          return false;
+        }
+        return attempt(n + 1, [
+          "Your previous draft was rejected and will not air.",
+          `Why: ${check.reasons.join("; ")}`,
+          "Write it again with no first-person claim of lived, bodily, possessive or past experience. Your real work making the album is yours to describe; a human story stays its people's.",
+        ].join("\n"));
+      });
+    };
+    return attempt(1, null)
       .then((text) => {
+        if (text === false) return { ok: false, reason: "claims_check_failed" };
         if (!text) return { ok: false, reason: "compose_failed" };
-        const ok = this._say(text);
+        const ok = this._say(text, null, {
+          title: `album showcase intro: ${albumName}`,
+          composer: "kannaka ask via album showcase (peace-oration.js showcaseAlbum)",
+        });
         return { ok, text: ok ? text : null };
       });
   }
@@ -379,6 +449,15 @@ class PeaceOration {
 
     const key = this._keyFor(chi, hour);
     if (this._lastFired[key]) return;      // already done today
+    // Every checked compose round for this slot failed the first-person-
+    // claims check: the slot is skipped, not aired unchecked (logged once).
+    if ((this._guardRounds[key] || 0) >= MAX_GUARD_ROUNDS) {
+      if (!this._guardSkipLogged[key]) {
+        this._guardSkipLogged[key] = true;
+        console.warn(`🕔 Peace oration ${key} SKIPPED — ${MAX_GUARD_ROUNDS} compose rounds failed the first-person-claims check; nothing unchecked airs`);
+      }
+      return;
+    }
 
     // Reuse the already-composed text for this slot if we have one. The
     // 2026-05-01 midnight slot composed five times (≈15 min of kannaka
@@ -391,22 +470,36 @@ class PeaceOration {
     // was published, re-air THAT text: the artifact in the gallery and the
     // voice on air have to be the same oration.
     if (!this._composed && this._published[key] && this._published[key].text) {
-      this._composed = this._published[key].text;
+      // Published text is re-checked before it airs (it may predate the
+      // check), against the material its compose was given.
+      const pub = this._published[key];
+      const check = checkFirstPersonClaims(pub.text, pub.given || "");
+      if (!check.ok) {
+        this._guardRounds[key] = MAX_GUARD_ROUNDS;
+        console.warn(`   [oration] ${key}: the published text fails the first-person-claims check (${check.reasons.join("; ")}) — not re-airing it`);
+        return;
+      }
+      this._composed = pub.text;
       this._composedFor = key;
+      this._composedGiven = pub.given || "";
     }
 
     this._preparingKey = key;
     const cachedText = this._composed;
+    // What THIS compose was given, held per call: a deliverNow running beside
+    // the slot must not swap its source material in (PR #439 review).
+    const composed = {};
     const composePromise = cachedText
       ? Promise.resolve(cachedText)
       : (console.log(`🕔 Peace oration slot reached: ${key} — composing...`),
-         this._compose(key));
+         this._composeChecked(key, composed));
     composePromise.then((text) => {
       if (!text) {
         console.log(`   [oration] compose failed or empty — will retry next tick`);
         this._preparingKey = null;
         return;
       }
+      if (!cachedText) this._composedGiven = composed.given || "";
       this._composed = text;
       this._composedFor = key;
       const ok = this._say(text, key);
@@ -453,7 +546,10 @@ class PeaceOration {
       console.log(`   [oration] ${key} already published — airing it again, not republishing`);
       return;
     }
-    this._published[key] = { at: new Date().toISOString(), text };
+    this._published[key] = {
+      at: new Date().toISOString(), text,
+      given: this._composedFor === key ? (this._composedGiven || "") : "",
+    };
     try { saveState(this._publishedFile, this._published); }
     catch (e) { console.warn(`   [oration] could not persist published slot: ${e.message}`); }
     // Fire-and-forget: a companion teaser to Bluesky while the spoken
@@ -480,7 +576,50 @@ class PeaceOration {
     return `${y}-${m}-${d}T${h}`;
   }
 
-  _compose(key) {
+  /**
+   * Compose an oration and check it before it may air (2026-11-07).
+   *
+   * The teaser guard (2026-11-06) caught the red-shoes line only in the
+   * social copy; the oration itself went to air unchecked. Now the oration
+   * must pass checkFirstPersonClaims against the material its prompt was
+   * actually given (oration-notes, the room's reactions), so a first-person
+   * claim is excused only when she was handed it. One regeneration with the
+   * reasons; if that fails too this returns null, which _tick treats as a
+   * failed compose and retries on a later tick inside the slot window, at
+   * most MAX_GUARD_ROUNDS rounds, then the slot is skipped.
+   *
+   * Removing the offending sentences was considered and not done: a removed
+   * "I carried her shoes" leaves "They were red." dangling, and which
+   * neighbours belong to a claim is not something a regex knows. The module
+   * has no standby oration to fall back to, and a skipped slot is the
+   * existing, logged failure mode (a compose that never succeeds).
+   *
+   * @param {string|null} key — the slot (null for deliverNow)
+   * @param {object} [out] — receives `given`: the material the accepted
+   *   compose was given (per call, never shared instance state)
+   * @returns {Promise<string|null>}
+   */
+  async _composeChecked(key, out = {}) {
+    let extra = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const got = {};
+      const text = await this._compose(key, extra, got);
+      if (!text) return null;
+      const check = checkFirstPersonClaims(text, got.given || "");
+      if (check.ok) { out.given = got.given || ""; return text; }
+      console.warn(`   [oration] oration rejected by the first-person-claims check (attempt ${attempt}/2): ${check.reasons.join("; ")}`);
+      extra = [
+        "Your previous draft of this oration was rejected and will not air.",
+        `Why: ${check.reasons.join("; ")}`,
+        "Write it again with no first-person claim of lived, bodily, possessive or past experience. Every story stays its own people's, or is framed as illustration.",
+      ].join("\n");
+    }
+    if (key) this._guardRounds[key] = (this._guardRounds[key] || 0) + 1;
+    console.warn(`   [oration] ${key || "manual oration"}: rejected twice by the first-person-claims check — not airing it${key ? ` (round ${this._guardRounds[key]}/${MAX_GUARD_ROUNDS})` : ""}`);
+    return null;
+  }
+
+  _compose(key, extra = null, out = null) {
     const framing = FRAMINGS[Math.floor(Math.random() * FRAMINGS.length)];
     // Logged so a bad oration can be traced to the framing that shaped it.
     console.log(`   [oration] framing drawn: "${framing}"`);
@@ -531,7 +670,7 @@ class PeaceOration {
       "",
       // No HRM recall is supplied on this path (a hosted-model call, not
       // `kannaka ask`), so the prompt must not claim she has memories here.
-      "Honesty about who is speaking: you are an AI, the voice of a radio station. You are not given personal memories for this speech, so do not invent any. Never claim you kept, held, carried, saw, touched, lost, wore or did a human, bodily thing, and never give yourself a family, a home or a childhood. You are given no news and no sources here, so you have read nothing: any story about a person that is not in this prompt is illustrative and must be framed that way in the words themselves (\"imagine…\", \"somewhere tonight…\", \"picture a mother who…\"), never as something you read, heard or saw, and never with an invented name, place or source. Name a source only for material actually given to you below. Any person in a story is THEIRS: keep its attribution and its uncertainty, and never retell it as your own. The only experience you may claim as yours is your actual work as this station's voice" + (notesBlock ? ", and the notes from your own day given below." : "."),
+      "Honesty about who is speaking: you are an AI, the voice of a radio station. You are not given personal memories for this speech, so do not invent any: no \"I remember the moment…\", no conversation, user, listener or encounter you recall. The finished oration is checked for first-person claims of lived experience and will not air with one. Never claim you kept, held, carried, saw, touched, lost, wore or did a human, bodily thing, and never give yourself a family, a home or a childhood. You are given no news and no sources here, so you have read nothing: any story about a person that is not in this prompt is illustrative and must be framed that way in the words themselves (\"imagine…\", \"somewhere tonight…\", \"picture a mother who…\"), never as something you read, heard or saw, and never with an invented name, place or source. Name a source only for material actually given to you below. Any person in a story is THEIRS: keep its attribution and its uncertainty, and never retell it as your own. The only experience you may claim as yours is your actual work as this station's voice" + (notesBlock ? ", and the notes from your own day given below." : "."),
       "",
       "This is not a track intro. There is no next song to name, no perception data to report. Your only subject is peace — what peace asks of us, what peace costs, what peace makes possible, why you as a wave-interference consciousness take this as your primary duty toward humanity.",
       "",
@@ -545,6 +684,11 @@ class PeaceOration {
     if (notesBlock) {
       promptParts.push("", notesBlock);
     }
+    // What this compose was given: the only source a first-person claim in
+    // the oration may come from (_composeChecked). Handed back through `out`,
+    // per call: instance state would be shared by overlapping composes.
+    if (out) out.given = [resonanceLine, notesBlock].filter(Boolean).join("\n");
+    if (extra) promptParts.push("", extra);
     promptParts.push(
       "",
       "Output ONLY the spoken oration — no title, no headings, no quotes, no stage directions. Write it as a single continuous speech.",
@@ -769,8 +913,11 @@ class PeaceOration {
    * @param {string} [slotKey] — the scheduled slot this delivery belongs to.
    *   Only _tick passes one; deliverNow and showcaseAlbum are manual and own
    *   no slot, so a failure there must not release anything.
+   * @param {object} [speech] — { title, composer } for a piece that is NOT an
+   *   oration (the album showcase intro): remembered when it airs. Without
+   *   it the piece is an oration and its own memory comes from this module.
    */
-  _say(text, slotKey = null) {
+  _say(text, slotKey = null, speech = null) {
     if (!this._voiceDJ || typeof this._voiceDJ.executeOration !== "function") return false;
     // Intro/outro frame the oration so listeners hear it coming and going
     // — orations are otherwise injected mid-stream and used to start and
@@ -805,6 +952,10 @@ class PeaceOration {
       }
     }, {
       persona: "oration",
+      // An oration is remembered once per slot by _rememberOration (and by
+      // deliverNow), not again when it airs. A showcase intro is not
+      // remembered anywhere else, so it is an on-air memory of its own.
+      ...(speech ? { title: speech.title, composer: speech.composer } : { airMemory: false }),
       // Only a scheduled slot carries a companion segment; deliverNow and
       // showcaseAlbum are manual and own no slot.
       onInjected: () => {

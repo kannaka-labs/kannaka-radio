@@ -20,6 +20,9 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { YouTubeAdapter } = require("../server/broadcasters/youtube-adapter");
+// A public or unlisted upload is remembered by the adapter (voice-writeback.js
+// wrapDirectPost; a private one is not); flush() before process.exit.
+const voiceWriteback = require("../server/voice-writeback");
 const { renderAudioMp4 } = require("../server/broadcasters/render-audio-mp4");
 const { renderMusicVideo } = require("../server/broadcasters/render-music-video");
 
@@ -105,6 +108,7 @@ async function main() {
   }
   try { fs.unlinkSync(outPath); } catch (_) {}
 
+  await voiceWriteback.flush();
   process.exit(result.ok ? 0 : 1);
 }
 
