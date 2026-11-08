@@ -451,7 +451,7 @@ function confirmationText({ row, guest, channel, siteOrigin, fallbackEmail }) {
  * day (forged requests must not become a way to mail-bomb a guest). Returns
  * { queued, id?, reason? }.
  */
-function queueConfirmation(outboxFile, { guest, record, row, channel, siteOrigin, fallbackEmail, inReplyTo = null, now = new Date() }) {
+function queueConfirmation(outboxFile, { guest, record, row, channel, siteOrigin, fallbackEmail, inReplyTo = null, sender = 'server', now = new Date() }) {
   const email = contactEmail(record);
   const masto = record && record.contact && record.contact.mastodon ? record.contact.mastodon : null;
   const to = email ? { channel: 'email', address: email } : (masto ? { channel: 'mastodon', address: masto } : null);
@@ -464,14 +464,16 @@ function queueConfirmation(outboxFile, { guest, record, row, channel, siteOrigin
   appendLine(outboxFile, {
     at: now.toISOString(), id, event: 'queued', kind: 'confirmation', guest,
     via: to.channel, to: to.address, subject, body, inReplyTo, rowHash: row.hash,
+    sender: sender === 'inbox' ? 'inbox' : 'server',
   });
   return { queued: true, id, via: to.channel, to: to.address, subject, body };
 }
 
 /** Queue a note to the operator (an unverified or ambiguous request). */
-function queueOperatorNote(outboxFile, { to, subject, body, now = new Date() }) {
+function queueOperatorNote(outboxFile, { to, subject, body, sender = 'server', now = new Date() }) {
   const id = crypto.randomBytes(8).toString('hex');
-  appendLine(outboxFile, { at: now.toISOString(), id, event: 'queued', kind: 'operator', guest: null, via: 'email', to: to || null, subject, body });
+  appendLine(outboxFile, { at: now.toISOString(), id, event: 'queued', kind: 'operator', guest: null, via: 'email', to: to || null, subject, body,
+    sender: sender === 'inbox' ? 'inbox' : 'server' });
   return { queued: true, id };
 }
 
@@ -480,14 +482,29 @@ function markOutbox(outboxFile, id, event, { via = null, error = null, now = new
   appendLine(outboxFile, { at: now.toISOString(), ref: id, event, via, error: error ? String(error).slice(0, 300) : null });
 }
 
-/** Try to send queued e-mail through a Mailer (server/mailer.js). Never throws. */
+// Outbox ids this process is sending right now. The link route and the log
+// watcher both flush after one withdrawal; without this the second flush
+// reads the row as still pending while the first awaits the relay, and the
+// guest gets the confirmation twice.
+const _inFlight = new Set();
+
+/**
+ * Try to send queued e-mail through a Mailer (server/mailer.js). Never throws.
+ * Rows queued with sender "inbox" (the e-mail channel: kannaka-inbox.py
+ * replies to the guest's own message, threaded, as the station's address,
+ * then marks them sent) are left to the inbox, or the guest would hear twice.
+ */
 async function flushOutbox(outboxFile, mailer) {
   const res = { sent: 0, failed: 0, left: 0 };
   for (const e of pendingConfirmations(outboxFile)) {
+    if (e.sender === 'inbox' || _inFlight.has(e.id)) { res.left++; continue; }
     if (e.via !== 'email' || !e.to || !mailer || typeof mailer.send !== 'function' || !(mailer.configured && mailer.configured())) { res.left++; continue; }
+    _inFlight.add(e.id);
     let ok = false;
-    try { ok = await mailer.send({ to: e.to, subject: e.subject, text: e.body }); } catch (_) { ok = false; }
-    try { markOutbox(outboxFile, e.id, ok ? 'sent' : 'failed', { via: 'mailer', error: ok ? null : 'mailer refused or not configured' }); } catch (_) { /* best effort */ }
+    try {
+      try { ok = await mailer.send({ to: e.to, subject: e.subject, text: e.body }); } catch (_) { ok = false; }
+      try { markOutbox(outboxFile, e.id, ok ? 'sent' : 'failed', { via: 'mailer', error: ok ? null : 'mailer refused or not configured' }); } catch (_) { /* best effort */ }
+    } finally { _inFlight.delete(e.id); }
     if (ok) res.sent++; else { res.failed++; res.left++; }
   }
   return res;

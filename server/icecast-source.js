@@ -645,6 +645,14 @@ class IcecastSource {
 
   async _streamFileToFfmpeg(absPath, startAtMs = 0, what = {}) {
     if (!this._ffmpeg || !this._ffmpeg.stdin || this._ffmpeg.killed) return;
+    // Cuttable from here on, not only once bytes flow: a withdrawal that
+    // lands while ffprobe runs below must still stop this file (#443).
+    const pre = {
+      kind: what.kind || "track", file: absPath, track: what.track || null, meta: what.meta || null,
+      cutRequested: false,
+      cut: () => { if (pre.cutRequested) return false; pre.cutRequested = true; return true; },
+    };
+    this._activeStream = pre;
     // Probe duration BEFORE we start streaming so we can pace the resolve.
     // Without this, short files (~100KB commercials, ~50KB voice intros)
     // pump entirely into ffmpeg's pipe buffer in <1s, r.on("end") fires,
@@ -677,11 +685,18 @@ class IcecastSource {
         expectedMs = 180_000;
       }
     }
+    if (pre.cutRequested) {
+      if (this._activeStream === pre) this._activeStream = null;
+      return { cut: true };
+    }
     const startMs = Date.now();
 
     return new Promise((resolve) => {
       const ff = this._ffmpeg;
-      if (!ff || !ff.stdin || ff.killed) return resolve();
+      if (!ff || !ff.stdin || ff.killed) {
+        if (this._activeStream === pre) this._activeStream = null;
+        return resolve();
+      }
       // Skip any ID3v2 tag at the start of the file. ffmpeg's mp3 demuxer
       // handles ID3 fine at file-open time but here we concatenate files
       // onto one long-lived stdin pipe — at every boundary the demuxer

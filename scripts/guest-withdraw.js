@@ -71,10 +71,12 @@ function run(argv, env = process.env, out = (o) => console.log(JSON.stringify(o,
   const origin = (env.RADIO_PUBLIC_URL || 'https://radio.ninja-portal.com').replace(/\/+$/, '');
   const fallbackEmail = env.GUEST_WITHDRAW_EMAIL || gw.DEFAULT_FALLBACK_EMAIL;
 
-  const confirm = (guest, row, channel, inReplyTo) => {
+  // sender "inbox": kannaka-inbox.py sends it (threaded, as the station's
+  // address) and marks it sent; the running radio leaves it alone.
+  const confirm = (guest, row, channel, inReplyTo, sender = 'server') => {
     const rec = gw.guestRecord(P.consentFile, guest);
     try {
-      return gw.queueConfirmation(P.outboxFile, { guest, record: rec, row, channel, siteOrigin: origin, fallbackEmail, inReplyTo: inReplyTo || null });
+      return gw.queueConfirmation(P.outboxFile, { guest, record: rec, row, channel, siteOrigin: origin, fallbackEmail, inReplyTo: inReplyTo || null, sender });
     } catch (e) { return { queued: false, reason: e.message }; }
   };
 
@@ -110,11 +112,12 @@ function run(argv, env = process.env, out = (o) => console.log(JSON.stringify(o,
           requestId: opt['message-id'] || null, note: d.reason, secret,
         });
         Object.assign(res, { created: !!r.created, already: !!r.already, duplicate: !!r.duplicate, at: r.row && r.row.at, hash: r.row && gw.rowHash(r.row) });
-        if (r.created) res.confirmation = confirm(d.guest, r.row, 'email', opt['message-id']);
+        if (r.created) res.confirmation = confirm(d.guest, r.row, 'email', opt['message-id'], 'inbox');
       }
       if (d.notifyOperator) {
         res.operatorNote = gw.queueOperatorNote(P.outboxFile, {
           to: env.RADIO_OPERATOR_EMAIL || null,
+          sender: 'inbox',
           subject: `[radio] guest withdrawal needs a look: ${d.reason}`,
           body: `From: ${opt.from}\nSubject: ${opt.subject}\nMessage-ID: ${opt['message-id'] || '(none)'}\nDecision: ${d.action}${d.guest ? ` (${d.guest})` : ''}, verified=${!!d.verified}\nReason: ${d.reason}\n\nHeld anyway when a guest was named or matched: holding is the safe side. Re-consent only with evidence: scripts/guest-withdraw.js reconsent <guest> --evidence <id>.`,
         });
