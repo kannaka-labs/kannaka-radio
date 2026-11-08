@@ -23,7 +23,7 @@ const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
 const voiceWriteback = require("../server/voice-writeback");
 const { OpenBotCityClient } = require("../server/openbotcity");
-const { isDeclined, stripPreamble, cleanGroundedLine, publicTextDefect } = require("./lib/kannaka-reply");
+const { isDeclined, stripPreamble, cleanGroundedLine, hasNoAbstract, publicTextDefect } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
@@ -87,7 +87,7 @@ async function main() {
   // "(no abstract)" when OpenAlex had none; that hole went out verbatim on
   // 2026-11-07 (Bluesky 3mzqbkthhzr22). Clean it before the model or a reader
   // sees it.
-  const noAbstract = /\(no abstract\)/i.test(d.text || "");
+  const noAbstract = hasNoAbstract(d.text);
   d.text = cleanGroundedLine(d.text);
 
   // 2. Phrase it in Kannaka's voice (grounded by the dispatch payload). Falls

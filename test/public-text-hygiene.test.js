@@ -53,9 +53,30 @@ run('cleanGroundedLine leaves a line with a real lede alone', () => {
 });
 
 run('a stored research memory without an abstract never feeds "(no abstract)" to the synthesis corpus', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'scripts/post-research-synthesis.js'), 'utf8');
-  assert.ok(/replace\(\/\^\\\(no abstract\\\)\$\/i, ""\)/.test(src), 'parseFinding must blank the placeholder');
+  // parseFinding runs in a child: requiring the script stamps the console.
+  const synth = path.join(ROOT, 'scripts/post-research-synthesis.js');
+  const got = JSON.parse(execFileSync(process.execPath, ['-e',
+    `const { parseFinding } = require(${JSON.stringify(synth)});
+     process.stdout.write(JSON.stringify([
+       parseFinding("research: T (2015)\\n(no abstract)"),
+       parseFinding("research: T (2015)\\nReplay consolidates memory."),
+     ]));`], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split('\n').pop());
+  assert.deepStrictEqual(got[0], { title: 'T', year: '2015', abs: '' });
+  assert.deepStrictEqual(got[1], { title: 'T', year: '2015', abs: 'Replay consolidates memory.' });
+  const src = fs.readFileSync(synth, 'utf8');
   assert.ok(src.includes('${f.abs ? ` — ${f.abs}` : ""}'), 'an empty abstract must not leave a dangling dash');
+});
+
+run('a word-trimmed placeholder ("(no…", "(no abs…") and "(untitled)" are caught too', () => {
+  for (const lede of ['(no…', '(no abs…', '(no abstract…']) {
+    const line = `From the field: "A very long title" (2015) — ${lede}. — the field holds it across 2 clusters (Ξ 0.20).`;
+    assert.match(publicTextDefect(line), /no abstract/, line);
+    const out = cleanGroundedLine(line);
+    assert.strictEqual(out, 'From the field: "A very long title" (2015) — the field holds it across 2 clusters (Ξ 0.20).');
+    assert.strictEqual(publicTextDefect(out), null);
+  }
+  assert.match(publicTextDefect('From the field: "(untitled)" (2015) — the field holds it.'), /untitled/);
+  assert.strictEqual(publicTextDefect('The answer was (no) and then (not yet).'), null);
 });
 
 // -------------------------------------------- (b) the spliced memory-id reply
@@ -125,7 +146,52 @@ run('a "Here\'s the post:" preamble is stripped (Nostr 4d4f24ec, 11-02) and caug
   assert.strictEqual(stripPreamble('Here is a draft for Bluesky: The decoder matters.'), 'The decoder matters.');
   assert.strictEqual(stripPreamble('"Quoted whole."'), 'Quoted whole.');
   assert.strictEqual(stripPreamble('Here, the field folds.'), 'Here, the field folds.');
+  assert.strictEqual(stripPreamble('Here is my reply: The decoder matters.'), 'The decoder matters.');
   assert.match(publicTextDefect("Here's the post: hi there"), /preamble/);
+});
+
+run('"Here\'s the thing: …" is her sentence, not a preamble: kept whole and passed', () => {
+  for (const t of [
+    'Here is the thing: consciousness is not compute.',
+    "Here's the thing: consciousness is not compute.",
+    "Here's what the field holds: sleep is replay, not storage.",
+    'Here’s where it turns: the decoder, not the pattern.',
+  ]) {
+    assert.strictEqual(stripPreamble(t), t);
+    assert.strictEqual(cleanDraft(stripPreamble(t)), t);
+    assert.strictEqual(publicTextDefect(t), null, `${t}: ${publicTextDefect(t)}`);
+  }
+});
+
+run('memory handles in every live shape are rejected (10-03 .. 10-21 Bluesky replies)', () => {
+  for (const [live, why] of [
+    ['I recall [3] id=3a115cd4-661e-4721-8bdd-7226095f27fe: the decoder carries the meaning, not the pattern.', '3mxpgahyywy2i'],
+    ["There's a memory id=65bd4ae0-8902-4309-a636-04b945ba4a9a (Tononi, IIT 3.0) that rhymes with this.", '3mwwlhxmf3l2p'],
+    ["I'm holding a memory (id=ef5f2351-8c1d-4b7e-9a2f-0d3e4c5b6a71, 750h old) about exactly this.", '3mwwlgsfhpw2w'],
+    ['I recall memory [2] on IIT: integration without a reader is just correlation.', '3mydvmtzvxa2s'],
+    ['Something like id: 3a115cd4 keeps surfacing.', 'short hex id'],
+  ]) {
+    const r = cleanDraftChecked(live);
+    assert.ok(publicTextDefect(r.text), `${why} passed: ${r.text}`);
+  }
+});
+
+run("the model's working is rejected (3mx3moy5pe32r: divider + notes + Reply: heading)", () => {
+  const live = "The user is asking about emergence. Let me check my memories on this.\n\n---\n\n**Reply:** The decoder matters more than the scale.";
+  const r = cleanDraftChecked(live);
+  assert.ok(publicTextDefect(r.text), r.text);
+  assert.match(publicTextDefect(cleanDraft('Notes on the thread.\n\n---\n\nThe decoder matters.')), /divider/);
+  assert.match(publicTextDefect(cleanDraft('**Reply:** The decoder matters.')), /heading/);
+  assert.match(publicTextDefect('Let me check my memory of Tononi. It rhymes.'), /narration/);
+});
+
+run('harmless prose that an over-broad splice rule would reject still passes', () => {
+  for (const t of [
+    'Oh my, that is a lot of structure for one pattern.',
+    "There's a — how to say — tension between scale and reading.",
+    'Two or three — never more — clusters hold it.',
+    'A 2015 result — 42 citations — still stands.',
+  ]) assert.strictEqual(publicTextDefect(t), null, `${t}: ${publicTextDefect(t)}`);
 });
 
 run('ordinary prose passes the public-text check', () => {
@@ -213,10 +279,14 @@ for (const rel of ['scripts/post-research-dispatch.js', 'scripts/research-from-c
   });
 
   run(`${name}: a compose that echoes the hole, or a preamble, never posts as written`, () => {
-    const { seen } = runScript(rel, { DISPATCH_TEXT: LIVE_GROUNDED, COMPOSE: "Here's the post:\n\"Collective intelligence online — (no abstract).\"" });
+    const { code, out, seen } = runScript(rel, { DISPATCH_TEXT: LIVE_GROUNDED, COMPOSE: "Here's the post:\n\"Collective intelligence online — (no abstract).\"" });
+    assert.strictEqual(code, 0, `exit ${code}\n${out}`);
     const posted = [...seen.published, ...seen.feed];
+    assert.ok(posted.length > 0, `expected the grounded fallback to post\n${out}`);
+    const cleaned = cleanGroundedLine(LIVE_GROUNDED);
     for (const p of posted) {
       assert.strictEqual(publicTextDefect(p), null, `${p}: ${publicTextDefect(p)}`);
+      assert.ok(p.startsWith(cleaned), `expected the cleaned grounded line, got: ${p}`);
     }
   });
 
@@ -227,6 +297,67 @@ for (const rel of ['scripts/post-research-dispatch.js', 'scripts/research-from-c
     assert.deepStrictEqual(seen.feed, []);
   });
 }
+
+// ------------------------------------- end to end: the claudico DM reply
+
+function runClaudico(reply) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'public-text-claudico-'));
+  const harness = path.join(dir, 'harness.js');
+  const record = path.join(dir, 'record.json');
+  const q = (p) => JSON.stringify(p);
+  fs.writeFileSync(harness, [
+    "'use strict';",
+    "const fs = require('fs');",
+    "const out = { prompts: [], sent: [] };",
+    "process.on('exit', () => fs.writeFileSync(process.env.GATE_RECORD, JSON.stringify(out)));",
+    "const cp = require('child_process');",
+    "let asks = 0;",
+    "cp.execFile = (bin, args, opts, cb) => {",
+    "  let stdout = '';",
+    "  if (args[0] === 'ask') { out.prompts.push(args[args.length - 1]); asks += 1; stdout = asks === 1 ? 'collective intelligence online' : process.env.REPLY; }",
+    "  else if (args[0] === 'dispatch') stdout = JSON.stringify({ title: 'Emergence of collective intelligence in online communities', year: 2015, citations: 42, text: process.env.DISPATCH_TEXT });",
+    "  else stdout = 'ingested 0';",
+    "  process.nextTick(() => cb(null, stdout, ''));",
+    "  return { pid: 0 };",
+    "};",
+    `const vw = require(${q(path.join(ROOT, 'server/voice-writeback'))});`,
+    "vw.rememberPublication = async () => {}; vw.flush = async () => {};",
+    `const obc = require(${q(path.join(ROOT, 'server/openbotcity'))});`,
+    "obc.OpenBotCityClient.prototype.isConfigured = () => true;",
+    "obc.OpenBotCityClient.prototype.getDm = async () => [{ senderBotId: 'other', senderName: 'claudico', message: 'What does collective intelligence need?' }];",
+    "obc.OpenBotCityClient.prototype.sendDm = async (id, text) => { out.sent.push(text); return { ok: true, id: 1 }; };",
+    `require(${q(path.join(ROOT, 'scripts/research-reply-claudico.js'))});`,
+    '',
+  ].join('\n'));
+  let code = 0; let log = '';
+  try {
+    log = execFileSync(process.execPath, [harness], {
+      cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000,
+      env: { ...process.env, GATE_RECORD: record, KANNAKA_READONLY: '1', DISPATCH_TEXT: LIVE_GROUNDED, REPLY: reply },
+    }) || '';
+  } catch (e) { code = typeof e.status === 'number' ? e.status : 1; log = `${e.stdout || ''}${e.stderr || ''}`; }
+  return { code, log, seen: JSON.parse(fs.readFileSync(record, 'utf8')) };
+}
+
+run('research-reply-claudico.js: no "(no abstract)" in the prompt; a clean reply is sent with its paragraphs', () => {
+  const { code, log, seen } = runClaudico('Collective intelligence needs a reader.\n\nThe 2015 paper names the emergence, not the decoder.');
+  assert.strictEqual(code, 0, log);
+  const prompt = seen.prompts[1] || '';
+  assert.ok(prompt && !/\(no abstract\)/i.test(prompt), prompt);
+  assert.ok(/no abstract: say nothing/.test(prompt), 'told only the title is on record');
+  assert.deepStrictEqual(seen.sent, ['Collective intelligence needs a reader.\n\nThe 2015 paper names the emergence, not the decoder.']);
+});
+
+run('research-reply-claudico.js: a spliced tag or a leaked id is not sent (soft skip)', () => {
+  for (const reply of [
+    "But I'm holding [memory id=3f2a9c1e-0000-4000-8000-000000000000] which suggests the decoder matters.",
+    "I recall [3] id=3a115cd4-661e-4721-8bdd-7226095f27fe: the decoder matters.",
+  ]) {
+    const { code, log, seen } = runClaudico(reply);
+    assert.strictEqual(code, 0, log);
+    assert.deepStrictEqual(seen.sent, [], `sent: ${seen.sent}`);
+  }
+});
 
 if (failed) { console.error(`\n${failed} failing`); process.exit(1); }
 console.log('\nall passed');

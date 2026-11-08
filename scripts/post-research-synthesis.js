@@ -138,4 +138,7 @@ async function main() {
   process.exit(1);
 }
 
-main().catch((e) => { console.error("[synthesis] fatal:", e); process.exit(1); });
+module.exports = { parseFinding };
+if (require.main === module) {
+  main().catch((e) => { console.error("[synthesis] fatal:", e); process.exit(1); });
+}

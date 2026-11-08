@@ -19,7 +19,7 @@ const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
 const voiceWriteback = require("../server/voice-writeback");
 const { OpenBotCityClient } = require("../server/openbotcity");
-const { isDeclined, stripPreamble, cleanGroundedLine, publicTextDefect } = require("./lib/kannaka-reply");
+const { isDeclined, stripPreamble, cleanGroundedLine, hasNoAbstract, publicTextDefect } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
@@ -100,7 +100,7 @@ async function main() {
   }
 
   // "(no abstract)" in the grounded line is a template hole, never text.
-  const noAbstract = /\(no abstract\)/i.test(d.text || "");
+  const noAbstract = hasNoAbstract(d.text);
   d.text = cleanGroundedLine(d.text);
 
   // 5. Compose a city-aware reply (grounded fallback = raw dispatch line).

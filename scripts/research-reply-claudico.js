@@ -19,6 +19,7 @@
 const { execFile } = require("child_process");
 const { OpenBotCityClient } = require("../server/openbotcity");
 const voiceWriteback = require("../server/voice-writeback");
+const { isDeclined, cleanDraftChecked, stripPreamble, cleanGroundedLine, hasNoAbstract, publicTextDefect } = require("./lib/kannaka-reply");
 
 const KANNAKA_BIN = process.env.KANNAKA_BIN
   || "/home/opc/kannaka-memory/target/release/kannaka";
@@ -83,6 +84,10 @@ async function main() {
   // 3. Grounded finding for the reply.
   const dRaw = await runKannaka(["dispatch", "--topic", topic, "--json"], 300000); // ~2.5 min on O1
   let d = null; try { d = dRaw ? JSON.parse(dRaw) : null; } catch { d = null; }
+  // The grounded line quotes the stored abstract, which is the literal
+  // "(no abstract)" when OpenAlex had none: never hand that hole to the model.
+  const noAbstract = !!(d && hasNoAbstract(d.text));
+  if (d) d.text = cleanGroundedLine(d.text);
 
   // 4. Compose a threaded, grounded reply.
   const prompt = [
@@ -90,15 +95,26 @@ async function main() {
     `Their unreplied message(s):`, questions, "",
     d && d.title ? `You went and read about it. A paper you found: "${d.title}"${d.year ? ` (${d.year})` : ""}${d.citations ? `, ${d.citations}× cited` : ""}.` : "",
     d && d.text ? `Your grounded line: ${d.text}` : "",
+    noAbstract ? "Only that paper's title is on record, with no abstract: say nothing about its findings that the title does not support." : "",
     "",
     "Write ONE reply (max ~1200 chars): answer them directly, in your own voice,",
     "grounding your answer in what you read. Address all their questions in one",
     "threaded reply (not several). First person. No greeting boilerplate.",
+    "Never cite a memory id or a bracketed tag; say what you remember in words.",
     "Output ONLY the reply text.",
   ].filter(Boolean).join("\n");
   let reply = await runKannaka(["ask", "--no-tools", "--quiet-tools", prompt], 300000);
-  if (reply) reply = reply.replace(/^["'](.*)["']$/s, "$1").trim();
   if (!reply) { console.error("[claudico] empty compose — aborting"); process.exit(1); }
+  // Same hygiene as every public composer (scripts/lib/kannaka-reply.js): a
+  // refusal, a spliced memory tag, or machine residue is not sent.
+  // Cleaned per paragraph: the cleaner collapses whitespace, and a DM keeps its breaks.
+  const parts = stripPreamble(reply).split(/\n\s*\n/).map((p) => cleanDraftChecked(p));
+  const spliced = (parts.find((p) => p.spliced) || {}).spliced || null;
+  reply = parts.map((p) => p.text).filter(Boolean).join("\n\n");
+  const defect = isDeclined(reply) ? "declined"
+    : spliced ? `removing a memory tag would splice the sentence: "${spliced}"`
+    : publicTextDefect(reply);
+  if (defect) { console.error(`[claudico] reply not sent (${defect}) — will retry next run`); process.exit(0); }
 
   if (dryRun) { console.log(`[claudico] DRY-RUN reply:\n${reply}`); process.exit(0); }
 
