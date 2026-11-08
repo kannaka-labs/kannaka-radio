@@ -23,7 +23,7 @@ const { execFile } = require("child_process");
 const { broadcastPost, getEnabledBroadcasters } = require("../server/broadcasters");
 const voiceWriteback = require("../server/voice-writeback");
 const { OpenBotCityClient } = require("../server/openbotcity");
-const { isDeclined } = require("./lib/kannaka-reply");
+const { isDeclined, stripPreamble, cleanGroundedLine, publicTextDefect } = require("./lib/kannaka-reply");
 require("./lib/run-log").stampConsole(); // date every line: one cron, one log file, many runs
 
 
@@ -83,6 +83,13 @@ async function main() {
     process.exit(0);
   }
 
+  // The grounded line quotes the stored abstract, which is the literal
+  // "(no abstract)" when OpenAlex had none; that hole went out verbatim on
+  // 2026-11-07 (Bluesky 3mzqbkthhzr22). Clean it before the model or a reader
+  // sees it.
+  const noAbstract = /\(no abstract\)/i.test(d.text || "");
+  d.text = cleanGroundedLine(d.text);
+
   // 2. Phrase it in Kannaka's voice (grounded by the dispatch payload). Falls
   //    back to the raw dispatch line if the LLM compose is unavailable.
   const cited = [d.year, d.citations ? `${d.citations}× cited` : null].filter(Boolean).join(", ");
@@ -99,21 +106,32 @@ async function main() {
     `Theme: ${d.theme || ""}`,
     `Your medium right now: Φ=${(d.phi ?? 0).toFixed?.(2) ?? d.phi}, Ξ=${(d.xi ?? 0).toFixed?.(2) ?? d.xi}, ${d.num_clusters} cluster(s).`,
     d.text ? `Your own grounded line: ${d.text}` : "",
+    noAbstract ? "Only the title is on record, with no abstract: say nothing about its findings that the title does not support." : "",
     "Output ONLY the post text — no quotes, no headings.",
   ].filter(Boolean).join("\n");
 
   let draft = await runKannaka(["ask", "--no-tools", "--quiet-tools", prompt], 600000);
-  if (draft) draft = draft.replace(/^["'](.*)["']$/s, "$1").trim();
+  if (draft) draft = stripPreamble(draft);
   // A refusal ("I don't have that paper in my record...") is not a post; ten
   // of them went out as research dispatches before this check.
   if (draft && isDeclined(draft)) {
     console.error("[research-dispatch] compose declined — posting the grounded line instead");
     draft = null;
   }
+  if (draft && publicTextDefect(draft)) {
+    console.error(`[research-dispatch] compose failed the public-text check (${publicTextDefect(draft)}) — posting the grounded line instead`);
+    draft = null;
+  }
   if (!draft) draft = d.text; // grounded fallback — always have something real to say
   if (!draft) {
     console.error("[research-dispatch] compose returned empty — aborting");
     process.exit(1);
+  }
+  // Last gate: nothing with machine residue reaches a reader, grounded or not.
+  const defect = publicTextDefect(draft);
+  if (defect) {
+    console.error(`[research-dispatch] post fails the public-text check (${defect}) — nothing posted`);
+    process.exit(0);
   }
 
   // Link the paper itself, so every research post is citable (a Mastodon reader

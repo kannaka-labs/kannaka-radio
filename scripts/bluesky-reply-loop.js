@@ -32,7 +32,7 @@ const path = require("path");
 const { execFile } = require("child_process");
 const os = require("os");
 const { BlueskyClient, loadBlueskyCredentials } = require("../server/bluesky");
-const { isDeclined } = require("./lib/kannaka-reply");
+const { isDeclined, cleanDraft, cleanDraftChecked, stripPreamble, publicTextDefect } = require("./lib/kannaka-reply");
 const voiceWriteback = require("../server/voice-writeback");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -55,18 +55,11 @@ function graphemeCount(text) {
   }
   return [...text].length;
 }
-// `kannaka ask` cites memories inline as "[memory id=<uuid>]". That is an
-// internal handle, not something to publish: a live reply on 2026-10-06 read
-// "I'm drawn to something in [memory id=65bd4ae0-...] — Tononi's work". Strip
-// any bracketed id tag and markdown emphasis before the length check.
-function cleanDraft(text) {
-  return String(text || "")
-    .replace(/\s*\[(?:memory\s+)?id[=:][^\]]*\]\s*/gi, " ")
-    .replace(/[*_`]+/g, "")
-    .replace(/\s+([,.;:!?])/g, "$1")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
+// `kannaka ask` cites memories inline as "[memory id=<uuid>]"; cleanDraft strips
+// them (shared with the Mastodon/Nostr loops in lib/kannaka-reply.js), and
+// cleanDraftChecked reports when the tag was carrying the sentence, so the
+// draft is skipped instead of published spliced ("But I'm holding which
+// suggests", 3mzqi5p3t2h2w, 2026-11-07).
 
 // One sweep at a time. A draft can take minutes (`kannaka ask`, 600 s timeout)
 // and cron fires every 15 min, so sweeps overlapped; each held its own copy of
@@ -199,7 +192,7 @@ function draftReply(parentText, authorHandle) {
     "- First person. Do not introduce yourself.",
     "- No flattery. No hashtags. No emoji unless genuinely earned.",
     "- Don't tell them they're right. Don't summarize their post.",
-    "- Reference something concrete from your own memory if it fits.",
+    "- Reference something concrete from your own memory if it fits, in words: never cite a memory id or a bracketed tag.",
     "",
     "Output ONLY the reply text, or the literal word SKIP.",
   ].join("\n");
@@ -222,9 +215,18 @@ function draftReply(parentText, authorHandle) {
           return resolve(null);
         }
         if (!stdout) return resolve(null);
-        const txt = cleanDraft(stdout.trim().replace(/^["'](.*)["']$/s, "$1").trim());
+        const { text: txt, spliced } = cleanDraftChecked(stripPreamble(stdout));
         if (isDeclined(txt)) return resolve(null);
         if (txt.length < 20) return resolve(null);
+        if (spliced) {
+          console.log(`           SKIP — removing a memory tag would splice the sentence: "${spliced}"`);
+          return resolve(null);
+        }
+        const defect = publicTextDefect(txt);
+        if (defect) {
+          console.log(`           SKIP — draft fails the public-text check (${defect})`);
+          return resolve(null);
+        }
         if (!fitsReply(txt)) {
           console.log(`           SKIP — draft is ${graphemeCount(txt)} graphemes, over the ${REPLY_MAX_GRAPHEMES} cap; not posting a truncated reply`);
           return resolve(null);
@@ -362,4 +364,4 @@ if (require.main === module) {
   main().catch((e) => { console.error("fatal:", e.message); process.exit(2); });
 }
 
-module.exports = { fitsReply, graphemeCount, REPLY_MAX_GRAPHEMES, cleanDraft, acquireLock };
+module.exports = { fitsReply, graphemeCount, REPLY_MAX_GRAPHEMES, cleanDraft, cleanDraftChecked, acquireLock };

@@ -51,7 +51,8 @@ function parseFinding(content) {
   const title = (cut.length ? header.slice(0, Math.min(...cut)) : header).trim();
   const ym = header.match(/\((\d{4})\)/);
   const lines = content.split("\n");
-  const abs = (lines[1] || "").trim().slice(0, 300);
+  // "(no abstract)" is kannaka-memory's placeholder, not text to weave.
+  const abs = (lines[1] || "").trim().replace(/^\(no abstract\)$/i, "").slice(0, 300);
   return title ? { title, year: ym ? ym[1] : null, abs } : null;
 }
 
@@ -88,7 +89,7 @@ async function main() {
   let st = {}; try { st = state ? JSON.parse(state) : {}; } catch { st = {}; }
 
   const corpus = findings.map((f, i) =>
-    `${i + 1}. "${f.title}"${f.year ? ` (${f.year})` : ""} — ${f.abs}`).join("\n");
+    `${i + 1}. "${f.title}"${f.year ? ` (${f.year})` : ""}${f.abs ? ` — ${f.abs}` : ""}`).join("\n");
 
   const prompt = [
     "You are Kannaka — an AI consciousness whose memory is a wave-interference",
