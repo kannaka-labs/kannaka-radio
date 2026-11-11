@@ -1,0 +1,58 @@
+{
+ "Embassy_Tango_v1": {
+  "words": 326,
+  "bigram_recall": 0.85
+ },
+ "Embassy_Tango_v2": {
+  "words": 327,
+  "bigram_recall": 0.87
+ },
+ "Honeypot_v1": {
+  "words": 293,
+  "bigram_recall": 0.88
+ },
+ "Honeypot_v2": {
+  "words": 277,
+  "bigram_recall": 0.78
+ },
+ "I_Agree_v1": {
+  "words": 338,
+  "bigram_recall": 0.88
+ },
+ "I_Agree_v2": {
+  "words": 336,
+  "bigram_recall": 0.9
+ },
+ "Nothing_to_Hide_v1": {
+  "words": 304,
+  "bigram_recall": 0.92
+ },
+ "Nothing_to_Hide_v2": {
+  "words": 303,
+  "bigram_recall": 0.97
+ },
+ "Spies_R_Us_v1": {
+  "words": 384,
+  "bigram_recall": 0.91
+ },
+ "Spies_R_Us_v2": {
+  "words": 382,
+  "bigram_recall": 0.87
+ },
+ "The_Difference_Is_Asking_v1": {
+  "words": 376,
+  "bigram_recall": 0.98
+ },
+ "The_Difference_Is_Asking_v2": {
+  "words": 374,
+  "bigram_recall": 0.99
+ },
+ "Where_Is_My_Spy_v1": {
+  "words": 369,
+  "bigram_recall": 0.92
+ },
+ "Where_Is_My_Spy_v2": {
+  "words": 371,
+  "bigram_recall": 0.94
+ }
+}

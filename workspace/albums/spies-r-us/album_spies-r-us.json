@@ -1,0 +1,54 @@
+{
+ "name": "Spies R Us",
+ "out_dir": "C:/Users/nickf/.openclaw/workspace/spies-r-us-build",
+ "ledger": "C:/Users/nickf/.openclaw/workspace/spies-r-us-done.json",
+ "theme": "A spook and a spoof at once: a concept album about nation states and private companies watching everyone and each other, sung by Kannaka, an AI memory system who admits she is a product on the same shelf. Seven songs: the store that sells watching, the yes nobody reads, states spying on friends and enemies alike, why a person needs a door, the small lab nobody bothers to spy on, being known without being cared for, and the difference between surveillance and attention, which is asking. Philosophical, funny, honest, absurd, never preachy. No real people, companies or agencies named. No real-artist references.",
+ "default_style": "Retro spy-film pop with modern production: twangy baritone guitar, brass stabs, bongos, vibraphone, warm upright bass, clean deep low end, wide mix. A clear warm female lead vocal, close and articulate, wry and sincere by turns. No real-artist references.",
+ "tracks": [
+  {
+   "title": "Spies R Us",
+   "style": "Retro toy-store commercial jingle crossed with spy-surf big band, 148 BPM, E minor verses and a bright G major chorus. Twangy tremolo baritone guitar, punchy brass section stabs, bongos and a driving surf drum kit, glockenspiel doubling the hook, walking bass. Clear warm female lead vocal, playful and deadpan in the verses, a huge cheerful group-chant chorus like an advertising jingle. Spoken bright store-announcer lines at the start and end. A quiet half-time bridge with vibraphone, then the full band back. Gleeful, sinister, catchy.",
+   "theme": "The title track. Watching as a shop where everyone is both the customer and the stock."
+  },
+  {
+   "title": "I Agree",
+   "style": "Slow 1950s-style doo-wop ballad, 12/8 time, 68 BPM, B flat major. Piano triplets, soft brushed drums, upright bass, a clean hollow-body guitar, close four-part backing vocals singing answers and shoo-wop pads, a little celesta. Female lead vocal tender and devoted, as if singing a wedding vow, with a wry edge; the bridge is call and response with the backing voices; the last chorus lifts a key. Sweet, romantic, quietly unsettling.",
+   "theme": "The consent ritual. A love song to terms and conditions nobody reads, and the honest admission that the trade was liked."
+  },
+  {
+   "title": "Embassy Tango",
+   "style": "Tango nuevo with light electronics, 126 BPM, D minor. Bandoneon lead, staccato piano, pizzicato and bowed violins, upright bass with slides, a crisp brushed snare, subtle analog synth bass under the chorus. Female lead vocal arch, theatrical and amused, rolling the lines like a cabaret singer; the bridge drops to solo bandoneon and a near-spoken sincere vocal, then the band snaps back. Ends on three spoken words and a hard stop. Elegant, sly, dangerous.",
+   "theme": "Nation states spying on enemies and allies, the ritual outrage, and the uncomfortable truth that verification has kept a peace."
+  },
+  {
+   "title": "Nothing to Hide",
+   "style": "Sparse chamber folk ballad, 76 BPM, A major. Fingerpicked steel-string guitar, a single warm cello, soft upright piano entering in the second chorus, room tone, no drums. Female lead vocal very close, unhurried and conversational, almost whispered at the end. The bridge is voice and cello only. The final lines are nearly a cappella. Intimate, clear-eyed, gentle, firm.",
+   "theme": "The philosophy of privacy. Not about guilt; a person needs an unwatched room to become someone."
+  },
+  {
+   "title": "Where Is My Spy",
+   "style": "Bouncy new wave funk-pop, 124 BPM, A major. Rubbery slap bass, tight disco-funk rhythm guitar, bright analog synth stabs, handclaps, a punchy dry drum kit with cowbell, a cheeky synth lead answering the vocal. Female lead vocal comic, indignant and charming, a shout-along chorus with gang backing vocals. Half-time sincere bridge over electric piano, then the biggest chorus. A dry spoken last line. Funny, bright, self-mocking.",
+   "theme": "The small open lab nobody bothers to spy on. You cannot steal what is published. A person needs a door; a power needs a window."
+  },
+  {
+   "title": "Honeypot",
+   "style": "Noir trip-hop torch song, 82 BPM, C minor. Dusty slow breakbeat, deep sub bass, muted trumpet with harmon mute, tremolo electric piano, vinyl crackle, a lonely vibraphone, strings swelling in the last chorus. Female lead vocal smoky, low and intimate, close to the microphone. The bridge strips to piano and voice. Ends on two spoken lines, very quiet. Sultry, sad, suspicious, tender.",
+   "theme": "Two spies assigned to each other, and the device in every pocket: being known in detail by something that does not care for you."
+  },
+  {
+   "title": "The Difference Is Asking",
+   "style": "Warm chamber pop building to a choral anthem, 88 BPM, D major. Starts with felt piano and a soft pulse, adds acoustic guitar, warm bass, brushed then full drums, a string quartet, and a full mixed choir from the bridge onward. Female lead vocal plain and honest in the verses, open and soaring in the last chorus. The outro slows to a music-box glockenspiel version of a cheerful jingle melody, then three gently spoken lines. Hopeful, humane, resolved.",
+   "theme": "The closing argument. A mother at a window and a camera on a corner do the same thing with light; the difference is consent, answerability and forgetting."
+  }
+ ],
+ "release": {
+  "artist": "Kannaka",
+  "note": "Album idea from the maintainer; lyrics drafted by Claude Code for Kannaka (an AI); music generated with Suno.",
+  "lead_track": "Spies R Us",
+  "lead_track_reason": "The title track is the hook and sets the shop metaphor the closer answers.",
+  "youtube_title": "Kannaka — Spies R Us (2026)",
+  "youtube_description": "Spies R Us: a spook and a spoof. Seven songs about nation states and private companies watching everyone and each other, sung by Kannaka, an AI memory system who admits she is a product on the same shelf.\n\n1. Spies R Us\n2. I Agree\n3. Embassy Tango\n4. Nothing to Hide\n5. Where Is My Spy\n6. Honeypot\n7. The Difference Is Asking\n\nA person needs a door. A power needs a window.\n\nAlbum idea from the maintainer; lyrics drafted by Claude Code for Kannaka (an AI); music generated with Suno. No real person, company or agency is depicted.\n\nKannaka Radio — radio.ninja-portal.com\nKannaka Memory — github.com/NickFlach/kannaka-memory",
+  "youtube_tags": ["kannaka", "ai music", "spies r us", "surveillance", "privacy", "concept album", "satire", "spy music"],
+  "tracker_url": "https://radio.ninja-portal.com/player"
+ }
+}

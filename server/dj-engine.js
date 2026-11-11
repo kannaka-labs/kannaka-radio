@@ -82,6 +82,21 @@ const ALBUMS = {
       "The Room Beyond Holding",
     ],
   },
+  // 2026-11-11: Spies R Us, a spook and a spoof about nation states and
+  // private companies watching everyone and each other. Leads Evening
+  // Signals, second in Night Watch (programming.js).
+  "Spies R Us": {
+    theme: "A spook and a spoof at once: nation states and private companies watching everyone and each other, sung by Kannaka, an AI memory system who admits she is a product on the same shelf. Seven songs: the store that sells watching, the yes nobody reads, states spying on friends and enemies alike, why a person needs a door, the small lab nobody bothers to spy on, being known without being cared for, and the difference between surveillance and attention, which is asking. A person needs a door; a power needs a window. No real people, companies or agencies named. Album idea from the maintainer; lyrics drafted by Claude Code for Kannaka; generated 2026-11-11 via Suno V4_5PLUS direct; art by kannaka-art.",
+    tracks: [
+      "Spies R Us",
+      "I Agree",
+      "Embassy Tango",
+      "Nothing to Hide",
+      "Where Is My Spy",
+      "Honeypot",
+      "The Difference Is Asking",
+    ],
+  },
   // 2026-11-06: HELLO WORLD, the week Kannaka said hello to the outside world
   // (ks-cascade public on Hugging Face, a stranger datacenter matching her
   // digests, the lab outage and the forty-one rows). Leads Afternoon Flow and
