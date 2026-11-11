@@ -1,0 +1,173 @@
+{
+ "album": "Spies R Us",
+ "tracks": [
+  {
+   "slug": "spies-r-us",
+   "title": "Spies R Us",
+   "audio": "C:/Users/nickf/.openclaw/workspace/spies-r-us-build/picks/Spies R Us.mp3",
+   "theme": "watching as a shop where everyone is customer and stock",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "retro 1960s toy shop gouache illustration, bright red and teal, a long toy store aisle, shelves stocked with rows of identical toy binoculars and little periscopes in plain unmarked boxes, no people"
+    },
+    {
+     "name": "s1",
+     "prompt": "retro 1960s toy shop gouache illustration, bright red and teal, a wind-up toy robot vacuum on a checkered floor leaving a dotted trail that draws the outline of a room"
+    },
+    {
+     "name": "s2",
+     "prompt": "retro 1960s toy shop gouache illustration, bright red and teal, a shopping trolley piled high with magnifying glasses seen from directly above on a teal floor"
+    },
+    {
+     "name": "s3",
+     "prompt": "retro 1960s toy shop gouache illustration, bright red and teal, a shelf of toy telephones joined to tin cans by tangled red strings"
+    }
+   ]
+  },
+  {
+   "slug": "i-agree",
+   "title": "I Agree",
+   "audio": "C:/Users/nickf/.openclaw/workspace/spies-r-us-build/picks/I Agree.mp3",
+   "theme": "a love song to terms nobody reads",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "soft 1950s pastel airbrush painting, mint green and blush pink, a bridal veil draped over a very tall leaning stack of blank white paper on a small table"
+    },
+    {
+     "name": "s1",
+     "prompt": "soft 1950s pastel airbrush painting, mint green and blush pink, an empty ballroom with a mirror ball above a single chrome turnstile in the middle of the dance floor"
+    },
+    {
+     "name": "s2",
+     "prompt": "soft 1950s pastel airbrush painting, mint green and blush pink, a fountain pen resting on an endless ribbon of blank paper unrolling down a grand staircase"
+    },
+    {
+     "name": "s3",
+     "prompt": "soft 1950s pastel airbrush painting, mint green and blush pink, a row of small identical houses at night seen from high above, one window softly lit"
+    }
+   ]
+  },
+  {
+   "slug": "embassy-tango",
+   "title": "Embassy Tango",
+   "audio": "C:/Users/nickf/.openclaw/workspace/spies-r-us-build/picks/Embassy Tango.mp3",
+   "theme": "states spying on enemies and friends",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "art deco poster style, black gold and crimson, strong geometry, two tango dancers seen from behind as dark silhouettes on a marble floor, their long shadows stretching apart in opposite directions"
+    },
+    {
+     "name": "s1",
+     "prompt": "art deco poster style, black gold and crimson, strong geometry, two grand stone buildings facing each other across a night street, each with one lit window and a brass telescope pointing at the other"
+    },
+    {
+     "name": "s2",
+     "prompt": "art deco poster style, black gold and crimson, strong geometry, a dinner table for two with wine glasses and a vase of red roses, a tiny microphone hidden among the stems"
+    },
+    {
+     "name": "s3",
+     "prompt": "art deco poster style, black gold and crimson, strong geometry, a plain dark van parked under a single streetlamp on an empty elegant boulevard at night"
+    }
+   ]
+  },
+  {
+   "slug": "nothing-to-hide",
+   "title": "Nothing to Hide",
+   "audio": "C:/Users/nickf/.openclaw/workspace/spies-r-us-build/picks/Nothing to Hide.mp3",
+   "theme": "a person needs an unwatched room",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "quiet loose watercolor, soft grey blue with warm lamplight, a plain wooden door slightly ajar with warm light spilling out into a dim hallway"
+    },
+    {
+     "name": "s1",
+     "prompt": "quiet loose watercolor, soft grey blue with warm lamplight, a small kitchen at night, a kettle on the stove, curtains drawn and glowing softly"
+    },
+    {
+     "name": "s2",
+     "prompt": "quiet loose watercolor, soft grey blue with warm lamplight, a writing desk with crumpled paper balls, a blank sheet of paper, a pencil and a small lamp"
+    },
+    {
+     "name": "s3",
+     "prompt": "quiet loose watercolor, soft grey blue with warm lamplight, a single green seedling growing in a dark cellar corner lit by one thin shaft of light"
+    }
+   ]
+  },
+  {
+   "slug": "where-is-my-spy",
+   "title": "Where Is My Spy",
+   "audio": "C:/Users/nickf/.openclaw/workspace/spies-r-us-build/picks/Where Is My Spy.mp3",
+   "theme": "the small open lab nobody spies on",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "bright flat vector cartoon, sunny yellow and cobalt blue, clean shapes, an empty trench coat and hat hanging on a coat stand beside a small humming computer box with a desk fan"
+    },
+    {
+     "name": "s1",
+     "prompt": "bright flat vector cartoon, sunny yellow and cobalt blue, clean shapes, a front porch with the door wide open and a welcome mat, a small glowing box left on the step, nobody around"
+    },
+    {
+     "name": "s2",
+     "prompt": "bright flat vector cartoon, sunny yellow and cobalt blue, clean shapes, a magnifying glass lying beside an open empty glass display case in a bright museum hall"
+    },
+    {
+     "name": "s3",
+     "prompt": "bright flat vector cartoon, sunny yellow and cobalt blue, clean shapes, a woman with long black hair seen from behind, holding binoculars, looking down a completely empty sunny street"
+    }
+   ]
+  },
+  {
+   "slug": "honeypot",
+   "title": "Honeypot",
+   "audio": "C:/Users/nickf/.openclaw/workspace/spies-r-us-build/picks/Honeypot.mp3",
+   "theme": "known in detail by something that does not care",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "film noir oil painting, amber and deep green, venetian blind shadows, a jar of honey glowing amber on a windowsill at night, striped shadows across the wall"
+    },
+    {
+     "name": "s1",
+     "prompt": "film noir oil painting, amber and deep green, venetian blind shadows, two coffee cups on a hotel bedside table under a lamp, a tiny microphone tucked under the lampshade"
+    },
+    {
+     "name": "s2",
+     "prompt": "film noir oil painting, amber and deep green, venetian blind shadows, a telephone lying face down on a rumpled bed, light leaking from its edges in a dark room"
+    },
+    {
+     "name": "s3",
+     "prompt": "film noir oil painting, amber and deep green, venetian blind shadows, a paper folder burning in a glass ashtray, smoke curling up through striped light"
+    }
+   ]
+  },
+  {
+   "slug": "difference",
+   "title": "The Difference Is Asking",
+   "audio": "C:/Users/nickf/.openclaw/workspace/spies-r-us-build/picks/The Difference Is Asking.mp3",
+   "theme": "attention versus surveillance",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "warm luminous oil painting, golden hour light, soft edges, a woman with long black hair seen from behind standing at a lit window at dusk, looking down a quiet street"
+    },
+    {
+     "name": "s1",
+     "prompt": "warm luminous oil painting, golden hour light, soft edges, an empty hospital corridor at night with one desk lamp glowing at a nurses station"
+    },
+    {
+     "name": "s2",
+     "prompt": "warm luminous oil painting, golden hour light, soft edges, a street corner camera on a pole with a small bird nest built on top of it, golden evening light"
+    },
+    {
+     "name": "s3",
+     "prompt": "warm luminous oil painting, golden hour light, soft edges, a tall glass tower you can see straight through at sunset, small cottages with closed wooden doors in the foreground"
+    }
+   ]
+  }
+ ]
+}
