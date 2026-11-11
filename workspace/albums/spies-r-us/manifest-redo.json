@@ -1,0 +1,45 @@
+{
+ "album": "Spies R Us",
+ "tracks": [
+  {
+   "slug": "i-agree",
+   "title": "I Agree",
+   "audio": "x",
+   "theme": "redo",
+   "images": [
+    {
+     "name": "cover",
+     "prompt": "soft 1950s pastel airbrush painting, mint green and blush pink, a tall white wedding cake on a small round table with a single fountain pen standing upright on top, empty room, no people"
+    }
+   ]
+  },
+  {
+   "slug": "honeypot",
+   "title": "Honeypot",
+   "audio": "x",
+   "theme": "redo",
+   "images": [
+    {
+     "name": "s2",
+     "prompt": "film noir oil painting, amber and deep green, venetian blind shadows, an old rotary telephone with its receiver off the hook lying on an empty neatly made bed, no people, bare walls"
+    }
+   ]
+  },
+  {
+   "slug": "spies-r-us",
+   "title": "Spies R Us",
+   "audio": "x",
+   "theme": "redo",
+   "images": [
+    {
+     "name": "s1",
+     "prompt": "retro 1960s gouache illustration, bright red and teal, one small round toy robot vacuum alone on a plain checkered floor in an empty room, a dotted trail curling behind it, bare walls"
+    },
+    {
+     "name": "s3",
+     "prompt": "retro 1960s gouache illustration, bright red and teal, two plain unpainted tin cans joined by one long red string stretched across an empty flat teal background"
+    }
+   ]
+  }
+ ]
+}
