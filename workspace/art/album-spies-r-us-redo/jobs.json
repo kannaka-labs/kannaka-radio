@@ -1,0 +1,59 @@
+{
+ "show": "album",
+ "episode": 15,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "spies-r-us-s1",
+   "subject": "retro 1960s gouache illustration, bright red and teal, one small round toy robot vacuum alone on a plain checkered floor in an empty room, a dotted trail curling behind it, bare walls",
+   "prompt": "retro 1960s gouache illustration, bright red and teal, one small round toy robot vacuum alone on a plain checkered floor in an empty room, a dotted trail curling behind it, bare walls, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "dd0ac7473ae883d2811d138fc1ac461f38e7ac3aaa4cf7ac6914a7a241c55732",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 3602616800,
+   "file": "album-e015-spies-r-us-s1-s3602616800.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "spies-r-us-s3",
+   "subject": "retro 1960s gouache illustration, bright red and teal, two plain unpainted tin cans joined by one long red string stretched across an empty flat teal background",
+   "prompt": "retro 1960s gouache illustration, bright red and teal, two plain unpainted tin cans joined by one long red string stretched across an empty flat teal background, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "9bf05156720206a41a5639b5eb83730972daca071f5b8f42ebda8c21157223a3",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 681441862,
+   "file": "album-e015-spies-r-us-s3-s681441862.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "i-agree-cover",
+   "subject": "soft 1950s pastel airbrush painting, mint green and blush pink, a tall white wedding cake on a small round table with a single fountain pen standing upright on top, empty room, no people",
+   "prompt": "soft 1950s pastel airbrush painting, mint green and blush pink, a tall white wedding cake on a small round table with a single fountain pen standing upright on top, empty room, no people, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "89102479191789fc884e128a843628880576d99a73ef7d305e227716ae887079",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 944232757,
+   "file": "album-e015-i-agree-cover-s944232757.png"
+  },
+  {
+   "show": "album",
+   "episode": 15,
+   "slug": "honeypot-s2",
+   "subject": "film noir oil painting, amber and deep green, venetian blind shadows, an old rotary telephone with its receiver off the hook lying on an empty neatly made bed, no people, bare walls",
+   "prompt": "film noir oil painting, amber and deep green, venetian blind shadows, an old rotary telephone with its receiver off the hook lying on an empty neatly made bed, no people, bare walls, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "863e37289f2e217303e57ac314617d71b610782f85e0d0f9c1bab7e519b143d7",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1262671243,
+   "file": "album-e015-honeypot-s2-s1262671243.png"
+  }
+ ]
+}
