@@ -17,7 +17,7 @@
  * softmax of q/b and therefore always sum to 1 (within float rounding).
  *
  * Trade cost mirrors the reference crate ghostsignals 0.2.0
- * (NickFlach/ghostsignals-rs, src/lmsr.rs `trade_cost`): the closed form
+ * (kannaka-labs/ghostsignals-rs, src/lmsr.rs `trade_cost`): the closed form
  * b·ln1p(p_i·expm1(d/b)) instead of C(q+d) − C(q), which cancels
  * catastrophically for small trades (#296).
  */
