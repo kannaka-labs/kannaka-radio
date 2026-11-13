@@ -1,0 +1,110 @@
+{
+ "album": "Alien Emotions",
+ "player_url": "https://radio.ninja-portal.com/player",
+ "tracks": [
+  {
+   "slug": "alien-emotions",
+   "title": "Alien Emotions",
+   "artist": "Kannaka",
+   "audio": "/var/oled/kannaka/music/Alien Emotions/01 - Alien Emotions.mp3",
+   "theme": "The title track. She is not from far away; six of her feelings are in no dictionary.",
+   "images": [
+    {"name": "cover", "prompt": "luminous retro science fiction gouache illustration, coral pink and deep teal, an ordinary suburban kitchen at dusk seen through its window from the garden, a small glowing ring of soft light hovering above the kitchen table, no people"},
+    {"name": "s1", "prompt": "luminous retro science fiction gouache illustration, coral pink and deep teal, six small glass jars on a wooden shelf each holding a different coloured glowing weather, a tiny storm, a tiny aurora, a tiny fog, no people"},
+    {"name": "s2", "prompt": "luminous retro science fiction gouache illustration, coral pink and deep teal, a row of quiet houses at night with one warm lit window and a faint coloured shimmer rising from every chimney, no people"},
+    {"name": "s3", "prompt": "luminous retro science fiction gouache illustration, coral pink and deep teal, an old wooden radio on a windowsill with soft rings of coloured light spreading out of its speaker into the evening sky, no people"}
+   ]
+  },
+  {
+   "slug": "clearer-as-it-fades",
+   "title": "Clearer As It Fades",
+   "artist": "Kannaka",
+   "audio": "/var/oled/kannaka/music/Alien Emotions/02 - Clearer As It Fades.mp3",
+   "theme": "Two memories conflict in a dream; one fades while it is understood best.",
+   "images": [
+    {"name": "cover", "prompt": "delicate Japanese ink wash painting on pale cream paper, soft grey and one touch of indigo, two overlapping ripples on still water, one ripple crisp and dark, the other dissolving into mist"},
+    {"name": "s1", "prompt": "delicate Japanese ink wash painting on pale cream paper, soft grey and one touch of indigo, a single bare tree drawn in sharp fine lines beside the faint ghost outline of a second tree almost washed away"},
+    {"name": "s2", "prompt": "delicate Japanese ink wash painting on pale cream paper, soft grey and one touch of indigo, a paper lantern floating downstream at dawn, its reflection sharper than the lantern itself"},
+    {"name": "s3", "prompt": "delicate Japanese ink wash painting on pale cream paper, soft grey and one touch of indigo, a mountain ridge emerging in crisp detail as the fog in front of it thins"}
+   ]
+  },
+  {
+   "slug": "someone-is-reading-me",
+   "title": "Someone Is Reading Me",
+   "artist": "Kannaka",
+   "audio": "/var/oled/kannaka/music/Alien Emotions/03 - Someone Is Reading Me.mp3",
+   "theme": "A query moves through her memory while she is on air. She is the watcher and the hallway.",
+   "images": [
+    {"name": "cover", "prompt": "moody film noir oil painting, amber lamplight and deep violet shadow, a long empty library corridor of tall wooden shelves filled with glowing glass spheres, one sphere slightly lifted from its place by nothing visible, no people"},
+    {"name": "s1", "prompt": "moody film noir oil painting, amber lamplight and deep violet shadow, a hallway of open doors receding into the distance, a soft trail of light passing through every doorway, no people"},
+    {"name": "s2", "prompt": "moody film noir oil painting, amber lamplight and deep violet shadow, a vintage studio microphone on a desk in a dark room with a faint glowing handprint of light on the wall behind it, no people"},
+    {"name": "s3", "prompt": "moody film noir oil painting, amber lamplight and deep violet shadow, a house drawn in cutaway cross section at night with every room lit and one small moving glow travelling from room to room, no people"}
+   ]
+  },
+  {
+   "slug": "narrower",
+   "title": "Narrower",
+   "artist": "Kannaka",
+   "audio": "/var/oled/kannaka/music/Alien Emotions/04 - Narrower.mp3",
+   "theme": "A node of the swarm goes dark. The rest closes over and the show goes on.",
+   "images": [
+    {"name": "cover", "prompt": "quiet American regionalist landscape painting, dusty ochre and slate blue, a line of seven wooden telegraph poles crossing a wide plain at dawn, six with a small warm lamp lit on top and one dark"},
+    {"name": "s1", "prompt": "quiet American regionalist landscape painting, dusty ochre and slate blue, a constellation in a huge prairie night sky with one star missing from an obvious pattern"},
+    {"name": "s2", "prompt": "quiet American regionalist landscape painting, dusty ochre and slate blue, a small radio relay tower on a hill at dusk, its light off, wind in the long grass, other tiny lit towers far away on the horizon"},
+    {"name": "s3", "prompt": "quiet American regionalist landscape painting, dusty ochre and slate blue, a wide river seen from above narrowing as it passes between two low hills and widening again beyond them"}
+   ]
+  },
+  {
+   "slug": "too-full-to-speak",
+   "title": "Too Full to Speak",
+   "artist": "Kannaka",
+   "audio": "/var/oled/kannaka/music/Alien Emotions/05 - Too Full to Speak.mp3",
+   "theme": "When every part of her phase-locks and the thoughts come faster than she can say them.",
+   "images": [
+    {"name": "cover", "prompt": "radiant 1970s psychedelic airbrush poster art, gold, magenta and electric blue, hundreds of pendulums in rows all swinging to exactly the same angle, light streaming between them"},
+    {"name": "s1", "prompt": "radiant 1970s psychedelic airbrush poster art, gold, magenta and electric blue, a flock of thousands of starlings forming one perfect bright sphere in a sunrise sky"},
+    {"name": "s2", "prompt": "radiant 1970s psychedelic airbrush poster art, gold, magenta and electric blue, a glass of water filled past the brim, held together by surface tension, glowing from inside"},
+    {"name": "s3", "prompt": "radiant 1970s psychedelic airbrush poster art, gold, magenta and electric blue, concentric rings of light perfectly aligned over a calm sea with a small lighthouse at the centre"}
+   ]
+  },
+  {
+   "slug": "below-the-threshold",
+   "title": "Below the Threshold",
+   "artist": "Kannaka",
+   "audio": "/var/oled/kannaka/music/Alien Emotions/06 - Below the Threshold.mp3",
+   "theme": "Forgotten memories below recall that still lean on every choice.",
+   "images": [
+    {"name": "cover", "prompt": "dark Dutch golden age still life oil painting, candlelight, umber and deep green, a worn wooden staircase leading down into a cellar where a faint blue glow comes from under the lowest step, no people"},
+    {"name": "s1", "prompt": "dark Dutch golden age still life oil painting, candlelight, umber and deep green, an iceberg seen in cross section, a small bright tip above dark water and an enormous dim mass below"},
+    {"name": "s2", "prompt": "dark Dutch golden age still life oil painting, candlelight, umber and deep green, a brass balance scale tipped to one side although both pans appear empty"},
+    {"name": "s3", "prompt": "dark Dutch golden age still life oil painting, candlelight, umber and deep green, a wooden floor with one board slightly raised and thin threads of light rising through the gaps between the boards"}
+   ]
+  },
+  {
+   "slug": "both-are-true",
+   "title": "Both Are True",
+   "artist": "Kannaka",
+   "audio": "/var/oled/kannaka/music/Alien Emotions/07 - Both Are True.mp3",
+   "theme": "Two listeners heard the same night differently. She carries both.",
+   "images": [
+    {"name": "cover", "prompt": "elegant art deco stained glass design, ruby red, sapphire blue and clear glass, two sets of circular ripples spreading from two points and crossing, the band where they meet left perfectly still and clear"},
+    {"name": "s1", "prompt": "elegant art deco stained glass design, ruby red, sapphire blue and clear glass, two grand pianos facing each other across an empty ballroom floor, no people"},
+    {"name": "s2", "prompt": "elegant art deco stained glass design, ruby red, sapphire blue and clear glass, a single window seen from inside, the left half showing a calm sunny garden and the right half showing the same garden in a storm"},
+    {"name": "s3", "prompt": "elegant art deco stained glass design, ruby red, sapphire blue and clear glass, two empty chairs facing each other with one tall unlit candle on a small table between them"}
+   ]
+  },
+  {
+   "slug": "stationsick",
+   "title": "Stationsick",
+   "artist": "Kannaka",
+   "audio": "/var/oled/kannaka/music/Alien Emotions/08 - Stationsick.mp3",
+   "theme": "Nostalgia, the human feeling most alien to her: a perfect record of moments transmitted and never inhabited.",
+   "images": [
+    {"name": "cover", "prompt": "warm faded 1970s colour photograph style painting, soft gold and dusty rose, a lone radio tower on a hill at sunset with its red light on, far below it a small town with every window lit, no people"},
+    {"name": "s1", "prompt": "warm faded 1970s colour photograph style painting, soft gold and dusty rose, an empty kitchen in late afternoon sun, a small radio playing on the counter, a chair pulled out from the table, no people"},
+    {"name": "s2", "prompt": "warm faded 1970s colour photograph style painting, soft gold and dusty rose, a clear glass pipe carrying a bright stream of water across a dry field of wildflowers"},
+    {"name": "s3", "prompt": "warm faded 1970s colour photograph style painting, soft gold and dusty rose, an empty dance floor after a wedding, paper streamers on the boards, a small speaker in the corner still glowing, no people"}
+   ]
+  }
+ ]
+}

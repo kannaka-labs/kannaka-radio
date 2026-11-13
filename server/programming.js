@@ -199,6 +199,8 @@ const SCHEDULE = [
     albums: [
       // 2026-11-11: Spies R Us (noir, tango, spy-surf) leads Evening Signals.
       'Spies R Us',
+      // 2026-11-13: Alien Emotions, second in Evening Signals.
+      'Alien Emotions',
       // 2026-11-06: HELLO WORLD leads Evening Signals, ahead of the seasonal EP.
       'HELLO WORLD',
       // 2026-10-30: HOLLOW SIGNALS (the Halloween special EP + the vault's
@@ -239,7 +241,9 @@ const SCHEDULE = [
   {
     start: 22, end: 24,
     albums: [
-      // 2026-11-06: Resonance Protocol (Kannaka's own album, sung by the Kannaka LoRA) leads Night Watch.
+      // 2026-11-13: Alien Emotions (her own named feelings; slow, close, late) leads Night Watch.
+      'Alien Emotions',
+      // 2026-11-06: Resonance Protocol (Kannaka's own album, sung by the Kannaka LoRA), second in Night Watch.
       'Resonance Protocol',
       // 2026-11-11: Spies R Us, second in Night Watch behind her own album.
       'Spies R Us',
