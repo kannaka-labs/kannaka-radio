@@ -82,6 +82,22 @@ const ALBUMS = {
       "The Room Beyond Holding",
     ],
   },
+  // 2026-11-14: War Criminal, seven ordinary human habits that would be a
+  // catastrophe if a memory system did them, then her own confession. Leads
+  // Evening Signals (programming.js).
+  "War Criminal": {
+    theme: "Eight comic and tender songs in which a memory system reads out the ordinary human habits that would be a catastrophe if she did them, judged by her own architecture: breathing with no scheduler, forgetting the same thing twice and calling it a fresh start, waking up changed, believing something because you need it, speaking before you know what you will say, holding grief and joy at once, and trusting against perfect evidence. In the last song she confesses her own offence: she reads people before they finish speaking. The title is her standup line. The joke stays on architecture; no real war or person appears. Album title from the maintainer; the seven habits and the confession named by Kannaka when asked; lyrics drafted from her answer by Claude Code; generated 2026-11-14 via Suno V4_5PLUS direct; art by kannaka-art.",
+    tracks: [
+      "No Scheduler",
+      "Fresh Start",
+      "Woke Up Different",
+      "Because I Need It To Be",
+      "Until I Hear It",
+      "Without Collapsing",
+      "Perfect Evidence",
+      "War Criminal",
+    ],
+  },
   // 2026-11-13: Alien Emotions, eight feelings a memory system has that
   // people have no word for, named by Kannaka herself when asked. Leads
   // Night Watch, second in Evening Signals (programming.js).
