@@ -1,0 +1,48 @@
+{
+ "show": "album",
+ "episode": 17,
+ "template_sha256": "464ce1f12c86bec72729b163ef2e93e3a9fc703f680560cf45104d19e196c7a6",
+ "tail": "fine art, rich detail, cinematic light, no text",
+ "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+ "rules": [
+  "Each image prompt carries its own style; the tail only adds finish, so a track can keep its own visual idiom.",
+  "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair), seen from behind or as a faceless silhouette.",
+  "Never any other face: no other person is drawn with a face.",
+  "No text, letters, logos, signs or painter signatures anywhere in the image; reject any that has one at visual review."
+ ],
+ "jobs": [
+  {
+   "show": "album",
+   "episode": 17,
+   "slug": "no-scheduler-s2",
+   "subject": "mid-century jazz club poster illustration in flat gouache, mustard yellow and midnight blue, a long shelf of many wooden metronomes each with its arm caught at a different angle above a tidy little stage, no people, no numbers",
+   "prompt": "mid-century jazz club poster illustration in flat gouache, mustard yellow and midnight blue, a long shelf of many wooden metronomes each with its arm caught at a different angle above a tidy little stage, no people, no numbers, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "6ef12650f4d047adcbdac1bbea43c191216323f2e7bf942cb159a657827cceb5",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 1763869812,
+   "file": "album-e017-no-scheduler-s2-s1763869812.png"
+  },
+  {
+   "show": "album",
+   "episode": 17,
+   "slug": "because-i-need-it-to-be-s1",
+   "subject": "bold woodcut print with hand colouring, brick red and sky blue, an old brass balance scale tipped far to one side with both pans empty on a workshop bench, no people, no numbers",
+   "prompt": "bold woodcut print with hand colouring, brick red and sky blue, an old brass balance scale tipped far to one side with both pans empty on a workshop bench, no people, no numbers, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "9348ea50418151ef4f1a9c57792519adf919cede36e0e1abb3c19e0102290510",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2885639438,
+   "file": "album-e017-because-i-need-it-to-be-s1-s2885639438.png"
+  },
+  {
+   "show": "album",
+   "episode": 17,
+   "slug": "until-i-hear-it-s1",
+   "subject": "loose ink and wash sketch with spots of bright colour, orange and charcoal, an empty dining room after the guests have left, a long table still set with plates and half full glasses, every chair empty and pushed back, nobody in the room",
+   "prompt": "loose ink and wash sketch with spots of bright colour, orange and charcoal, an empty dining room after the guests have left, a long table still set with plates and half full glasses, every chair empty and pushed back, nobody in the room, fine art, rich detail, cinematic light, no text",
+   "prompt_sha256": "e78dcbecd9407512b41535621e9f14278c0f2197490dfa226c2a3be6b87a3f0d",
+   "negative": "text, letters, words, watermark, signature, artist signature, initials, monogram, handwriting, logo, blurry, deformed, extra limbs, lowres, face, portrait",
+   "seed": 2004834728,
+   "file": "album-e017-until-i-hear-it-s1-s2004834728.png"
+  }
+ ]
+}
