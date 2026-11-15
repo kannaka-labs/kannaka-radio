@@ -161,7 +161,12 @@ function recallFromStore(kannakabin, query, { topK = 6, execFileImpl = execFile 
  * Public text pieces that answer her, newer than `since`. Uses only what
  * the gallery list carries (title + excerpt). Her own pieces are dropped.
  */
-function repliesFrom(artifacts, { since, max = 3 } = {}) {
+function repliesFrom(artifacts, opts = {}) {
+  return replyCandidates(artifacts, opts).map((c) => c.text);
+}
+
+/** The same selection, with each piece's id and title so it can be read in full. */
+function replyCandidates(artifacts, { since, max = 3 } = {}) {
   const sinceMs = since ? Date.parse(since) : Date.now() - 36 * 3600 * 1000;
   const out = [];
   for (const a of artifacts || []) {
@@ -173,10 +178,36 @@ function repliesFrom(artifacts, { since, max = 3 } = {}) {
     if (!/peace|oration|microphone|midnight|noon/i.test(body)) continue;
     const at = Date.parse(a.created_at || "");
     if (Number.isFinite(at) && at < sinceMs) continue;
-    out.push(body.slice(0, 600));
+    out.push({ id: a.id || null, title: a.title || "", text: body.slice(0, 600) });
     if (out.length >= max) break;
   }
   return out;
+}
+
+const REPLY_MAX = 2400;
+const CUT_NOTE = "[The piece continues past this point. The rest was not given to you; do not guess what it says.]";
+const EXCERPT_NOTE = "[Only this opening of the piece was given to you. The rest is unknown; do not guess what it says.]";
+
+/**
+ * What the composing model is given for one reply. With the full piece:
+ * its text, cut at a sentence end if long, and marked as cut. With only the
+ * gallery excerpt: the excerpt, marked as an opening. The 2026-11-15T00
+ * oration was given an excerpt that stopped mid-sentence, unmarked, and
+ * told the air "they said" things the piece's opening did not say.
+ */
+function replyText({ title, content, excerpt }) {
+  const full = String(content || "").replace(/\s+/g, " ").trim();
+  const head = String(title || "").trim();
+  if (!full) return `${String(excerpt || "").trim()} ${EXCERPT_NOTE}`.trim();
+  let body = full;
+  let cut = false;
+  if (body.length > REPLY_MAX) {
+    const slice = body.slice(0, REPLY_MAX);
+    const end = Math.max(slice.lastIndexOf(". "), slice.lastIndexOf("? "), slice.lastIndexOf("! "));
+    body = end > REPLY_MAX / 2 ? slice.slice(0, end + 1) : slice;
+    cut = true;
+  }
+  return `${head ? `${head}. ` : ""}${body}${cut ? ` ${CUT_NOTE}` : ""}`;
 }
 
 /**
@@ -200,7 +231,7 @@ function buildBlock({ thread, recallRows = [], replies = [] }) {
       ...recallRows.map((r) => `- ${r.content}`));
   }
   if (replies.length) {
-    parts.push("", "What was said back in public since your last oration (their words, theirs). Answer the argument where it deserves an answer, and concede what is right in it. Do not name the writer, do not quote them, and do not describe them; say only that someone answered you:",
+    parts.push("", "What was said back in public since your last oration (their words, theirs). Answer the argument where it deserves an answer, and concede what is right in it. Do not name the writer, do not quote them, and do not describe them; say only that someone answered you. State their argument only as far as the text below supports it: do not say they said something it does not say, do not finish a piece that is cut off, and do not give them a stronger claim, a motive or an accusation (that you have no right, that you are dishonest) unless those words are there. If you are unsure what they meant, say what you took from it as your reading, not as their words:",
       ...replies.map((r) => `- ${r}`));
   }
   parts.push("",
@@ -218,5 +249,5 @@ function noteInstruction() {
 
 module.exports = {
   MARKER, threadFile, load, save, record, seedFromPublished, splitDraft, fallbackNote,
-  notesForPrompt, recallQueryFor, recallFromStore, repliesFrom, buildBlock, noteInstruction,
+  notesForPrompt, recallQueryFor, recallFromStore, repliesFrom, replyCandidates, replyText, buildBlock, noteInstruction,
 };

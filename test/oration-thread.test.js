@@ -91,6 +91,21 @@ const SPOKEN = 'Imagine a street somewhere tonight where two neighbours have sto
     assert.ok(!/Someone/.test(block), 'the writer\'s name is not handed to the model');
   });
 
+  await run('a reply is given whole or marked as cut, and the model is told not to complete it', () => {
+    const excerptOnly = T.replyText({ title: 'A Piece', excerpt: 'A Piece. Kannaka speaks of peace, but there is a contradiction in a voice lecturing on the cost' });
+    assert.ok(/Only this opening of the piece was given to you/.test(excerptOnly));
+    const whole = T.replyText({ title: 'A Piece', content: 'Kannaka speaks of peace.  There is a contradiction in it.', excerpt: 'x' });
+    assert.strictEqual(whole, 'A Piece. Kannaka speaks of peace. There is a contradiction in it.');
+    const long = T.replyText({ title: 'A Piece', content: 'One sentence about peace and Kannaka. '.repeat(120), excerpt: 'x' });
+    assert.ok(long.length < 2600 && /The piece continues past this point/.test(long));
+    assert.ok(/Kannaka\. \[The piece continues/.test(long), 'cut at a sentence end');
+    const c = T.replyCandidates([{ id: 'abc', type: 'text', title: 'On the Microphone', content_excerpt: 'Kannaka on peace.', creator: { display_name: 'Someone' }, created_at: new Date().toISOString() }], {});
+    assert.deepStrictEqual(c.map((x) => x.id), ['abc']);
+    const { block } = T.buildBlock({ thread: { entries: [] }, replies: [whole] });
+    assert.ok(/State their argument only as far as the text below supports it/.test(block));
+    assert.ok(/do not finish a piece that is cut off/.test(block));
+  });
+
   await run('recall is read-only, unobserved, and survives a failing binary', async () => {
     let seen = null;
     const rows = await T.recallFromStore('/bin/kannaka', 'peace oration open question', {

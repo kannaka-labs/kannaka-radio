@@ -851,7 +851,14 @@ class PeaceOration {
   async _threadReplies(since) {
     const obc = new OpenBotCityClient();
     if (!obc.isConfigured()) return [];
-    return orationThread.repliesFrom(await obc.getGalleryArtifacts(50), { since });
+    const picked = orationThread.replyCandidates(await obc.getGalleryArtifacts(50), { since });
+    const out = [];
+    for (const c of picked) {
+      let full = null;
+      try { full = c.id ? await obc.getGalleryArtifact(c.id) : null; } catch (_) { full = null; }
+      out.push(orationThread.replyText({ title: c.title, content: full && full.content, excerpt: c.text }));
+    }
+    return out;
   }
 
   // Direct-Anthropic equivalent of _askWithRetry. Same backoff +
