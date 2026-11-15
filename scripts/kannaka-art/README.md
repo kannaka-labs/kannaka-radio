@@ -43,7 +43,7 @@ D=workspace/art/album-field-guide
 python $A album-plan --manifest manifest.json --episode 1 --out $D     # --episode = album number, seeds derive from it
 python $A ledger check --jobs $D/jobs.json
 python $A qbraid --jobs $D/jobs.json --out $D --mode base             # prints the one-GPU-session commands
-python $A gate $D                                                     # then look at every image; delete any with a face, text or signature
+python $A gate $D                                                     # then look at every image; delete any with text, a signature, a distorted face, or Kannaka's face not made by the identity pipeline
 python $A album-export $D --dest /path/to/album/workspace             # writes <track slug>_<name>.png for videos.js
 ```
 

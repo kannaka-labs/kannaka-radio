@@ -2,10 +2,10 @@
   "show": "gsp",
   "name": "Ghost Signals (podcast)",
   "tail": "flat vector illustration, bold black ink outlines, cel shaded, night palette of deep indigo and sodium orange with teal glow accents, no text",
-  "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres, face, portrait",
+  "negative": "text, letters, watermark, signature, blurry, deformed, extra limbs, photorealistic, lowres",
   "rules": [
-    "Kannaka may appear only per the face canon (a classically beautiful queen with long black hair) or as a faceless silhouette.",
-    "Never any other face: no other person, host or guest is drawn with a face.",
+    "Kannaka's own face appears only through the identity pipeline locked to the face canon image (KANNAKA-CANON-face); in any batch run without it she is seen from behind or as a faceless silhouette.",
+    "Other people may be drawn with faces when the faces come out clean; reject distorted faces and anything that reads as a portrait of a real person.",
     "No text, letters, logos or signs anywhere in the image."
   ]
 }
