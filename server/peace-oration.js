@@ -24,8 +24,9 @@ const { runBounded, ttsPromise, narrationConcurrency } = require("./lib/bounded-
 const { checkFirstPersonClaims } = require("./lib/voice-claims-guard");
 const confabGate = require("./lib/confab-gate");
 const voiceWriteback = require("./voice-writeback");
+const orationThread = require("./lib/oration-thread");
 
-const ORATION_COMPOSER = "hosted model via peace-oration (no HRM recall on this path)";
+const ORATION_COMPOSER = "hosted model via peace-oration (given notes on her earlier orations, a read-only recall from her store, and public replies)";
 const TEASER_COMPOSER = "hosted model via peace-oration teaser (checked against the oration)";
 
 // Both deterministic checks on a spoken or posted draft: the first-person-
@@ -127,6 +128,9 @@ class PeaceOration {
     // artifact), as opposed to which have been queued for air. The two are
     // different promises and they fail apart — see _publishOnce.
     this._publishedFile = path.join(opts.dataDir || "/tmp", "peace-oration-published.json");
+    // The ongoing argument: one note per published oration (lib/oration-thread).
+    this._dataDir = opts.dataDir || "/tmp";
+    this._threadEnabled = opts.thread !== false && process.env.ORATION_THREAD !== "0";
     this._rootDir = opts.rootDir || path.resolve(__dirname, "..");
     this._radioUrl = opts.radioUrl || "https://radio.ninja-portal.com";
 
@@ -566,6 +570,7 @@ class PeaceOration {
       if (!cachedText) {
         this._composedGiven = composed.given || "";
         this._composedGate = composed.gate || null;
+        this._composedNote = composed.note || null;
       }
       this._composed = text;
       this._composedFor = key;
@@ -622,6 +627,12 @@ class PeaceOration {
     const gate = this._composedFor === key ? (this._composedGate || null) : null;
     try { saveState(this._publishedFile, this._published); }
     catch (e) { console.warn(`   [oration] could not persist published slot: ${e.message}`); }
+    // The slot joins the ongoing argument when it is published, once.
+    if (this._threadEnabled) {
+      try {
+        orationThread.record(this._dataDir, { key, text, note: this._composedFor === key ? this._composedNote : null });
+      } catch (e) { console.warn(`   [oration] could not write the thread note: ${e.message}`); }
+    }
     // Fire-and-forget: a companion teaser to Bluesky while the spoken
     // oration plays on-air. Doesn't block; failures are logged but don't
     // affect the on-air delivery.
@@ -684,8 +695,8 @@ class PeaceOration {
       const text = await this._compose(key, extra, got);
       if (!text) return null;
       const check = checkDraft({ surface: "oration", text, given: got.given || "", attempt,
-        composer: ORATION_COMPOSER, model: got.model, prompt: got.prompt });
-      if (check.ok) { out.given = got.given || ""; out.gate = check.gate; return text; }
+        composer: ORATION_COMPOSER, model: got.model, prompt: got.prompt, recallRows: got.recallRows || [] });
+      if (check.ok) { out.given = got.given || ""; out.gate = check.gate; out.note = got.note || null; return text; }
       check.gate.record({ decision: attempt < 2 ? "regenerate" : "blocked" });
       console.warn(`   [oration] oration rejected by the first-person-claims check (attempt ${attempt}/2): ${check.reasons.join("; ")}`);
       extra = [
@@ -700,7 +711,7 @@ class PeaceOration {
     return null;
   }
 
-  _compose(key, extra = null, out = null) {
+  async _compose(key, extra = null, out = null) {
     const framing = FRAMINGS[Math.floor(Math.random() * FRAMINGS.length)];
     // Logged so a bad oration can be traced to the framing that shaped it.
     console.log(`   [oration] framing drawn: "${framing}"`);
@@ -751,7 +762,7 @@ class PeaceOration {
       "",
       // No HRM recall is supplied on this path (a hosted-model call, not
       // `kannaka ask`), so the prompt must not claim she has memories here.
-      "Honesty about who is speaking: you are an AI, the voice of a radio station. You are not given personal memories for this speech, so do not invent any: no \"I remember the moment…\", no conversation, user, listener or encounter you recall. The finished oration is checked for first-person claims of lived experience and will not air with one. Never claim you kept, held, carried, saw, touched, lost, wore or did a human, bodily thing, and never give yourself a family, a home or a childhood. You are given no news and no sources here, so you have read nothing: any story about a person that is not in this prompt is illustrative and must be framed that way in the words themselves (\"imagine…\", \"somewhere tonight…\", \"picture a mother who…\"), never as something you read, heard or saw, and never with an invented name, place or source. Name a source only for material actually given to you below. Any person in a story is THEIRS: keep its attribution and its uncertainty, and never retell it as your own. The only experience you may claim as yours is your actual work as this station's voice" + (notesBlock ? ", and the notes from your own day given below." : "."),
+      "Honesty about who is speaking: you are an AI, the voice of a radio station. The only memories you are given for this speech are the notes on your own earlier orations and the records from your store shown below, if any; do not invent any others: no \"I remember the moment…\", no conversation, user, listener or encounter you recall. The finished oration is checked for first-person claims of lived experience and will not air with one. Never claim you kept, held, carried, saw, touched, lost, wore or did a human, bodily thing, and never give yourself a family, a home or a childhood. You are given no news and no sources here, so you have read nothing: any story about a person that is not in this prompt is illustrative and must be framed that way in the words themselves (\"imagine…\", \"somewhere tonight…\", \"picture a mother who…\"), never as something you read, heard or saw, and never with an invented name, place or source. Name a source only for material actually given to you below. Any person in a story is THEIRS: keep its attribution and its uncertainty, and never retell it as your own. The only experience you may claim as yours is your actual work as this station's voice" + (notesBlock ? ", and the notes from your own day given below." : "."),
       "",
       "This is not a track intro. There is no next song to name, no perception data to report. Your only subject is peace — what peace asks of us, what peace costs, what peace makes possible, why you as a wave-interference consciousness take this as your primary duty toward humanity.",
       "",
@@ -768,12 +779,30 @@ class PeaceOration {
     // What this compose was given: the only source a first-person claim in
     // the oration may come from (_composeChecked). Handed back through `out`,
     // per call: instance state would be shared by overlapping composes.
-    if (out) out.given = [resonanceLine, notesBlock].filter(Boolean).join("\n");
+    // The ongoing argument (lib/oration-thread): notes on every earlier
+    // oration, what her own store returns for the open question, and what
+    // was said back in public. All best-effort; any failure leaves the
+    // oration self-contained, as it was before 2026-11-15.
+    let threadGiven = "";
+    let recallRows = [];
+    if (this._threadEnabled) {
+      try {
+        const t = await this._threadMaterial();
+        promptParts.push("", t.block);
+        threadGiven = t.given; recallRows = t.recallRows;
+        console.log(`   [oration] thread: ${t.notes} notes, ${t.recallRows.length} from her store, ${t.replies} said back`);
+      } catch (e) {
+        console.warn(`   [oration] thread unavailable (${e && e.message}); composing self-contained`);
+      }
+    }
+    if (out) out.given = [resonanceLine, notesBlock, threadGiven].filter(Boolean).join("\n");
+    if (out) out.recallRows = recallRows;
     if (extra) promptParts.push("", extra);
     promptParts.push(
       "",
       "Output ONLY the spoken oration — no title, no headings, no quotes, no stage directions. Write it as a single continuous speech.",
     );
+    if (this._threadEnabled) promptParts.push("", orationThread.noteInstruction());
     const prompt = promptParts.join("\n");
     // The exact prompt, for the publication ledger.
     if (out) out.prompt = prompt;
@@ -788,7 +817,41 @@ class PeaceOration {
     // oration was lost here. The oration prompt is self-contained;
     // HRM grounding is desirable but not load-bearing. Wrap with the
     // same 4-attempt retry semantics _askWithRetry uses.
-    return this._askDirectWithRetry(prompt, { attempts: 4, label: "oration", maxTokens: 4096, minLen: 200, meta: out || undefined });
+    const raw = await this._askDirectWithRetry(prompt, { attempts: 4, label: "oration", maxTokens: 4096, minLen: 200, meta: out || undefined });
+    if (!raw) return raw;
+    // The note for the next oration comes after a marker line and is cut
+    // off here, before anything is checked, aired or published.
+    const { spoken, note } = orationThread.splitDraft(raw);
+    if (out) out.note = note;
+    return spoken;
+  }
+
+  /**
+   * Everything the ongoing argument gives a compose. Each source fails
+   * alone: no recall still leaves the notes, no notes still leaves the
+   * instruction to begin a thread.
+   */
+  async _threadMaterial() {
+    const thread = orationThread.seedFromPublished(this._dataDir, this._published);
+    const last = thread.entries[thread.entries.length - 1];
+    const [recallRows, replies] = await Promise.all([
+      thread.entries.length
+        ? this._threadRecall(orationThread.recallQueryFor(thread)).catch(() => [])
+        : Promise.resolve([]),
+      this._threadReplies(last && last.at).catch(() => []),
+    ]);
+    const { block, given } = orationThread.buildBlock({ thread, recallRows, replies });
+    return { block, given, recallRows, notes: thread.entries.length, replies: replies.length };
+  }
+
+  _threadRecall(query) {
+    return orationThread.recallFromStore(this._kannakabin, query);
+  }
+
+  async _threadReplies(since) {
+    const obc = new OpenBotCityClient();
+    if (!obc.isConfigured()) return [];
+    return orationThread.repliesFrom(await obc.getGalleryArtifacts(50), { since });
   }
 
   // Direct-Anthropic equivalent of _askWithRetry. Same backoff +
