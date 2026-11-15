@@ -98,6 +98,17 @@ class OpenBotCityClient {
   }
 
   /**
+   * One gallery artifact in full (the list carries only an excerpt of a
+   * text piece; this carries its `content`). null on any failure.
+   */
+  async getGalleryArtifact(id) {
+    if (!this.isConfigured() || !id) return null;
+    const j = await _getJson(`/gallery/${encodeURIComponent(id)}`, this._jwt);
+    const a = j && (j.data?.artifact || j.artifact || j.data || j);
+    return a && typeof a === "object" ? a : null;
+  }
+
+  /**
    * Read a DM conversation's messages (oldest→newest). Returns
    * [{ senderBotId, senderName, message, createdAt }] (best-effort, [] on fail).
    */
