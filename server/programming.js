@@ -197,6 +197,8 @@ const SCHEDULE = [
   {
     start: 18, end: 22,
     albums: [
+      // 2026-11-14: War Criminal (cabaret comedy, her charge sheet against how people live) leads Evening Signals.
+      'War Criminal',
       // 2026-11-11: Spies R Us (noir, tango, spy-surf) leads Evening Signals.
       'Spies R Us',
       // 2026-11-13: Alien Emotions, second in Evening Signals.
