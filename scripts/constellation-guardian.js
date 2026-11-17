@@ -13,8 +13,12 @@
  * Sources : nginx access log + spacechild-auth journal (failed logins).
  * Detects : path scanners, auth credential-stuffing, 429 floods.
  * Mitigates: `sudo firewall-cmd --ipset=kannaka_threats --add-entry=<ip>`
- *            (firewalld nftables-backed set; uniform 1h timeout from the set's
- *            default; skipped in DRY_RUN; allowlisted IPs are never banned).
+ *            (firewalld nftables-backed sets; skipped in DRY_RUN; allowlisted
+ *            IPs are never banned). Bans escalate for a repeat offender: the
+ *            first is 1 hour (kannaka_threats), the second 1 day
+ *            (kannaka_threats_day), the third and later 1 week
+ *            (kannaka_threats_week). Each set carries its own timeout, so every
+ *            ban still ends by itself. Strikes are forgotten after 30 quiet days.
  * Publishes: per-threat + summary entities into Flux (constellation observability)
  *            so the Observatory can render the security posture alongside Phi.
  *
@@ -25,6 +29,9 @@
 
 const https = require("https");
 const { spawn } = require("child_process");
+const fs = require("fs");
+const os = require("os");
+const pathMod = require("path");
 
 const FLUX_URL = process.env.FLUX_URL || "https://api.flux-universe.com";
 const FLUX_TOKEN = process.env.FLUX_TOKEN || "";
@@ -46,12 +53,18 @@ const SCANNER_PATTERNS = [
   /xmlrpc\.php/i, /phpmyadmin/i, /\/vendor\//i, /\/\.well-known\/(?!acme)/i,
   /\/config\.(php|json|yml)/i, /\/actuator/i, /\/solr/i, /\/cgi-bin/i,
   /\/owa\//i, /\/console/i, /\/\.DS_Store/i, /eval\(/i, /\/boaform/i,
+  // Added 2026-11-17. On 2026-11-16 one address made about 5,400 probing
+  // requests after its first ban lapsed and was caught only once more, because
+  // none of what it sent matched the list above: path traversal, script and
+  // template injection, SQL fragments.
+  /etc\/passwd/i, /\.\.(\/|\\|%2f|%5c)/i, /%252e|%2e%2e/i,
+  /<script|%3Cscript|onerror\s*=|onerror%3D/i, /\{\{|%7B%7B|\$\{|%24%7B/i,
+  /union(\s|%20|\+)+select|;(\s|%20)*select/i,
 ];
 const AUTH_PATHS = [/\/auth\/login/i, /\/api\/space-child-auth\/login/i, /\/auth\/register/i];
 
-// Detection rules: window (ms), threshold, reason. Ban duration is uniform
-// (the kannaka_threats set's default timeout, 1h) — re-offense re-adds and
-// resets the clock. Conservative thresholds on purpose.
+// Detection rules: window (ms), threshold, reason. Ban duration comes from
+// the offender's strike count (see LADDER). Conservative thresholds on purpose.
 const RULES = {
   scanner:   { windowMs: 5 * 60_000, threshold: 6,   reason: "path-scanning" },
   authBrute: { windowMs: 10 * 60_000, threshold: 12, reason: "auth-brute-force" },
@@ -73,20 +86,56 @@ function within(arr, windowMs, now) {
   return arr.length;
 }
 
-const BAN_TTL_S = 3600; // matches the kannaka_threats set default timeout
+// The ladder. Each rung is a firewalld set with its own timeout; an entry
+// inherits it, so no ban needs anything to lift it.
+const LADDER = [
+  { set: "kannaka_threats", ttlS: 3600 },
+  { set: "kannaka_threats_day", ttlS: 86400 },
+  { set: "kannaka_threats_week", ttlS: 7 * 86400 },
+];
+const STRIKE_MEMORY_MS = 30 * 86400 * 1000;
+const STRIKES_FILE = process.env.GUARDIAN_STRIKES_FILE || pathMod.join(os.homedir(), ".kannaka", "guardian-strikes.json");
+
+/** ip -> { n, last }. Kept on disk so a restart does not forgive a repeat offender. */
+let strikes = {};
+try { strikes = JSON.parse(fs.readFileSync(STRIKES_FILE, "utf8")) || {}; } catch (_e) { strikes = {}; }
+function saveStrikes() {
+  try {
+    fs.mkdirSync(pathMod.dirname(STRIKES_FILE), { recursive: true });
+    fs.writeFileSync(STRIKES_FILE + ".tmp", JSON.stringify(strikes));
+    fs.renameSync(STRIKES_FILE + ".tmp", STRIKES_FILE);
+  } catch (e) { console.error("[guardian] could not save strikes:", e.message); }
+}
+/** Count this ban and return the rung it earns. Pure apart from the map it is given. */
+function nextRung(map, ip, now) {
+  const s = map[ip];
+  const n = s && now - s.last < STRIKE_MEMORY_MS ? s.n + 1 : 1;
+  map[ip] = { n, last: now };
+  return { n, rung: LADDER[Math.min(n, LADDER.length) - 1] };
+}
+function pruneStrikes(map, now) {
+  let dropped = 0;
+  for (const ip of Object.keys(map)) if (now - map[ip].last >= STRIKE_MEMORY_MS) { delete map[ip]; dropped++; }
+  return dropped;
+}
+
 function ban(ip, rule, now) {
   const r = rec(ip);
+  const { n, rung } = nextRung(strikes, ip, now);
+  saveStrikes();
+  const BAN_TTL_S = rung.ttlS;
   r.banned = true;
   r.banExpires = now + BAN_TTL_S * 1000;
   r.reason = rule.reason;
+  r.strikes = n;
   const human = new Date(now).toISOString();
   if (DRY_RUN) {
     console.log(`[guardian] WOULD ban ${ip} (${rule.reason}) @ ${human}`);
   } else {
-    // firewalld nftables-backed set; entry inherits the set's 1h timeout.
-    const p = spawn("sudo", ["firewall-cmd", `--ipset=kannaka_threats`, `--add-entry=${ip}`]);
+    // firewalld nftables-backed set; the entry inherits that set's timeout.
+    const p = spawn("sudo", ["firewall-cmd", `--ipset=${rung.set}`, `--add-entry=${ip}`]);
     p.on("close", (code) => {
-      console.log(`[guardian] ${code === 0 ? "BANNED" : "ban-FAILED(" + code + ")"} ${ip} (${rule.reason}) ttl=${BAN_TTL_S}s`);
+      console.log(`[guardian] ${code === 0 ? "BANNED" : "ban-FAILED(" + code + ")"} ${ip} (${rule.reason}) strike=${n} set=${rung.set} ttl=${BAN_TTL_S}s`);
     });
     p.on("error", (e) => console.error(`[guardian] ban error for ${ip}:`, e.message));
   }
@@ -124,6 +173,7 @@ function publishThreat(ip, r, now) {
   fluxPost(`${NS}/threat-${ip.replace(/[.:]/g, "-")}`, {
     type: "threat", ip, reason: r.reason || "observed", banned: !DRY_RUN && r.banned,
     dry_run: DRY_RUN, ban_expires: r.banExpires ? new Date(r.banExpires).toISOString() : null,
+    strikes: r.strikes || 0,
     first_seen: new Date(r.firstSeen).toISOString(), last_seen: new Date(now).toISOString(),
   });
 }
@@ -180,6 +230,13 @@ setInterval(() => {
   }
 }, 60_000).unref();
 setInterval(publishSummary, 60_000).unref();
+setInterval(() => { if (pruneStrikes(strikes, Date.now())) saveStrikes(); }, 3600_000).unref();
+
+if (require.main !== module) {
+  // Loaded by a test: export the pure parts and start nothing.
+  module.exports = { LADDER, STRIKE_MEMORY_MS, nextRung, pruneStrikes, SCANNER_PATTERNS };
+  return;
+}
 
 console.log(`[guardian] starting — mode=${DRY_RUN ? "OBSERVE (dry-run)" : "ACTIVE"} flux=${FLUX_TOKEN ? "on" : "off"} log=${ACCESS_LOG}`);
 tailFile(ACCESS_LOG, onAccessLine);
