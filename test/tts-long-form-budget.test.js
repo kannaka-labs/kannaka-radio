@@ -154,6 +154,77 @@ test('a 20-word line still reaches piper when edge fails', () => {
   });
 });
 
+// ── 2026-11-20: edge slowed to about the speed of speech ──
+// O1 measured 204 s and 198 s for 735 words, 40 s for 120 words. The 150 ms/word
+// budget killed every 620-775 word oration; it missed its slot on most days
+// from 11-12. A long text now goes out as pieces in parallel and is joined.
+const MEASURED_EDGE_MS_PER_WORD_NOV = 272;
+const sentence = (n) => Array.from({ length: n }, (_, i) => `s${i}`).join(' ') + '.';
+
+test('the per-word budget is at least twice the rate measured in November', () => {
+  const perWord = (ve.edgeTimeoutMs(words(200)) - ve.edgeTimeoutMs(words(100))) / 100;
+  assert.ok(perWord >= 2 * MEASURED_EDGE_MS_PER_WORD_NOV, `per-word budget ${perWord} ms`);
+});
+
+test('splitForEdge: a short text is one piece, a long one is cut on sentence ends', () => {
+  assert.deepStrictEqual(ve.splitForEdge('Hello there. How are you?', 180), ['Hello there. How are you?']);
+  assert.strictEqual(ve.splitForEdge(words(220), 180).length, 1, 'a quarter over the limit is not worth a cut');
+  const text = Array.from({ length: 21 }, () => sentence(35)).join(' ');   // 735 words
+  const pieces = ve.splitForEdge(text, 180);
+  assert.ok(pieces.length >= 4, `pieces: ${pieces.length}`);
+  for (const p of pieces) {
+    assert.ok(p.split(/\s+/).length <= 180, 'no piece over the limit');
+    assert.ok(/\.$/.test(p), 'every piece ends on a sentence end');
+  }
+  assert.strictEqual(pieces.join(' '), text, 'nothing lost, nothing reordered');
+  const run = ve.splitForEdge(words(400), 180);
+  assert.deepStrictEqual(run.map((p) => p.split(/\s+/).length), [180, 180, 40], 'a sentence with no end is cut on words');
+});
+
+test('a 735-word oration: edge is asked for pieces, each with a budget it can meet, then joined', () => {
+  const fs = require('node:fs');
+  const text = Array.from({ length: 21 }, () => sentence(35)).join(' ');
+  const out = path.join(os.tmpdir(), `tts-budget-735-${process.pid}.mp3`);
+  const lastArg = (args) => args[args.length - 1];
+  return withFakeExecFile((cmd, args, fn) => {
+    if (/edge/.test(String(cmd))) { fs.writeFileSync(args[args.indexOf('--write-media') + 1], 'x'); return fn(null, '', ''); }
+    if (args.includes('null')) return fn(new Error('no measure in this fake'), '', '');   // loudness pass
+    fs.writeFileSync(lastArg(args), Buffer.alloc(600));                                   // join, then encode
+    fn(null, '', '');
+  }, (fresh, calls) => new Promise((resolve, reject) => {
+    fresh.synthesize({ text, persona: 'oration', outPath: out }, (err, _p, engine) => {
+      try {
+        assert.ifError(err);
+        assert.strictEqual(engine, 'edge');
+        const edge = calls.filter(isEdge);
+        assert.ok(edge.length >= 4, `edge calls: ${edge.length}`);
+        for (const c of edge) {
+          const n = c.args[c.args.indexOf('--text') + 1].split(/\s+/).length;
+          assert.ok(n <= 180, `piece of ${n} words`);
+          assert.ok(c.timeout >= 2 * MEASURED_EDGE_MS_PER_WORD_NOV * n, `piece budget ${c.timeout} ms for ${n} words`);
+        }
+        const join = calls.filter((c) => c.cmd === 'ffmpeg' && c.args.includes('concat'));
+        assert.strictEqual(join.length, 1, 'one join');
+        assert.deepStrictEqual(join[0].args.slice(join[0].args.indexOf('-c'), join[0].args.indexOf('-c') + 2), ['-c', 'copy']);
+        resolve();
+      } catch (e) { reject(e); } finally { try { fs.unlinkSync(out); } catch (_) {} }
+    });
+  }));
+});
+
+test('a piece that fails twice fails the render and names the piece', () => {
+  const text = Array.from({ length: 21 }, () => sentence(35)).join(' ');
+  return withFakeExecFile((cmd, args, fn) => killed(fn), (fresh, calls) => new Promise((resolve, reject) => {
+    fresh.synthesize({ text, persona: 'oration', outPath: path.join(os.tmpdir(), 'tts-budget-fail.mp3') }, (err) => {
+      try {
+        assert.ok(err && /edge\(piece \d+\/\d+: timed out/.test(err.message), String(err && err.message));
+        assert.strictEqual(calls.filter((c) => c.args.includes('concat')).length, 0, 'no join after a failed piece');
+        resolve();
+      } catch (e) { reject(e); }
+    });
+  }));
+});
+
 Promise.all(pending).then(() => {
   if (failures) { console.error(`tts-long-form-budget: ${failures} failed`); process.exit(1); }
   console.log('tts-long-form-budget: all passed');

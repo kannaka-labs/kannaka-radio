@@ -164,7 +164,46 @@ function _ttsTimeout(text, baseMs, perWordMs, capMs) {
 // lock stuck at 5 min and restarted the radio mid-song: five restarts that day, two
 // orations and the artist story lost. Edge gets room; piper does not attempt what it
 // cannot finish (fail fast, so the retry comes sooner).
-const EDGE_TTS_BASE_MS = 60000, EDGE_TTS_PER_WORD_MS = 150, EDGE_TTS_CAP_MS = 300000;
+//
+// Measured again on O1 2026-11-20: edge now delivers at about the speed of
+// speech. 735 words took 204 s and 198 s (two runs), 120 words took 40 s, so
+// roughly 270 ms/word where October measured 118. The 150 ms/word budget gave
+// a 731-word oration 170 s and every attempt was killed: the oration missed
+// its slot on most days from 11-12. Two changes: the per-word budget is 600 ms
+// (twice the measured rate), and a long text is rendered as several pieces in
+// parallel and joined (see renderEdge), so the wait is one piece, not the sum.
+const EDGE_TTS_BASE_MS = 60000, EDGE_TTS_PER_WORD_MS = 600, EDGE_TTS_CAP_MS = 300000;
+const EDGE_CHUNK_PARALLEL = 4, EDGE_CONCAT_MS = 60000;
+function edgeChunkWords() {
+  const n = parseInt(process.env.EDGE_CHUNK_WORDS || "", 10);
+  return Number.isFinite(n) && n >= 40 ? n : 180;
+}
+/**
+ * Split a long utterance into pieces of at most maxWords, on sentence ends
+ * where there are any. A text that fits (with a quarter over, so a 200-word
+ * piece is not cut in two for the sake of 20 words) comes back whole. A single
+ * sentence longer than maxWords is cut on words. Pure.
+ */
+function splitForEdge(text, maxWords) {
+  const t = String(text || "").trim();
+  const max = maxWords || edgeChunkWords();
+  if (_wordCount(t) <= Math.floor(max * 1.25)) return t ? [t] : [];
+  const sentences = t.match(/[^.!?…]+[.!?…]+["'”’)\]]*\s*|[^.!?…]+$/g) || [t];
+  const units = [];
+  for (const s of sentences) {
+    const w = s.trim().split(/\s+/).filter(Boolean);
+    if (w.length <= max) { if (w.length) units.push(w); continue; }
+    for (let i = 0; i < w.length; i += max) units.push(w.slice(i, i + max));
+  }
+  const out = [];
+  let cur = [];
+  for (const u of units) {
+    if (cur.length && cur.length + u.length > max) { out.push(cur.join(" ")); cur = []; }
+    cur = cur.concat(u);
+  }
+  if (cur.length) out.push(cur.join(" "));
+  return out;
+}
 const PIPER_TTS_BASE_MS = 60000, PIPER_TTS_PER_WORD_MS = 400, PIPER_TTS_CAP_MS = 360000;
 function piperMaxWords() {
   const n = parseInt(process.env.PIPER_MAX_WORDS || "", 10);
@@ -365,11 +404,66 @@ function _pythonBin() {
   return process.env.PYTHON_BIN || (os.platform() === "win32" ? "python" : "python3");
 }
 
+/**
+ * edge for any length. Short text is one request. Long text is split on
+ * sentence ends, the pieces are requested EDGE_CHUNK_PARALLEL at a time (the
+ * service streams at about the speed of speech, so pieces in parallel finish
+ * in the time of one), each piece gets one retry, and ffmpeg joins them in
+ * order without re-encoding. Any piece failing twice fails the render, with
+ * the piece named in the reason.
+ */
 function renderEdge(text, voice, rawPath, cb) {
+  const pieces = splitForEdge(text, edgeChunkWords());
+  if (pieces.length <= 1) return renderEdgeOne(text, voice, rawPath, cb);
+  const parts = pieces.map((_, i) => `${rawPath}.part${String(i).padStart(2, "0")}.mp3`);
+  const listPath = `${rawPath}.parts.txt`;
+  const cleanup = () => {
+    for (const p of parts) { try { fs.unlinkSync(p); } catch (_) {} }
+    try { fs.unlinkSync(listPath); } catch (_) {}
+  };
+  let next = 0, running = 0, done = 0, failed = false;
+  const finish = (err) => {
+    if (failed) return;
+    if (err) { failed = true; cleanup(); return cb(err); }
+    try {
+      fs.writeFileSync(listPath, parts.map((p) => `file '${p.replace(/\\/g, "/").replace(/'/g, "'\\''")}'`).join("\n") + "\n");
+    } catch (e) { failed = true; cleanup(); return cb(e); }
+    const args = ["-hide_banner", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", listPath, "-c", "copy", rawPath];
+    execFile("ffmpeg", args, { timeout: EDGE_CONCAT_MS }, (cErr, _stdout, stderr) => {
+      cleanup();
+      if (cErr || !fs.existsSync(rawPath)) {
+        const e = withReason(cErr, stderr) || new Error("edge join produced no file");
+        e.reason = `join of ${parts.length} pieces: ${failureReason(e)}`;
+        return cb(e);
+      }
+      cb(null, rawPath);
+    });
+  };
+  const pump = () => {
+    while (!failed && running < EDGE_CHUNK_PARALLEL && next < pieces.length) {
+      const i = next++;
+      running++;
+      const attempt = (n) => renderEdgeOne(pieces[i], voice, parts[i], (err) => {
+        if (err && n === 0 && !failed) return attempt(1);
+        running--;
+        if (err) {
+          err.reason = `piece ${i + 1}/${pieces.length}: ${failureReason(err)}`;
+          return finish(err);
+        }
+        if (++done === pieces.length) return finish(null);
+        pump();
+      });
+      attempt(0);
+    }
+  };
+  pump();
+}
+
+function renderEdgeOne(text, voice, rawPath, cb) {
   const ec = _edgeCmd();
   // edge does the synthesis cloud-side, so this is mostly download time —
-  // generous but bounded: 150 ms/word over a 60 s base, capped at 5 min
-  // (526 words measured at 62 s on O1; the old 60 ms/word budget equalled it).
+  // generous but bounded: 600 ms/word over a 60 s base, capped at 5 min
+  // (about 270 ms/word measured on O1 2026-11-20; see the constants above).
   const timeout = edgeTimeoutMs(text);
   const runWith = (cmd, pre) => {
     const args = [...pre, "--voice", voice, "--text", text, "--write-media", rawPath];
@@ -601,6 +695,8 @@ module.exports = {
   failureReason,
   synthesize,
   edgeTimeoutMs,
+  edgeChunkWords,
+  splitForEdge,
   dspTimeoutMs,
   piperTimeoutMs,
   piperMaxWords,
