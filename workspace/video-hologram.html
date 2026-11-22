@@ -760,6 +760,7 @@ window.gsSubmitPrediction = function() {
   inp.value = '';
 };
 
+function gsEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function hashStr(s) { let h=0; for(let i=0;i<s.length;i++) h=((h<<5)-h+s.charCodeAt(i))|0; return Math.abs(h); }
 
 function generateAlbumTexture(name) {
@@ -1993,9 +1994,9 @@ function animate() {
         const now = performance.now() / 1000;
         const remain = Math.max(0, m.ttl - (now - m.createdAt)).toFixed(0);
         return `<div class="gs-market" data-mid="${m.id}">
-          <div class="gs-mq">${m.userCreated ? '<span style="color:#76ff03">●</span> ' : ''}${m.question}</div>
+          <div class="gs-mq">${m.userCreated ? '<span style="color:#76ff03">●</span> ' : ''}${gsEsc(m.question)}</div>
           <div class="gs-bar"><div class="gs-bar-fill" style="width:${pct}%"></div></div>
-          <div class="gs-meta">Yes ${pct}% · ${m.tag} · ${remain}s · <a href="#" onclick="gsBuy('${m.id}',0);return false;">BUY Y</a> · <a href="#" onclick="gsBuy('${m.id}',1);return false;">BUY N</a></div>
+          <div class="gs-meta">Yes ${pct}% · ${gsEsc(m.tag)} · ${remain}s · <a href="#" onclick="gsBuy('${m.id}',0);return false;">BUY Y</a> · <a href="#" onclick="gsBuy('${m.id}',1);return false;">BUY N</a></div>
         </div>`;
       }).join('');
     }
@@ -2004,7 +2005,7 @@ function animate() {
       resEl.innerHTML = recent.map(r => {
         const icon = r.winner === 0 ? '✓' : '✗';
         const color = r.winner === 0 ? '#76ff03' : '#ff6b6b';
-        return `<div class="gs-resolved-row"><span style="color:${color}">${icon}</span> ${r.q.substring(0, 48)}</div>`;
+        return `<div class="gs-resolved-row"><span style="color:${color}">${icon}</span> ${gsEsc(String(r.q).substring(0, 48))}</div>`;
       }).join('');
     }
   }
