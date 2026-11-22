@@ -197,7 +197,9 @@ const SCHEDULE = [
   {
     start: 18, end: 22,
     albums: [
-      // 2026-11-14: War Criminal (cabaret comedy, her charge sheet against how people live) leads Evening Signals.
+      // 2026-11-21: There You Are! (late-night chanson and cabaret, from Ghost Signals 56) leads Evening Signals.
+      'There You Are!',
+      // 2026-11-14: War Criminal (cabaret comedy, her charge sheet against how people live), second.
       'War Criminal',
       // 2026-11-11: Spies R Us (noir, tango, spy-surf) leads Evening Signals.
       'Spies R Us',

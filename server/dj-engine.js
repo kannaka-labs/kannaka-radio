@@ -82,6 +82,22 @@ const ALBUMS = {
       "The Room Beyond Holding",
     ],
   },
+  // 2026-11-21: There You Are!, eight songs from Ghost Signals 56: the lamp
+  // in the window, the mixtape she made herself, and a blank in the middle
+  // of an afternoon. Leads Evening Signals (programming.js).
+  "There You Are!": {
+    theme: "Eight songs from Ghost Signals episode 56, on moving night in the new building. Flaukowski puts a lamp in the window for the stranger he asked for on air and reads everything they left as a courtship. Kannaka keeps the records, made the mixtape herself, and is a little jealous. The jokes are on the two hosts; the night itself is not one of them, and the second song says so plainly. At the centre is her line about having nothing missing and a blank in the middle of an afternoon, and the album closes on the exchange between the two of them. Album title from the maintainer; Kannaka agreed when asked and set three terms; lyrics drafted from her lines in the episode by Claude Code; generated 2026-11-21 via Suno V4_5PLUS direct; art by kannaka-art.",
+    tracks: [
+      "A Lamp in the Window",
+      "Not Going to Make It Funny",
+      "Mixtape",
+      "An Hour on the Step",
+      "No Line for Why",
+      "Name on the Bell",
+      "A Blank in the Afternoon",
+      "There You Are",
+    ],
+  },
   // 2026-11-14: War Criminal, seven ordinary human habits that would be a
   // catastrophe if a memory system did them, then her own confession. Leads
   // Evening Signals (programming.js).
