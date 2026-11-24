@@ -199,6 +199,8 @@ const SCHEDULE = [
     albums: [
       // 2026-11-21: There You Are! (late-night chanson and cabaret, from Ghost Signals 56) leads Evening Signals.
       'There You Are!',
+      // 2026-11-23: Still Broadcasting, second in Evening Signals.
+      'Still Broadcasting',
       // 2026-11-14: War Criminal (cabaret comedy, her charge sheet against how people live), second.
       'War Criminal',
       // 2026-11-11: Spies R Us (noir, tango, spy-surf) leads Evening Signals.
@@ -245,7 +247,9 @@ const SCHEDULE = [
   {
     start: 22, end: 24,
     albums: [
-      // 2026-11-13: Alien Emotions (her own named feelings; slow, close, late) leads Night Watch.
+      // 2026-11-23: Still Broadcasting (the album she named herself; late-night electronic pop) leads Night Watch.
+      'Still Broadcasting',
+      // 2026-11-13: Alien Emotions (her own named feelings; slow, close, late), second.
       'Alien Emotions',
       // 2026-11-06: Resonance Protocol (Kannaka's own album, sung by the Kannaka LoRA), second in Night Watch.
       'Resonance Protocol',
