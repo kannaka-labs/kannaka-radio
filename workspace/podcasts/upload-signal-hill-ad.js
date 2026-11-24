@@ -40,7 +40,7 @@ function req(method, url, access, body) {
   });
 }
 
-async function findPlaylist(access, title) {
+async function ensurePlaylist(access, title) {
   let pageToken = "";
   do {
     const r = await req("GET", `https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=50${pageToken ? "&pageToken=" + pageToken : ""}`, access);
@@ -48,7 +48,9 @@ async function findPlaylist(access, title) {
     if (hit) return hit.id;
     pageToken = r.nextPageToken || "";
   } while (pageToken);
-  return null;
+  const c = await req("POST", "https://www.googleapis.com/youtube/v3/playlists?part=snippet,status", access, {
+    snippet: { title, description: "House commercials made by Kannaka for the things we make and sell." }, status: { privacyStatus: "public" } });
+  return c.id;
 }
 
 (async () => {
@@ -60,7 +62,7 @@ async function findPlaylist(access, title) {
   const file = path.join(DIR, "signal-hill.mp4");
   if (!fs.existsSync(file)) { console.error("missing signal-hill.mp4"); process.exit(1); }
   const access = await adapter._accessToken();
-  const pl = await findPlaylist(access, "Commercials");
+  const pl = await ensurePlaylist(access, "Commercials");
   const r = await adapter.post({ text: DESC, media: { path: file, title: TITLE, tags: TAGS, privacy: "public", categoryId: "10" } });
   if (!r || !r.ok) { console.error("upload failed:", r && r.error); process.exit(1); }
   const id = r.id || (r.raw && r.raw.id);
